@@ -25,7 +25,7 @@ public class Utils {
     public static float respawnTimeEnforced = 1f;
     public static int respawnTimeEnforcedDuration = 10; // duration of insta spawn
     static String welcomeMessage = "";
-    static String noPermissionMessage = "You don't have permissions to execute this command! Purchase vip at https://donate.mindustry.io";
+    static String noPermissionMessage = "[accent]You don't have permissions to execute this command!";
     static String statMessage = "";
 
     // wheter ip verification is in place (detect vpns, disallow their build rights)
