@@ -12,8 +12,12 @@ public class TempPlayerData implements Serializable {
     public Array<BaseUnit> draugPets = new Array<>();
     public int hue;
     public boolean doRainbow;
+    public boolean doTrail;
     public boolean spawnedLichPet;
     public boolean spawnedPowerGen;
+
+    public int burstCD = 0;
+
 
     public TempPlayerData(Player p) {
         playerRef = new WeakReference<>(p);
@@ -28,4 +32,5 @@ public class TempPlayerData implements Serializable {
     public void setHue(int i) {
         this.hue = i;
     }
+
 }

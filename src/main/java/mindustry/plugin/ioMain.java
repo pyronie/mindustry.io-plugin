@@ -5,7 +5,9 @@ import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.IntStream;
 
+import arc.graphics.Colors;
 import com.google.gson.Gson;
 import arc.util.Timer;
 import arc.util.Timer.Task;
@@ -14,6 +16,7 @@ import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.UnitTypes;
 import mindustry.entities.Effects;
+import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
 import mindustry.graphics.Pal;
 import mindustry.world.Build;
@@ -97,6 +100,7 @@ public class ioMain extends Plugin {
         try {
             jedis = new Jedis("localhost");
             Log.info("jedis database loaded successfully");
+            Log.info(jedis.ping());
         } catch (Exception e){
             e.printStackTrace();
             Core.app.exit();
@@ -305,6 +309,13 @@ public class ioMain extends Plugin {
                 tdata.setHue(hue);
             }
 
+            if (tdata.doTrail) {
+                String hex = Integer.toHexString(Color.getHSBColor(tdata.hue / 360f, 1f, 1f).getRGB()).substring(2);
+
+                arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
+                Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c); // this inverse rotation thing gave me a headache
+            }
+
             // update pets
             for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
         }
@@ -352,18 +363,27 @@ public class ioMain extends Plugin {
                 player.sendMessage(builder.toString());
             });
 
-            handler.<Player>register("rainbow", "[regular+] Give your username a rainbow animation", (args, player) -> {
+            handler.<Player>register("rainbow", "[regular+]Give your username a rainbow animation", (args, player) -> {
                 PlayerData pd = getData(player.uuid);
                 if (pd != null && pd.rank > 2) {
                     TempPlayerData tdata = playerDataGroup.get(player.uuid);
                     if (tdata == null) return; // shouldn't happen, ever
-                    if (tdata.doRainbow) {
-                        player.sendMessage("[sky]Rainbow effect toggled off.");
-                        tdata.doRainbow = false;
-                    } else {
-                        player.sendMessage("[sky]Rainbow effect toggled on.");
-                        tdata.doRainbow = true;
-                    }
+
+                    player.sendMessage("[sky]Rainbow effect toggled.");
+                    tdata.doRainbow = !tdata.doRainbow;
+                } else {
+                    player.sendMessage(noPermissionMessage);
+                }
+            });
+
+            handler.<Player>register("trail", "[regular+]Give your username an in-world trail animation.", (args, player) -> {
+                PlayerData pd = getData(player.uuid);
+                if (pd != null && pd.rank > 2) {
+                    TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                    if (tdata == null) return; // shouldn't happen, ever
+
+                    player.sendMessage("[sky]Trail effect toggled.");
+                    tdata.doTrail = !tdata.doTrail;
                 } else {
                     player.sendMessage(noPermissionMessage);
                 }
@@ -437,7 +457,9 @@ public class ioMain extends Plugin {
                             }
 
                             targetTile.setNet(Blocks.rtgGenerator, player.getTeam(), 0);
-                            Call.onEffectReliable(Fx.coreLand, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
+                            Call.onLabel(escapeColorCodes(player.name) + "'s generator", 60f, targetTile.worldx(), targetTile.worldy());
+                            Call.onEffectReliable(Fx.explosion, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
+                            Call.onEffectReliable(Fx.placeBlock, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
                             Call.sendMessage(player.name + "[#ff82d1] spawned in a power generator!");
 
                             // ok seriously why is this necessary
@@ -456,6 +478,39 @@ public class ioMain extends Plugin {
                             };
                         } else {
                             player.sendMessage("[#ff82d1]You already spawned a power generator in this game!");
+                        }
+                    } else {
+                        player.sendMessage(noPermissionMessage);
+                    }
+                } else {
+                    player.sendMessage("[scarlet]This command is disabled on pvp.");
+                }
+            });
+
+            handler.<Player>register("waterburst", "[donator+] Extinguish all flames (3 minute cooldown)", (args, player) -> {
+                if(!state.rules.pvp || player.isAdmin) {
+                    PlayerData pd = getData(player.uuid);
+                    if (pd != null && pd.rank >= 3) {
+                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                        if (tdata == null) return;
+                        if (tdata.burstCD <= 0 || player.isAdmin) {
+                            tdata.burstCD = 3;
+                            float x = player.getX();
+                            float y = player.getY();
+
+                            Tile targetTile = world.tileWorld(x, y);
+                            Call.onEffectReliable(Fx.healWave, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
+
+                            IntStream.range(0, 90).forEach(i -> {
+                                Call.onEffectReliable(Fx.shootLiquid, targetTile.worldx(), targetTile.worldy(), i * 4, arc.graphics.Color.valueOf("65bdf7"));
+                            });
+
+                            for(Entity fire : fireGroup){
+                                Call.onRemoveFire(fire.getID());
+                            }
+                            Call.sendMessage(player.name + "[#3279a8] extinguished all fires!");
+                        } else {
+                            player.sendMessage("[#3279a8]This command is on a cooldown. " + tdata.burstCD + "m remaining.");
                         }
                     } else {
                         player.sendMessage(noPermissionMessage);
@@ -499,6 +554,19 @@ public class ioMain extends Plugin {
                 PlayerData pd = getData(player.uuid);
                 if (pd != null) {
                     Call.onInfoMessage(player.con, formatMessage(player, statMessage));
+                }
+            });
+
+            handler.<Player>register("label", "<duration> <text...>", "[admin only] Create an in-world label at the current position.", (args, player) -> {
+                if(args[0].length() <= 0 || args[1].length() <= 0) player.sendMessage("[scarlet]Invalid arguments provided.");
+                if (player.isAdmin) {
+                    float x = player.getX();
+                    float y = player.getY();
+
+                    Tile targetTile = world.tileWorld(x, y);
+                    Call.onLabel(args[1], Float.parseFloat(args[0]), targetTile.worldx(), targetTile.worldy());
+                } else {
+                    player.sendMessage(noPermissionMessage);
                 }
             });
 
