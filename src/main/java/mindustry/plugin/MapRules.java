@@ -21,12 +21,7 @@ public class MapRules {
 
 
     public static void onMapLoad(){
-        Rules rules = Vars.world.getMap().rules();
-        Rules orig = rules.copy();
-        rules.respawnTime = respawnTimeEnforced;
-        Call.onSetRules(rules);
-
-        Timer.schedule(() -> Call.onSetRules(orig), respawnTimeEnforcedDuration);
+        // TODO: figure out a way to spawn all players quick
 
         Vars.netServer.admins.addActionFilter(action -> {
             Player player = action.player;
