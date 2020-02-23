@@ -41,10 +41,17 @@ public class BotThread extends Thread {
                 Thread.sleep(60 * 1000);
 
                 for (Player p : Vars.playerGroup.all()) {
+                    // cooldowns
+                    TempPlayerData tdata = (ioMain.playerDataGroup.getOrDefault(p.uuid, null));
+                    if (tdata != null){
+                        if (tdata.burstCD > 0){
+                            tdata.burstCD--;
+                        }
+                    }
+                    // increment playtime for users in-game
                     PlayerData pd = getData(p.uuid);
                     if (pd == null) return;
 
-                    // increment playtime for users in-game
                     pd.playTime++;
                     if(pd.rank == 0 && pd.playTime >= activeRequirements.playtime && pd.buildingsBuilt >= activeRequirements.buildingsBuilt && pd.gamesPlayed >= activeRequirements.gamesPlayed){
                         Call.onInfoMessage(p.con, Utils.formatMessage(p, promotionMessage));
@@ -52,6 +59,7 @@ public class BotThread extends Thread {
                     }
                     setData(p.uuid, pd);
                 }
+
 
             } catch (Exception e) {
                 e.printStackTrace();
