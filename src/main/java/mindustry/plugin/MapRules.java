@@ -9,7 +9,6 @@ import mindustry.game.Rules;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
 import mindustry.net.Administration;
-import mindustry.net.Administration.ActionType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 
@@ -27,53 +26,28 @@ public class MapRules {
         rules.respawnTime = respawnTimeEnforced;
         Call.onSetRules(rules);
 
-        Timer.schedule(() -> Call.onSetRules(orig), 1);
+        Timer.schedule(() -> Call.onSetRules(orig), 10);
 
         Vars.netServer.admins.addActionFilter(action -> {
             Player player = action.player;
-            // action was generated locally
             if (player == null) return true;
+
             String uuid = player.uuid;
             if (uuid == null) return true;
 
-            // disable checks for moderators and admins
-            if (ioMain.getRank(player) >= 4 || player.isAdmin) return true;
+            PlayerData pd = getData(uuid);
+            if (pd == null) return true;
 
-            if (ioMain.verifiedIPs.containsKey(uuid) && verification) {
-                if (!ioMain.verifiedIPs.get(uuid)) {
-                    Call.onInfoToast(player.con, "[scarlet]Your IP was flagged as a VPN, please join http://discord.mindustry.io and request manual verification.", 5f);
-                    player.sendMessage("[#7a7a7a]Cannot build while flagged.");
-                    return false;
-                }
-            }
+            // disable checks for admins
+            if (player.isAdmin) return true;
 
-            TempPlayerData tdata = ioMain.tempPlayerDatas.get(player.uuid);
-            if (tdata == null) { // should never happen
-                player.sendMessage("[scarlet]You may not build right now due to a server error, please tell an administrator");
+            if (!pd.verified) {
+                Call.setHudTextReliable(player.con, "[scarlet]Your IP was flagged as a VPN, please join http://discord.mindustry.io and request manual verification.");
+                player.sendMessage("[#7a7a7a]Cannot build while flagged.");
                 return false;
             }
 
-            switch (action.type) {
-                case rotate: {
-                    boolean hit = tdata.rotateRatelimit.get();
-                    if (hit) {
-                        player.sendMessage("[scarlet]Rotate ratelimit exceeded, please rotate slower");
-                        return false;
-                    }
-                    break;
-                }
-
-                case configure: {
-                    boolean hit = tdata.configureRatelimit.get();
-                    if (hit) {
-                        player.sendMessage("[scarlet]Configure ratelimit exceeded, please configure slower");
-                        return false;
-                    }
-                    break;
-                }
-            }
-
-            return true;
+            return action.type != Administration.ActionType.rotate;
         });
     }
 
