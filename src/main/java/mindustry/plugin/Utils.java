@@ -120,21 +120,24 @@ public class Utils {
         message = message.replaceAll("%player%", escapeCharacters(player.name));
         message = message.replaceAll("%map%", world.getMap().name());
         message = message.replaceAll("%wave%", String.valueOf(state.wave));
-
-        if(database.containsKey(player.uuid)) {
-            message = message.replaceAll("%playtime%", String.valueOf(database.get(player.uuid).getPlaytime()));
-            message = message.replaceAll("%games%", String.valueOf(database.get(player.uuid).getGames()));
-            message = message.replaceAll("%buildings%", String.valueOf(database.get(player.uuid).getBuildings()));
-            message = message.replaceAll("%rank%", escapeColorCodes(rankNames.get(database.get(player.uuid).getRank())));
+        PlayerData pd = getData(player.uuid);
+        if(pd != null) {
+            message = message.replaceAll("%playtime%", String.valueOf(pd.playTime));
+            message = message.replaceAll("%games%", String.valueOf(pd.gamesPlayed));
+            message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
+            message = message.replaceAll("%rank%", escapeColorCodes(rankNames.get(pd.rank)));
         }
         return message;
     }
 
-    public static PlayerData getData(String usid){
-        String json = jedis.get(usid);
-        if(json != null){
-            PlayerD
-        }
+    public static PlayerData getData(String uuid) {
+        String json = jedis.get(uuid);
+        if (json == null) jedis.set(uuid, gson.toJson(new PlayerData(0)));
+
+        return gson.fromJson(json, PlayerData.class);
     }
 
+    public static void setData(String uuid, PlayerData pd) {
+        jedis.set(uuid, gson.toJson(pd));
+    }
 }
