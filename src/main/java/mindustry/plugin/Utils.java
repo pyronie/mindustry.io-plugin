@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import static mindustry.Vars.*;
+import static mindustry.plugin.ioMain.*;
 
 public class Utils {
     static int messageBufferSize = 24; // number of messages sent at once to discord
@@ -120,13 +121,20 @@ public class Utils {
         message = message.replaceAll("%map%", world.getMap().name());
         message = message.replaceAll("%wave%", String.valueOf(state.wave));
 
-        if(ioMain.database.containsKey(player.uuid)) {
-            message = message.replaceAll("%playtime%", String.valueOf(ioMain.database.get(player.uuid).getPlaytime()));
-            message = message.replaceAll("%games%", String.valueOf(ioMain.database.get(player.uuid).getGames()));
-            message = message.replaceAll("%buildings%", String.valueOf(ioMain.database.get(player.uuid).getBuildings()));
-            message = message.replaceAll("%rank%", escapeColorCodes(rankNames.get(ioMain.database.get(player.uuid).getRank())));
+        if(database.containsKey(player.uuid)) {
+            message = message.replaceAll("%playtime%", String.valueOf(database.get(player.uuid).getPlaytime()));
+            message = message.replaceAll("%games%", String.valueOf(database.get(player.uuid).getGames()));
+            message = message.replaceAll("%buildings%", String.valueOf(database.get(player.uuid).getBuildings()));
+            message = message.replaceAll("%rank%", escapeColorCodes(rankNames.get(database.get(player.uuid).getRank())));
         }
         return message;
+    }
+
+    public static PlayerData getData(String usid){
+        String json = jedis.get(usid);
+        if(json != null){
+            PlayerD
+        }
     }
 
 }

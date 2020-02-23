@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import arc.struct.Array;
+import com.google.gson.Gson;
 import mindustry.content.Blocks;
 import mindustry.content.Items;
 import mindustry.content.UnitTypes;
@@ -31,6 +32,7 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.gen.Call;
+import redis.clients.jedis.Jedis;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
@@ -39,14 +41,17 @@ import static mindustry.Vars.*;
 import static mindustry.plugin.Utils.*;
 
 public class ioMain extends Plugin {
+    public static Jedis jedis;
+    Gson gson = new Gson();
+
     public static DiscordApi api = null;
     public static String prefix = ".";
     public static String serverName = "<untitled>";
-    public static HashMap<String, PlayerData> database  = new HashMap<String, PlayerData>(); // uuid, rank
-    public static HashMap<String, Boolean> verifiedIPs = new HashMap<>(); // uuid, verified?
+
     public static Array<String> rainbowedPlayers = new Array<>(); // player
     public static Array<String> spawnedLichPet = new Array<>();
     public static Array<String> spawnedPowerGen = new Array<>();
+    
     public static HashMap<String, TempPlayerData> tempPlayerDatas = new HashMap<>(); // uuid, data
     public static HashMap<String, Integer> spawnedDraugPets = new HashMap<>(); // player, amount of draugs spawned
     public static Boolean intermission = false;
@@ -88,40 +93,13 @@ public class ioMain extends Plugin {
         bt.start();
 
 
-        // setup database
+
+        //
         try {
-            File toRead = new File("database.io");
-            if(toRead.length() > 0) {
-                FileInputStream fis = new FileInputStream(toRead);
-                ObjectInputStream ois = new ObjectInputStream(fis);
-
-                database = (HashMap<String, PlayerData>) ois.readObject();
-
-                ois.close();
-                fis.close();
-
-                Log.info("discordplugin: database loaded successfully");
-            }
-        } catch(Exception e){
+            jedis = new Jedis("localhost");
+        } catch (Exception e){
             e.printStackTrace();
-        }
-
-        // setup ipdatabase
-        try {
-            File toRead2 = new File("ipdb.io");
-            if(toRead2.length() > 0) {
-                FileInputStream fis2 = new FileInputStream(toRead2);
-                ObjectInputStream ois2 = new ObjectInputStream(fis2);
-
-                verifiedIPs = (HashMap<String, Boolean>) ois2.readObject();
-
-                ois2.close();
-                fis2.close();
-
-                Log.info("discordplugin: ip database loaded successfully");
-            }
-        } catch(Exception e){
-            e.printStackTrace();
+            Core.app.exit();
         }
 
         // setup prefix
