@@ -169,10 +169,10 @@ public class ComCommands {
                     }
                     Player player = findPlayer(target);
                     if(player!=null && rank > 0){
-                        if(ioMain.database.containsKey(player.uuid)) {
-                            ioMain.database.get(player.uuid).setRank(rank);
-                        } else {
-                            ioMain.database.put(player.uuid, new PlayerData(player.usid, rank));
+                        PlayerData pd = getData(player.uuid);
+                        if(pd != null) {
+                            pd.rank = rank;
+                            setData(player.uuid, pd);
                         }
                         eb.setTitle("Command executed successfully");
                         eb.setDescription("Promoted " + escapeCharacters(player.name) + " to " + escapeColorCodes(rankNames.get(rank)) + ".");
