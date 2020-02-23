@@ -11,10 +11,7 @@ import arc.graphics.Colors;
 import com.google.gson.Gson;
 import arc.util.Timer;
 import arc.util.Timer.Task;
-import mindustry.content.Blocks;
-import mindustry.content.Fx;
-import mindustry.content.Items;
-import mindustry.content.UnitTypes;
+import mindustry.content.*;
 import mindustry.entities.Effects;
 import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
@@ -314,6 +311,10 @@ public class ioMain extends Plugin {
 
                 arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
                 Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c); // this inverse rotation thing gave me a headache
+            }
+
+            if(tdata.bt != null && p.isShooting()){
+                Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
             }
 
             // update pets

@@ -1,6 +1,9 @@
 package mindustry.plugin;
 import arc.struct.Array;
+import mindustry.content.Bullets;
+import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
+import mindustry.entities.type.Bullet;
 import mindustry.entities.type.Player;
 
 import java.io.Serializable;
@@ -17,6 +20,10 @@ public class TempPlayerData implements Serializable {
     public boolean spawnedPowerGen;
 
     public int burstCD = 0;
+
+    public BulletType bt;
+    public float sclLifetime = 1f;
+    public float sclVelocity = 1f;
 
 
     public TempPlayerData(Player p) {

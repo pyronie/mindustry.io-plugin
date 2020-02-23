@@ -2,8 +2,10 @@ package mindustry.plugin;
 
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.Bullets;
 import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
+import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
 import mindustry.game.Teams;
 import mindustry.net.Administration;
@@ -601,7 +603,7 @@ public class ServerCommands {
 
                     if(target.length() > 0 && targetTeam.length() > 0) {
                         try {
-                            Field field = Teams.class.getDeclaredField(targetTeam);
+                            Field field = Team.class.getDeclaredField(targetTeam);
                             desiredTeam = (Team)field.get(null);
                         } catch (NoSuchFieldException | IllegalAccessException ignored) {}
 
@@ -759,6 +761,7 @@ public class ServerCommands {
                     role = banRole;
                 }
                 public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1];
                     String targetUnit = ctx.args[2];
                     int amount = Integer.parseInt(ctx.args[3]);
@@ -769,7 +772,6 @@ public class ServerCommands {
                             desiredUnit = (UnitType)field.get(null);
                         } catch (NoSuchFieldException | IllegalAccessException ignored) {}
 
-                        EmbedBuilder eb = new EmbedBuilder();
                         Player player = findPlayer(target);
                         if(player!=null){
                             UnitType finalDesiredUnit = desiredUnit;
@@ -782,6 +784,11 @@ public class ServerCommands {
                             eb.setDescription("Spawned " + amount + " " + targetUnit + " near " + Utils.escapeCharacters(player.name) + ".");
                             ctx.channel.sendMessage(eb);
                         }
+                    } else{
+                        eb.setTitle("Command terminated");
+                        eb.setDescription("Invalid arguments provided.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
                     }
                 }
             });
@@ -792,6 +799,7 @@ public class ServerCommands {
                     role = banRole;
                 }
                 public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1];
                     String targetUnit = ctx.args[2];
                     UnitType desiredUnit = UnitTypes.dagger;
@@ -801,7 +809,6 @@ public class ServerCommands {
                             desiredUnit = (UnitType)field.get(null);
                         } catch (NoSuchFieldException | IllegalAccessException ignored) {}
 
-                        EmbedBuilder eb = new EmbedBuilder();
                         Player player = findPlayer(target);
                         if(player!=null){
                             int amount = 0;
@@ -817,6 +824,11 @@ public class ServerCommands {
                             eb.setDescription("Killed " + amount + " " + targetUnit + "s on team " + player.getTeam());
                             ctx.channel.sendMessage(eb);
                         }
+                    } else{
+                        eb.setTitle("Command terminated");
+                        eb.setDescription("Invalid arguments provided.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
                     }
                 }
             });
@@ -847,6 +859,57 @@ public class ServerCommands {
 
                         eb.setTitle("Command executed successfully.");
                         eb.setDescription("Spawned " + desiredBlock.name + " on " + Utils.escapeCharacters(player.name) + "'s position.");
+                        ctx.channel.sendMessage(eb);
+                    } else{
+                        eb.setTitle("Command terminated");
+                        eb.setDescription("Invalid arguments provided.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
+                    }
+                }
+            });
+
+            handler.registerCommand(new RoleRestrictedCommand("weaponmod") { // OH NO
+                {
+                    help = "<playerid|ip|name> <bullet-type> <lifetime-modifier> <velocity-modifier> Mod the current weapon of a player.";
+                    role = banRole;
+                }
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+
+                    String target = ctx.args[1];
+                    String targetBullet = ctx.args[2];
+                    float targetL = Float.parseFloat(ctx.args[3]);
+                    float targetV = Float.parseFloat(ctx.args[4]);
+                    BulletType desiredBullet = null;
+
+                    if(target.length() > 0 && targetBullet.length() > 0) {
+                        try {
+                            Field field = Bullets.class.getDeclaredField(targetBullet);
+                            desiredBullet = (BulletType)field.get(null);
+                        } catch (NoSuchFieldException | IllegalAccessException ignored) {}
+
+                        Player player = findPlayer(target);
+                        if(player!=null){
+                            TempPlayerData tdata = ioMain.playerDataGroup.get(player.uuid);
+                            if(desiredBullet == null){
+                                tdata.bt = null;
+                                eb.setTitle("Command executed");
+                                eb.setDescription("Reverted " + escapeCharacters(player.name) + "'s weapon to default.");
+                                ctx.channel.sendMessage(eb);
+                            } else{
+                                tdata.bt = desiredBullet;
+                                tdata.sclLifetime = targetL;
+                                tdata.sclVelocity = targetV;
+                                eb.setTitle("Command executed");
+                                eb.setDescription("Modded " + escapeCharacters(player.name) + "'s weapon to " + targetBullet + " with " + targetL + "x lifetime modifier and " + targetV + "x velocity modifier.");
+                                ctx.channel.sendMessage(eb);
+                            }
+                        }
+                    } else{
+                        eb.setTitle("Command terminated");
+                        eb.setDescription("Invalid arguments provided.");
+                        eb.setColor(Pals.error);
                         ctx.channel.sendMessage(eb);
                     }
                 }
