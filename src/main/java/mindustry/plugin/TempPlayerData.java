@@ -15,11 +15,6 @@ public class TempPlayerData implements Serializable {
     public boolean spawnedLichPet;
     public boolean spawnedPowerGen;
 
-    // 50 configures per 1000 ms
-    public Ratelimit configureRatelimit = new Ratelimit(50, 1000);
-    // 10 rotates per 1000 ms
-    public Ratelimit rotateRatelimit = new Ratelimit(10, 1000);
-
     public TempPlayerData(Player p) {
         playerRef = new WeakReference<>(p);
         origName = p.name;
