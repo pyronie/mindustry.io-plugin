@@ -22,7 +22,7 @@ import static mindustry.plugin.ioMain.*;
 public class Utils {
     static int messageBufferSize = 24; // number of messages sent at once to discord
     public static int chatMessageMaxSize = 256;
-    public static float respawnTimeEnforced = 1f;
+    public static float respawnTimeEnforced = 0.1f;
     public static int respawnTimeEnforcedDuration = 10; // duration of insta spawn
     static String welcomeMessage = "";
     static String noPermissionMessage = "[accent]You don't have permissions to execute this command!";
