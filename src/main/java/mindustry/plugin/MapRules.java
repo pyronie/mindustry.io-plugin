@@ -26,7 +26,7 @@ public class MapRules {
         rules.respawnTime = respawnTimeEnforced;
         Call.onSetRules(rules);
 
-        Timer.schedule(() -> Call.onSetRules(orig), 10);
+        Timer.schedule(() -> Call.onSetRules(orig), respawnTimeEnforcedDuration);
 
         Vars.netServer.admins.addActionFilter(action -> {
             Player player = action.player;
@@ -54,6 +54,7 @@ public class MapRules {
     public static void run(){
         onMapLoad();
         Map map = Vars.world.getMap();
+        Log.info(map.name());
         if (map.name().equals(Maps.minefield)) {
             Log.info("[MapRules]: Minefield action trigerred.");
             Call.sendMessage("[scarlet]Preparing minefield map, please wait.");
@@ -70,7 +71,6 @@ public class MapRules {
                     }
                 }
             }
-            Call.sendMessage("[scarlet]Minefield map generated, glhf!");
         }
     }
 }
