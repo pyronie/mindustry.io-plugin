@@ -149,27 +149,25 @@ public class ServerCommands {
                     int targetRank = Integer.parseInt(ctx.args[2]);
                     if(target.length() > 0 && targetRank > -1 && targetRank < 6) {
                         Player player = findPlayer(target);
-                        if(player!=null){
-                            if(ioMain.database.containsKey(player.uuid)) {
-                                ioMain.database.get(player.uuid).setRank(targetRank);
-                            } else {
-                                ioMain.database.put(player.uuid, new PlayerData(player.usid, targetRank));
-                            }
-                            if(targetRank==5) { // give admin to administrators
-                                netServer.admins.adminPlayer(player.uuid, player.usid);
-                            }
+                        if(player == null){
+                            eb.setTitle("Command terminated");
+                            eb.setDescription("Player not found.");
+                            eb.setColor(Pals.error);
+                            ctx.channel.sendMessage(eb);
+                            return;
+                        }
+
+                        PlayerData pd = getData(player.uuid);
+                        if(pd != null) {
+                            pd.rank = targetRank;
+                            setData(player.uuid, pd);
                             eb.setTitle("Command executed successfully");
                             eb.setDescription("Promoted " + escapeCharacters(player.name) + " to " + targetRank);
                             ctx.channel.sendMessage(eb);
                             player.con.kick("Your rank was modified, please rejoin.", 0);
-                        } else {
-                            if(ioMain.database.containsKey(target)){
-                                ioMain.database.get(target).setRank(targetRank);
-                                eb.setTitle("Command executed successfully");
-                                eb.setDescription("Promoted `" + target + "` to " + targetRank);
-                                ctx.channel.sendMessage(eb);
-                            }
                         }
+
+                        if(targetRank==5) netServer.admins.adminPlayer(player.uuid, player.usid);
                     }
                 }
 
@@ -673,7 +671,7 @@ public class ServerCommands {
                         Player player = findPlayer(target);
                         if (player != null) {
                             player.name = name;
-                            TempPlayerData tdata = ioMain.tempPlayerDatas.get(player.uuid);
+                            TempPlayerData tdata = ioMain.playerDataGroup.get(player.uuid);
                             if (tdata != null) tdata.origName = name;
                             eb.setTitle("Command executed successfully");
                             eb.setDescription("Changed name to " + escapeCharacters(player.name));
@@ -694,17 +692,17 @@ public class ServerCommands {
                 public void run(Context ctx) {
                     EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1];
-                    if(ioMain.verifiedIPs.containsKey(target)) {
-                        ioMain.verifiedIPs.put(target, true);
+                    PlayerData pd = getData(target);
+                    if(pd != null) {
+                        pd.verified = true;
+                        setData(target, pd);
                         eb.setTitle("Command executed successfully");
-                        eb.setDescription("Verified " + escapeCharacters(target));
-                        ctx.channel.sendMessage(eb);
+                        eb.setDescription("Verified " + escapeCharacters(target) + ".");
                     } else {
                         eb.setTitle("Command terminated");
                         eb.setDescription("Couldn't find " + escapeCharacters(target) + " in the database.");
                         eb.setColor(Pals.error);
-                        ctx.channel.sendMessage(eb);
-                    }
+                    } ctx.channel.sendMessage(eb);
                 }
 
             });
@@ -754,31 +752,6 @@ public class ServerCommands {
 
             });
 
-
-            handler.registerCommand(new RoleRestrictedCommand("getrank"){
-                {
-                    help = "<rankid> Returns all players and their uuids for the specified rank.";
-                    role = banRole;
-                }
-
-                public void run(Context ctx) {
-                    int targetRank = Integer.parseInt(ctx.args[1]);
-                    if(targetRank > 0) {
-                        StringBuilder msg = new StringBuilder().append("**Players with rank** `").append(rankNames.get(targetRank)).append("`:```");
-                        for(java.util.Map.Entry<String, PlayerData> entrySet : ioMain.database.entrySet()) {
-                            String uuid = entrySet.getKey();
-                            PlayerData pd = entrySet.getValue();
-                            if(uuid != null && pd != null) {
-                                if(pd.getRank() == targetRank) {
-                                    msg.append("· ").append(uuid).append("\n");
-                                }
-                            }
-                        }
-                        msg.append("```");
-                        ctx.reply(String.valueOf(msg));
-                    }
-                }
-            });
 
             handler.registerCommand(new RoleRestrictedCommand("spawn") {
                 {
@@ -879,78 +852,6 @@ public class ServerCommands {
                 }
             });
 
-            handler.registerCommand(new RoleRestrictedCommand("strictusid") {
-                {
-                    help = "Whether to kick players with a usid mismatch.";
-                    role = banRole;
-                }
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    if (ctx.args.length < 2) {
-                        eb.setTitle("Command terminated");
-                        eb.setDescription("Not enough arguments.");
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-                    String opt = ctx.args[1].toLowerCase();
-                    switch (opt) {
-                        case "on":
-                        case "true":
-                        case "yes":
-                            ioMain.rejectUsidMismatch = true;
-                            eb.setTitle("Command executed.");
-                            eb.setDescription("Strict usid checking enabled.");
-                            break;
-                        case "off":
-                        case "false":
-                        case "no":
-                            ioMain.rejectUsidMismatch = false;
-                            eb.setTitle("Command executed.");
-                            eb.setDescription("Strict usid checking disabled");
-                            break;
-                        default:
-                            eb.setTitle("Command terminated.");
-                            eb.setDescription("Unknown argument `" + ctx.args[1] + "`");
-                    }
-                    ctx.channel.sendMessage(eb);
-                }
-            });
-
-            handler.registerCommand(new RoleRestrictedCommand("resetusid"){
-                {
-                    help = "<uuid> Reset usid associated with uuid in playerdata";
-                    role = banRole;
-                }
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    if (ctx.args.length < 2) {
-                        eb.setTitle("Command terminated");
-                        eb.setDescription("Not enough arguments");
-                        eb.setColor(Pals.error);
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-                    String target = ctx.args[1];
-                    if (ioMain.database.containsKey(target)) {
-                        PlayerData data = ioMain.database.get(target);
-                        Player found = playerGroup.find(p -> p.uuid.equals(target));
-                        if (found != null) {
-                            data.usid = found.usid;
-                            found.con.kick("Your rank was modified, please rejoin.", 0);
-                        } else {
-                            data.usid = null;
-                        }
-                        eb.setTitle("Command executed successfully");
-                        eb.setDescription("Reset usid of " + escapeCharacters(target));
-                    } else {
-                        eb.setTitle("Command terminated");
-                        eb.setDescription("Couldn't find " + escapeCharacters(target) + " in the database.");
-                        eb.setColor(Pals.error);
-                    }
-                    ctx.channel.sendMessage(eb);
-                }
-
-            });
         }
 
             /*handler.registerCommand(new Command("sendm"){ // use sendm to send embed messages when needed locally, disable for now
