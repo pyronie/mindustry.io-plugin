@@ -205,11 +205,11 @@ public class ioMain extends Plugin {
             if (event.player == null) return;
             if (event.breaking) return;
             PlayerData pd = getData(event.player.uuid);
-            if (pd == null) return;
+            TempPlayerData td = (playerDataGroup.getOrDefault(event.player.uuid, null));
+            if (pd == null || td == null) return;
             if (event.tile.entity != null) {
-                if (!activeRequirements.bannedBlocks.contains(event.tile.entity.block)) {
-                    pd.buildingsBuilt++;
-                    setData(event.player.uuid, pd);
+                if (!activeRequirements.bannedBlocks.contains(event.tile.block())) {
+                    td.bbIncrementor++;
                 }
             }
         });

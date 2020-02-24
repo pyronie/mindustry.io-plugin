@@ -12,6 +12,7 @@ public class TempPlayerData implements Serializable {
     public String origName;
     public Array<BaseUnit> draugPets = new Array<>();
     public int hue;
+    public int bbIncrementor = 0;
     public boolean doRainbow;
     public boolean doTrail;
     public boolean spawnedLichPet;
