@@ -13,10 +13,7 @@ import static mindustry.Vars.*;
 import static mindustry.plugin.ioMain.*;
 
 public class Utils {
-    static int messageBufferSize = 24; // number of messages sent at once to discord
     public static int chatMessageMaxSize = 256;
-    public static float respawnTimeEnforced = 0.1f;
-    public static int respawnTimeEnforcedDuration = 10; // duration of insta spawn
     static String welcomeMessage = "";
     static String noPermissionMessage = "[accent]You don't have permissions to execute this command!\nObtain the donator rank here: http://donate.mindustry.io";
     static String statMessage = "";
@@ -41,6 +38,7 @@ public class Utils {
 
     static HashMap<Integer, String> rankNames = new HashMap<>();
     static HashMap<String, Integer> rankRoles = new HashMap<>();
+    static Array<String> bannedNames = new Array<>();
 
     public static void init(){
         rankNames.put(0, "[#7d7d7d]<none>[]");
@@ -54,6 +52,10 @@ public class Utils {
         rankRoles.put("636968410441318430", 2);
         rankRoles.put("674778262857187347", 3);
         rankRoles.put("624959361789329410", 4);
+
+        bannedNames.add("IGGGAMES");
+        bannedNames.add("CODEX");
+        bannedNames.add("VALVE");
 
         activeRequirements.bannedBlocks.add(Blocks.conveyor);
         activeRequirements.bannedBlocks.add(Blocks.titaniumConveyor);
