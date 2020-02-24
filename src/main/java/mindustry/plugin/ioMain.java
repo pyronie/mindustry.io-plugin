@@ -254,9 +254,7 @@ public class ioMain extends Plugin {
             // update pets
             for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
 
-            if (p == null) return;
-
-            if (tdata.doRainbow) {
+            if (p != null && tdata.doRainbow) {
                 // update rainbows
                 String playerNameUnmodified = tdata.origName;
                 int hue = tdata.hue;
@@ -273,14 +271,14 @@ public class ioMain extends Plugin {
                 tdata.setHue(hue);
             }
 
-            if (tdata.doTrail) {
+            if (p != null && tdata.doTrail) {
                 String hex = Integer.toHexString(Color.getHSBColor(tdata.hue / 360f, 1f, 1f).getRGB()).substring(2);
 
                 arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
                 Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c); // this inverse rotation thing gave me a headache
             }
 
-            if(tdata.bt != null && p.isShooting()){
+            if(p != null && tdata.bt != null && p.isShooting()){
                 Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
             }
         }
