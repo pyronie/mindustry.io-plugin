@@ -45,7 +45,7 @@ public class BotThread extends Thread {
                             tdata.burstCD--;
                         }
                         if (tdata.bbIncrementor > 0){
-                            pd.buildingsBuilt =+ tdata.bbIncrementor;
+                            pd.buildingsBuilt = pd.buildingsBuilt + tdata.bbIncrementor;
                             tdata.bbIncrementor = 0;
                         }
                     }

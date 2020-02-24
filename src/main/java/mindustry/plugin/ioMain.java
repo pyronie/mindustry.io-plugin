@@ -2,7 +2,6 @@ package mindustry.plugin;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
@@ -32,7 +31,8 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.gen.Call;
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
@@ -41,7 +41,7 @@ import static mindustry.Vars.*;
 import static mindustry.plugin.Utils.*;
 
 public class ioMain extends Plugin {
-    public static Jedis jedis;
+    public static JedisPool pool;
     static Gson gson = new Gson();
 
     public static DiscordApi api = null;
@@ -81,9 +81,8 @@ public class ioMain extends Plugin {
 
         // database
         try {
-            jedis = new Jedis("localhost");
-            Log.info("jedis database loaded successfully");
-            Log.info(jedis.ping());
+            pool = new JedisPool(new JedisPoolConfig(), "localhost");
+            Log.info("jedis database loaded");
         } catch (Exception e){
             e.printStackTrace();
             Core.app.exit();

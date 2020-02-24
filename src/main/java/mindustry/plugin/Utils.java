@@ -1,12 +1,11 @@
 package mindustry.plugin;
 
 import arc.struct.Array;
-import com.google.gson.JsonSyntaxException;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.maps.Map;
 import mindustry.world.Block;
-import redis.clients.jedis.Response;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -130,41 +129,27 @@ public class Utils {
     }
 
     public static PlayerData getData(String uuid) {
-        Response<String> json = null;
-        try {
-            Transaction t = jedis.multi();
-            json = t.get(uuid);
-            t.exec();
-        } catch(JedisException e){
-            e.printStackTrace();
-        }
-        if (json != null && json.get() == null){
-            PlayerData pd = new PlayerData(0);
+        try(Jedis jedis = ioMain.pool.getResource()) {
+            String json = jedis.get(uuid);
+            if(json == null) return null;
+
             try {
-                Transaction t2 = jedis.multi();
-                t2.set(uuid, gson.toJson(pd));
-                t2.exec();
-            } catch(JedisException e){
+                return gson.fromJson(json, PlayerData.class);
+            } catch(Exception e){
                 e.printStackTrace();
-            }
-            return pd;
-        } else {
-            try {
-                if(json==null) return null;
-                return gson.fromJson(json.get(), PlayerData.class);
-            } catch(IllegalStateException | JsonSyntaxException e){
                 return null;
             }
         }
     }
 
     public static void setData(String uuid, PlayerData pd) {
-        try {
-            Transaction t = jedis.multi();
-            t.set(uuid, gson.toJson(pd));
-            t.exec();
-        } catch(JedisException e){
-            e.printStackTrace();
+        try(Jedis jedis = ioMain.pool.getResource()) {
+            try {
+                String json = gson.toJson(pd);
+                jedis.set(uuid, json);
+            } catch(Exception e){
+                e.printStackTrace();
+            }
         }
     }
 }
