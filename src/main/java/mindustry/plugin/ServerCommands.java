@@ -544,7 +544,8 @@ public class ServerCommands {
                 }
                 public void run(Context ctx) {
                     for(Player p : playerGroup.all()) {
-                        Call.onInfoMessage(p.con, "Desync detected, please use the /sync command.");
+                        Call.onWorldDataBegin(p.con);
+                        netServer.sendWorldData(p);
                     }
                     EmbedBuilder eb = new EmbedBuilder()
                             .setTitle("Command executed.")
@@ -871,7 +872,7 @@ public class ServerCommands {
 
             handler.registerCommand(new RoleRestrictedCommand("weaponmod") { // OH NO
                 {
-                    help = "<playerid|ip|name> <bullet-type> <lifetime-modifier> <velocity-modifier> Mod the current weapon of a player.";
+                    help = "<playerid|ip|name|all(oh no)> <bullet-type> <lifetime-modifier> <velocity-modifier> Mod the current weapon of a player.";
                     role = banRole;
                 }
                 public void run(Context ctx) {
@@ -888,6 +889,22 @@ public class ServerCommands {
                             Field field = Bullets.class.getDeclaredField(targetBullet);
                             desiredBullet = (BulletType)field.get(null);
                         } catch (NoSuchFieldException | IllegalAccessException ignored) {}
+
+                        if(target.equals("all")){
+                            for(Player p : playerGroup.all()){
+                                TempPlayerData tdata = ioMain.playerDataGroup.get(p.uuid);
+                                if(desiredBullet == null){
+                                    tdata.bt = null;
+                                } else{
+                                    tdata.bt = desiredBullet;
+                                    tdata.sclLifetime = targetL;
+                                    tdata.sclVelocity = targetV;
+                                }
+                                eb.setTitle("Command executed");
+                                eb.setDescription("Changed everyone's weapon mod. sorry. i dont know how to explain the rest");
+                                ctx.channel.sendMessage(eb);
+                            }
+                        }
 
                         Player player = findPlayer(target);
                         if(player!=null){
