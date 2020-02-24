@@ -163,7 +163,7 @@ public class ioMain extends Plugin {
             player.name = player.name.replaceFirst("<(.*)>", "");
             player.name = player.name.replaceAll("<", "");
             player.name = player.name.replaceAll(">", "");
-            
+
             if(pd != null) {
                 int rank = pd.rank;
                 switch (rank) { // apply new tag
@@ -453,7 +453,7 @@ public class ioMain extends Plugin {
                 }
             });
 
-            handler.<Player>register("waterburst", "[donator+] Extinguish all flames (3 minute cooldown)", (args, player) -> {
+            handler.<Player>register("waterburst", "[donator+] Extinguish all ongoing fires (3 minute cooldown)", (args, player) -> {
                 if(!state.rules.pvp || player.isAdmin) {
                     PlayerData pd = getData(player.uuid);
                     if (pd != null && pd.rank >= 3) {
@@ -500,7 +500,7 @@ public class ioMain extends Plugin {
                 }
             });
 
-            handler.<Player>register("stats", "<playerid/playername>", "Get information (playtime, buildings built, etc.) of the specified user. [get playerid from /players]", (args, player) -> {
+            handler.<Player>register("stats", "<player>", "Display stats of the specified player.", (args, player) -> {
                 if(args[0].length() > 0) {
                     Player p = findPlayer(args[0]);
                     if(p != null){
@@ -516,7 +516,7 @@ public class ioMain extends Plugin {
                 }
             });
 
-            handler.<Player>register("info", "Get information (playtime, buildings built, etc.) about yourself.", (args, player) -> { // self info
+            handler.<Player>register("info", "Display your stats.", (args, player) -> { // self info
                 PlayerData pd = getData(player.uuid);
                 if (pd != null) {
                     Call.onInfoMessage(player.con, formatMessage(player, statMessage));
