@@ -163,6 +163,7 @@ public class ioMain extends Plugin {
 
 
             if(pd != null) {
+                if(pd.banned) player.con.kick("uuid: " + player.uuid + " you are banned.");
                 int rank = pd.rank;
                 Administration.PlayerInfo info = netServer.admins.getInfoOptional(player.uuid);
                 if(info == null) return;
