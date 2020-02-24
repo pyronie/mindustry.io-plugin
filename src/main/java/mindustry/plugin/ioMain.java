@@ -225,7 +225,7 @@ public class ioMain extends Plugin {
         });
 
         Events.on(EventType.WorldLoadEvent.class, event -> {
-            Timer.schedule(MapRules::run, 1); // idk
+            Timer.schedule(MapRules::run, 5); // idk
 
             for (Player p : playerGroup.all()) Call.onInfoMessage(p.con, formatMessage(p, welcomeMessage));
 
@@ -249,7 +249,11 @@ public class ioMain extends Plugin {
         for (Entry<String, TempPlayerData> entry : playerDataGroup.entrySet()) {
             TempPlayerData tdata = entry.getValue();
             Player p = tdata.playerRef.get();
-            if (p == null) continue;
+
+            // update pets
+            for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
+
+            if (p == null) return;
 
             if (tdata.doRainbow) {
                 // update rainbows
@@ -278,9 +282,6 @@ public class ioMain extends Plugin {
             if(tdata.bt != null && p.isShooting()){
                 Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
             }
-
-            // update pets
-            for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
         }
 
         Core.app.post(this::loop);
