@@ -5,6 +5,8 @@ import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.maps.Map;
 import mindustry.world.Block;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -126,13 +128,21 @@ public class Utils {
     }
 
     public static PlayerData getData(String uuid) {
-        String json = jedis.get(uuid);
-        if (json == null) jedis.set(uuid, gson.toJson(new PlayerData(0)));
+        Transaction t = jedis.multi();
+        Response<String> json = t.get(uuid);
+        t.exec();
+        if (json.get() == null){
+            Transaction t2 = jedis.multi();
+            t2.set(uuid, gson.toJson(new PlayerData(0)));
+            t2.exec();
+        }
 
-        return gson.fromJson(json, PlayerData.class);
+        return gson.fromJson(json.get(), PlayerData.class);
     }
 
     public static void setData(String uuid, PlayerData pd) {
-        jedis.set(uuid, gson.toJson(pd));
+        Transaction t = jedis.multi();
+        t.set(uuid, gson.toJson(pd));
+        t.exec();
     }
 }
