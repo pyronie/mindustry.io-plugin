@@ -1,6 +1,7 @@
 package mindustry.plugin;
 
 import arc.struct.Array;
+import com.google.gson.JsonSyntaxException;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.maps.Map;
@@ -133,11 +134,17 @@ public class Utils {
         t.exec();
         if (json.get() == null){
             Transaction t2 = jedis.multi();
-            t2.set(uuid, gson.toJson(new PlayerData(0)));
+            PlayerData pd = new PlayerData(0);
+            t2.set(uuid, gson.toJson(pd));
             t2.exec();
+            return pd;
+        } else {
+            try {
+                return gson.fromJson(json.get(), PlayerData.class);
+            } catch(IllegalStateException | JsonSyntaxException e){
+                return null;
+            }
         }
-
-        return gson.fromJson(json.get(), PlayerData.class);
     }
 
     public static void setData(String uuid, PlayerData pd) {
