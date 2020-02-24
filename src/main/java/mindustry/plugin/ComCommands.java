@@ -29,14 +29,10 @@ public class ComCommands {
                 help = "<message> Sends a message to in-game chat.";
             }
             public void run(Context ctx) {
+                if(ctx.event.isPrivateMessage()) return;
+                
                 EmbedBuilder eb = new EmbedBuilder();
                 ctx.message = escapeCharacters(ctx.message);
-                if (ctx.message == null) {
-                    eb.setTitle("Command terminated");
-                    eb.setDescription("No message given");
-                    ctx.channel.sendMessage(eb);
-                    return;
-                }
                 if (ctx.message.length() < chatMessageMaxSize) {
                     Call.sendMessage("[sky]" + ctx.author.getName() + " @discord >[] " + ctx.message);
                     eb.setTitle("Command executed");
