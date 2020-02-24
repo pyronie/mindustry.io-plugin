@@ -23,7 +23,7 @@ dependencies{
     compileOnly "com.github.fuzzbuck.Mindustry:server:$mindustryVersion"
 
     compile "org.glassfish.jersey.core:jersey-client:2.25.1"
-    compile "redis.clients:jedis:2.10.2"
+    compile "redis.clients:jedis:3.2.0"
     compile group: 'org.json', name: 'json', version: '20190722'
 
     implementation 'org.javacord:javacord:3.0.4'
