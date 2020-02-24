@@ -112,6 +112,7 @@ public class ioMain extends Plugin {
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
             Player player = event.player;
+            if(bannedNames.contains(player.name)) player.con.kick("[scarlet]Error #103, please join http://discord.mindustry.io and tell an admin.");
             PlayerData pd = getData(player.uuid);
             Thread verThread = new Thread(() -> {
                 if(verification) {
@@ -248,7 +249,7 @@ public class ioMain extends Plugin {
     public void loop() {
         for (Entry<String, TempPlayerData> entry : playerDataGroup.entrySet()) {
             TempPlayerData tdata = entry.getValue();
-            Player p = tdata.playerRef.get();
+            Player p = findPlayer(entry.getKey());
 
             // update pets
             for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
