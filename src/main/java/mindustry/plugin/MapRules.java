@@ -4,11 +4,13 @@ import arc.util.Log;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
+import mindustry.entities.type.TileEntity;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
 import mindustry.net.Administration;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.blocks.storage.CoreBlock;
 
 import static mindustry.plugin.Utils.*;
 
@@ -42,6 +44,21 @@ public class MapRules {
 
             return action.type != Administration.ActionType.rotate;
         });
+
+        // display map description on core tiles for the first minute
+        Tile[][] tiles = Vars.world.getTiles();
+        for (int x = 0; x < tiles.length; ++x) {
+            for(int y = 0; y < tiles[0].length; ++y) {
+                if (tiles[x][y] != null && tiles[x][y].entity != null) {
+                    TileEntity ent = tiles[x][y].ent();
+                    if (ent instanceof CoreBlock.CoreEntity) {
+                        Map map = Vars.world.getMap();
+                        Call.onLabel(map.description(), 60f, ent.x, ent.y);
+                        Call.onInfoToast("Playing [accent]" + escapeColorCodes(map.name()) + "[] by[accent] " + map.author(), 10f); // credit map makers
+                    }
+                }
+            }
+        }
     }
 
     public static void run(){
