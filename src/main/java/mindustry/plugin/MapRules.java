@@ -77,6 +77,8 @@ public class MapRules {
 
         // display map description on core tiles for the first minute
         Call.onInfoToast("Playing [accent]" + escapeColorCodes(map.name()) + "[] by[accent] " + map.author(), 10f); // credit map makers
+
+        if(map.description().equals("???unknown???")) return;
         Tile[][] tiles = world.getTiles();
         for (int x = 0; x < tiles.length; ++x) {
             for(int y = 0; y < tiles[0].length; ++y) {
