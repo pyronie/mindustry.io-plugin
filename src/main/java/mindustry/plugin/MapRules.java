@@ -23,6 +23,7 @@ public class MapRules {
         public static String minefield = "Minefield"; // pvp map
     }
 
+
     public static CoreBlock.CoreEntity getCore(Team team){
         Tile[][] tiles = world.getTiles();
         for (int x = 0; x < tiles.length; ++x) {
@@ -94,6 +95,19 @@ public class MapRules {
 
     public static void run(){
         onMapLoad();
+
+        for (java.util.Map.Entry<String, TempPlayerData> entry : ioMain.playerDataGroup.entrySet()) {
+            TempPlayerData tdata = entry.getValue();
+            if (tdata.playerRef.get() == null) {
+                ioMain.playerDataGroup.remove(entry.getKey());
+                continue;
+            }
+            tdata.spawnedPowerGen = false;
+            tdata.spawnedLichPet = false;
+            tdata.draugPets.clear();
+        }
+
+
         Map map = world.getMap();
         if (map.name().equals(Maps.minefield)) {
             Log.info("[MapRules]: Minefield action trigerred.");

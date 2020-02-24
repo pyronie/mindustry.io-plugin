@@ -10,9 +10,11 @@ import com.google.gson.Gson;
 import arc.util.Timer;
 import arc.util.Timer.Task;
 import mindustry.content.*;
+import mindustry.core.GameState;
 import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
 import mindustry.graphics.Pal;
+import mindustry.net.Administration;
 import mindustry.world.Build;
 import mindustry.world.Tile;
 import org.javacord.api.DiscordApi;
@@ -162,26 +164,28 @@ public class ioMain extends Plugin {
 
             if(pd != null) {
                 int rank = pd.rank;
+                Administration.PlayerInfo info = netServer.admins.getInfoOptional(player.uuid);
+                if(info == null) return;
                 switch (rank) { // apply new tag
                     case 1:
                         Call.sendMessage("[sky]active player " + player.name + " joined the server!");
-                        player.tag = rankNames.get(1) + " ";
+                        info.tag = rankNames.get(1) + " ";
                         break;
                     case 2:
                         Call.sendMessage("[#fcba03]regular player " + player.name + " joined the server!");
-                        player.tag = rankNames.get(2) + " ";
+                        info.tag = rankNames.get(2) + " ";
                         break;
                     case 3:
                         Call.sendMessage("[scarlet]donator " + player.name + " joined the server!");
-                        player.tag = rankNames.get(3) + " ";
+                        info.tag = rankNames.get(3) + " ";
                         break;
                     case 4:
                         Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + " joined the server!");
-                        player.tag = rankNames.get(4) + " ";
+                        info.tag = rankNames.get(4) + " ";
                         break;
                     case 5:
                         Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + " joined the server!");
-                        player.tag = rankNames.get(5) + " ";
+                        info.tag = rankNames.get(5) + " ";
                         break;
                 }
                 tempData.origName = player.name;
@@ -226,19 +230,6 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.WorldLoadEvent.class, event -> {
             Timer.schedule(MapRules::run, 5); // idk
-
-            for (Player p : playerGroup.all()) Call.onInfoMessage(p.con, formatMessage(p, welcomeMessage));
-
-            for (Entry<String, TempPlayerData> entry : playerDataGroup.entrySet()) {
-                TempPlayerData tdata = entry.getValue();
-                if (tdata.playerRef.get() == null) {
-                    playerDataGroup.remove(entry.getKey());
-                    continue;
-                }
-                tdata.spawnedPowerGen = false;
-                tdata.spawnedLichPet = false;
-                tdata.draugPets.clear();
-            }
         });
 
         Core.app.post(this::loop);
@@ -248,7 +239,10 @@ public class ioMain extends Plugin {
     public void loop() {
         for (Entry<String, TempPlayerData> entry : playerDataGroup.entrySet()) {
             TempPlayerData tdata = entry.getValue();
-            Player p = findPlayer(entry.getKey());
+            if (tdata == null) return;
+            String uuid = entry.getKey();
+            if (uuid == null) return;
+            Player p = findPlayer(uuid);
 
             // update pets
             for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
