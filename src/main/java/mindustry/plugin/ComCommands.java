@@ -134,10 +134,17 @@ public class ComCommands {
             }
             public void run(Context ctx) {
                 EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("All available commands:");
+                        .setTitle("Public commands:");
+                EmbedBuilder embed2 = new EmbedBuilder()
+                        .setTitle("Restricted commands:");
                 for(Command command : handler.getAllCommands()) {
-                    embed.addInlineField(command.name, command.help);
+                    if(command instanceof RoleRestrictedCommand) {
+                        embed2.addInlineField("**" + command.name + "**", command.help);
+                    } else {
+                        embed.addInlineField("**" + command.name + "**", command.help);
+                    }
                 }
+                ctx.channel.sendMessage(embed2);
                 ctx.channel.sendMessage(embed);
             }
         });
