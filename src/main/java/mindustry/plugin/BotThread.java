@@ -4,16 +4,9 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import org.javacord.api.DiscordApi;
-import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.MessageBuilder;
-import org.javacord.api.entity.permission.Role;
 import org.json.JSONObject;
 
 import mindustry.plugin.discordcommands.DiscordCommands;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
 
 import static mindustry.plugin.Utils.*;
 

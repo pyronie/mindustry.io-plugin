@@ -1,19 +1,12 @@
 package mindustry.plugin;
 
-import arc.files.Fi;
 import arc.struct.Array;
-import arc.util.Log;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
-import mindustry.game.Schematic;
-import mindustry.game.Schematics;
-import mindustry.gen.Call;
 import mindustry.maps.Map;
 import mindustry.world.Block;
 
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 
 import static mindustry.Vars.*;

@@ -7,7 +7,6 @@ import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
-import mindustry.game.Teams;
 import mindustry.net.Administration;
 import mindustry.plugin.discordcommands.Command;
 import mindustry.plugin.discordcommands.Context;

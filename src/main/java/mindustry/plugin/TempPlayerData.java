@@ -1,9 +1,7 @@
 package mindustry.plugin;
 import arc.struct.Array;
-import mindustry.content.Bullets;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
-import mindustry.entities.type.Bullet;
 import mindustry.entities.type.Player;
 
 import java.io.Serializable;

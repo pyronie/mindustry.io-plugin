@@ -30,7 +30,7 @@ public class ComCommands {
             }
             public void run(Context ctx) {
                 if(ctx.event.isPrivateMessage()) return;
-                
+
                 EmbedBuilder eb = new EmbedBuilder();
                 ctx.message = escapeCharacters(ctx.message);
                 if (ctx.message.length() < chatMessageMaxSize) {
@@ -163,7 +163,7 @@ public class ComCommands {
                         roles.add(r.getIdAsString());
                     }
                 }
-                if(target.length() > 0 && roles != null) {
+                if(target.length() > 0) {
                     int rank = 0;
                     for(String role : roles){
                         if(rankRoles.containsKey(role)){
