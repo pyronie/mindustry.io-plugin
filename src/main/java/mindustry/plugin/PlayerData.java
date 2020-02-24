@@ -10,6 +10,7 @@ public class PlayerData implements Serializable {
     public int buildingsBuilt = 0;
     public int gamesPlayed = 0;
     public boolean verified = true;
+    public boolean banned = false;
 
     public Array<String> ips = new Array<>();
 

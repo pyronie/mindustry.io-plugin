@@ -315,6 +315,11 @@ public class ServerCommands {
                     if (target.length() > 0) {
                         Player p = findPlayer(target);
                         if (p != null) {
+                            PlayerData pd = getData(p.uuid);
+                            if (pd != null){
+                                pd.banned = true;
+                                setData(p.uuid, pd);
+                            }
                             netServer.admins.banPlayer(p.uuid);
                             eb.setTitle("Command executed.");
                             eb.setDescription("Banned " + p.name + "(#" + p.id + ") `" + p.con.address + "` successfully!");
@@ -363,23 +368,30 @@ public class ServerCommands {
             handler.registerCommand(new RoleRestrictedCommand("unban") {
                 EmbedBuilder eb = new EmbedBuilder();
                 {
-                    help = "Unban a player by the provided ip.";
+                    help = "<ip/uuid> Unban a player by the provided ip or uuid.";
                     role = banRole;
                 }
                 public void run(Context ctx) {
-                    String ip;
-                    if(ctx.args.length==2){ ip = ctx.args[1]; } else {ctx.reply("Invalid arguments provided, use the following format: %unban <ip>".replace("%", ioMain.prefix)); return;}
+                    String target;
+                    if(ctx.args.length==2){ target = ctx.args[1]; } else {ctx.reply("Invalid arguments provided, use the following format: %unban <ip>".replace("%", ioMain.prefix)); return;}
 
-                    if (netServer.admins.unbanPlayerIP(ip)) {
-                        eb.setTitle("Command executed.");
-                        eb.setDescription("Unbanned `" + ip + "` successfully");
-                        ctx.channel.sendMessage(eb);
+                    if (netServer.admins.unbanPlayerIP(target)) {
+                        eb.setTitle("Command executed");
+                        eb.setDescription("Unbanned `" + target + "` successfully");
                     } else {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("No such ban exists.");
-                        ctx.channel.sendMessage(eb);
+                        PlayerData pd = getData(target);
+                        if (pd != null){
+                            pd.banned = false;
+                            setData(target, pd);
+                            eb.setTitle("Command executed");
+                            eb.setDescription(target + " was unbanned successfully.");
+                        } else {
+                            eb.setTitle("Command terminated");
+                            eb.setColor(Pals.error);
+                            eb.setDescription("No such ban exists.");
+                        }
                     }
+                    ctx.channel.sendMessage(eb);
                 }
             });
 
