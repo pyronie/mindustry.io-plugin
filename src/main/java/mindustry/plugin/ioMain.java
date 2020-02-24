@@ -7,12 +7,10 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
-import arc.graphics.Colors;
 import com.google.gson.Gson;
 import arc.util.Timer;
 import arc.util.Timer.Task;
 import mindustry.content.*;
-import mindustry.entities.Effects;
 import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
 import mindustry.graphics.Pal;
@@ -23,7 +21,6 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.Channel;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.permission.Role;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -69,23 +66,12 @@ public class ioMain extends Plugin {
             String pureJson = Core.settings.getDataDirectory().child("mods/settings.json").readString();
             data = alldata = new JSONObject(new JSONTokener(pureJson));
         } catch (Exception e) {
-            if (e.getMessage().contains(fileNotFoundErrorMessage)){
-                Log.err("[ERR!] discordplugin: settings.json file is missing.\nBot can't start.");
-                return;
-            } else {
-                Log.err("[ERR!] discordplugin: Init Error");
-                e.printStackTrace();
-                return;
-            }
+            Log.err("Couldn't read settings.json file.");
         }
         try {
             api = new DiscordApiBuilder().setToken(alldata.getString("token")).login().join();
         }catch (Exception e){
-            if (e.getMessage().contains("READY packet")){
-                Log.err("\n[ERR!] discordplugin: invalid token.\n");
-            } else {
-                e.printStackTrace();
-            }
+            Log.err("Couldn't log into discord.");
         }
         BotThread bt = new BotThread(api, Thread.currentThread(), alldata);
         bt.setDaemon(false);
@@ -93,7 +79,7 @@ public class ioMain extends Plugin {
 
 
 
-        //
+        // database
         try {
             jedis = new Jedis("localhost");
             Log.info("jedis database loaded successfully");
@@ -106,37 +92,16 @@ public class ioMain extends Plugin {
         // setup prefix
         if (data.has("prefix")) {
             prefix = String.valueOf(data.getString("prefix").charAt(0));
-            api.updateActivity("prefix: " + prefix);
         } else {
-            Log.warn("[WARN!] discordplugin: no prefix setting detected, using default \".\" prefix.");
+            Log.warn("Prefix not found, using default '.' prefix.");
         }
+        api.updateActivity("prefix: " + prefix);
 
         // setup name
         if (data.has("server_name")) {
             serverName = String.valueOf(data.getString("server_name"));
         } else {
-            Log.warn("[WARN!] discordplugin: no server_name setting detected.");
-        }
-
-        // live chat
-        if (data.has("live_chat_channel_id")) {
-            TextChannel tc = getTextChannel(data.getString("live_chat_channel_id"));
-            if (tc != null) {
-                HashMap<String, String> messageBuffer = new HashMap<>();
-                Events.on(EventType.PlayerChatEvent.class, event -> {
-                    messageBuffer.put(escapeCharacters(event.player.name), escapeCharacters(event.message));
-                    if(messageBuffer.size() >= messageBufferSize) { // if message buffer size is below the expected size
-                        EmbedBuilder eb = new EmbedBuilder().setTitle(new SimpleDateFormat("yyyy_MM_dd").format(Calendar.getInstance().getTime()));
-                        for (Map.Entry<String, String> entry : messageBuffer.entrySet()) {
-                            String username = entry.getKey();
-                            String message = entry.getValue();
-                            eb.addField(escapeCharacters(username), escapeCharacters(message));
-                        }
-                        tc.sendMessage(eb);
-                        messageBuffer.clear();
-                    }
-                });
-            }
+            Log.warn("No server name setting detected!");
         }
 
         if(data.has("api_key")){
@@ -198,8 +163,8 @@ public class ioMain extends Plugin {
             player.name = player.name.replaceFirst("<(.*)>", "");
             player.name = player.name.replaceAll("<", "");
             player.name = player.name.replaceAll(">", "");
-
-            if(pd != null) { ;
+            
+            if(pd != null) {
                 int rank = pd.rank;
                 switch (rank) { // apply new tag
                     case 1:
