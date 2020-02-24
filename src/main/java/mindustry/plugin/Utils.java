@@ -8,6 +8,7 @@ import mindustry.maps.Map;
 import mindustry.world.Block;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.exceptions.JedisException;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -45,11 +46,11 @@ public class Utils {
 
     public static void init(){
         rankNames.put(0, "[#7d7d7d]<none>[]");
-        rankNames.put(1, "[sky]<active player>[]");
-        rankNames.put(2, "[#fcba03]<regular>[]");
-        rankNames.put(3, "[scarlet]<donator>[]");
-        rankNames.put(4, "[orange]<[][white]io moderator[][orange]>[]");
-        rankNames.put(5, "[orange]<[][white]io administrator[][orange]>[]");
+        rankNames.put(1, "[accent]<[white]\uE810[accent]>[]");
+        rankNames.put(2, "[accent]<[white]\uE809[accent]>[]");
+        rankNames.put(3, "[accent]<[white]\uE84E[accent]>[]");
+        rankNames.put(4, "[accent]<[white]\uE84F[accent]>[]");
+        rankNames.put(5, "[accent]<[white]\uE828[accent]>[]");
 
         rankRoles.put("627985513600516109", 1);
         rankRoles.put("636968410441318430", 2);
@@ -129,17 +130,27 @@ public class Utils {
     }
 
     public static PlayerData getData(String uuid) {
-        Transaction t = jedis.multi();
-        Response<String> json = t.get(uuid);
-        t.exec();
-        if (json.get() == null){
-            Transaction t2 = jedis.multi();
+        Response<String> json = null;
+        try {
+            Transaction t = jedis.multi();
+            json = t.get(uuid);
+            t.exec();
+        } catch(JedisException e){
+            e.printStackTrace();
+        }
+        if (json != null && json.get() == null){
             PlayerData pd = new PlayerData(0);
-            t2.set(uuid, gson.toJson(pd));
-            t2.exec();
+            try {
+                Transaction t2 = jedis.multi();
+                t2.set(uuid, gson.toJson(pd));
+                t2.exec();
+            } catch(JedisException e){
+                e.printStackTrace();
+            }
             return pd;
         } else {
             try {
+                if(json==null) return null;
                 return gson.fromJson(json.get(), PlayerData.class);
             } catch(IllegalStateException | JsonSyntaxException e){
                 return null;
@@ -148,8 +159,12 @@ public class Utils {
     }
 
     public static void setData(String uuid, PlayerData pd) {
-        Transaction t = jedis.multi();
-        t.set(uuid, gson.toJson(pd));
-        t.exec();
+        try {
+            Transaction t = jedis.multi();
+            t.set(uuid, gson.toJson(pd));
+            t.exec();
+        } catch(JedisException e){
+            e.printStackTrace();
+        }
     }
 }

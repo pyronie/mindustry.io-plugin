@@ -166,23 +166,23 @@ public class ioMain extends Plugin {
                 switch (rank) { // apply new tag
                     case 1:
                         Call.sendMessage("[sky]active player " + player.name + " joined the server!");
-                        player.tag = rankNames.get(1) + "[] ";
+                        player.tag = rankNames.get(1) + " ";
                         break;
                     case 2:
                         Call.sendMessage("[#fcba03]regular player " + player.name + " joined the server!");
-                        player.tag = rankNames.get(2) + "[] ";
+                        player.tag = rankNames.get(2) + " ";
                         break;
                     case 3:
                         Call.sendMessage("[scarlet]donator " + player.name + " joined the server!");
-                        player.tag = rankNames.get(3) + "[] ";
+                        player.tag = rankNames.get(3) + " ";
                         break;
                     case 4:
                         Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + " joined the server!");
-                        player.tag = rankNames.get(4) + "[] ";
+                        player.tag = rankNames.get(4) + " ";
                         break;
                     case 5:
                         Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + " joined the server!");
-                        player.tag = "[orange]<[][white]io admin[][orange]>[] ";
+                        player.tag = rankNames.get(5) + " ";
                         break;
                 }
                 tempData.origName = player.name;
