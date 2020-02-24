@@ -159,33 +159,29 @@ public class ioMain extends Plugin {
                 tempData.doRainbow = false;
             }
 
-            // reset all previous tags
-            player.name = player.name.replaceFirst("<(.*)>", "");
-            player.name = player.name.replaceAll("<", "");
-            player.name = player.name.replaceAll(">", "");
 
             if(pd != null) {
                 int rank = pd.rank;
                 switch (rank) { // apply new tag
                     case 1:
                         Call.sendMessage("[sky]active player " + player.name + " joined the server!");
-                        player.name = "[sky]<active>[] " + player.name;
+                        player.tag = rankNames.get(1) + "[] ";
                         break;
                     case 2:
                         Call.sendMessage("[#fcba03]regular player " + player.name + " joined the server!");
-                        player.name = "[#fcba03]<regular>[] " + player.name;
+                        player.tag = rankNames.get(2) + "[] ";
                         break;
                     case 3:
                         Call.sendMessage("[scarlet]donator " + player.name + " joined the server!");
-                        player.name = "[scarlet]<donator>[] " + player.name;
+                        player.tag = rankNames.get(3) + "[] ";
                         break;
                     case 4:
                         Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + " joined the server!");
-                        player.name = "[white]<mod>[] " + player.name;
+                        player.tag = rankNames.get(4) + "[] ";
                         break;
                     case 5:
                         Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + " joined the server!");
-                        player.name = "[white]<admin>[] " + player.name;
+                        player.tag = "[orange]<[][white]io admin[][orange]>[] ";
                         break;
                 }
                 tempData.origName = player.name;
@@ -424,7 +420,7 @@ public class ioMain extends Plugin {
                             }
 
                             targetTile.setNet(Blocks.rtgGenerator, player.getTeam(), 0);
-                            Call.onLabel(escapeColorCodes(player.name) + "'s generator", 60f, targetTile.worldx(), targetTile.worldy());
+                            Call.onLabel("[accent]" + escapeCharacters(escapeColorCodes(player.name)) + "'s[] generator", 60f, targetTile.worldx(), targetTile.worldy());
                             Call.onEffectReliable(Fx.explosion, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
                             Call.onEffectReliable(Fx.placeBlock, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
                             Call.sendMessage(player.name + "[#ff82d1] spawned in a power generator!");
