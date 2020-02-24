@@ -90,7 +90,7 @@ public class Utils {
         } catch (Exception e) {
             // try by name
             for (Map m : maps.customMaps()) {
-                if (m.name().equals(query)) {
+                if (m.name().replaceAll(" ", "").toLowerCase().contains(query.toLowerCase().replaceAll(" ", ""))) {
                     found = m;
                     break;
                 }
