@@ -229,7 +229,8 @@ public class ioMain extends Plugin {
         });
 
         Events.on(EventType.WorldLoadEvent.class, event -> {
-            MapRules.run();
+            Timer.schedule(MapRules::run, 1); // idk
+
             for (Player p : playerGroup.all()) Call.onInfoMessage(p.con, formatMessage(p, welcomeMessage));
 
             for (Entry<String, TempPlayerData> entry : playerDataGroup.entrySet()) {
