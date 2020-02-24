@@ -911,10 +911,10 @@ public class ServerCommands {
                                     tdata.sclLifetime = targetL;
                                     tdata.sclVelocity = targetV;
                                 }
-                                eb.setTitle("Command executed");
-                                eb.setDescription("Changed everyone's weapon mod. sorry. i dont know how to explain the rest");
-                                ctx.channel.sendMessage(eb);
                             }
+                            eb.setTitle("Command executed");
+                            eb.setDescription("Changed everyone's weapon mod. sorry. i dont know how to explain the rest");
+                            ctx.channel.sendMessage(eb);
                         }
 
                         Player player = findPlayer(target);
