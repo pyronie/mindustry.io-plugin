@@ -29,14 +29,10 @@ public class ComCommands {
                 help = "<message> Sends a message to in-game chat.";
             }
             public void run(Context ctx) {
+                if(ctx.event.isPrivateMessage()) return;
+
                 EmbedBuilder eb = new EmbedBuilder();
                 ctx.message = escapeCharacters(ctx.message);
-                if (ctx.message == null) {
-                    eb.setTitle("Command terminated");
-                    eb.setDescription("No message given");
-                    ctx.channel.sendMessage(eb);
-                    return;
-                }
                 if (ctx.message.length() < chatMessageMaxSize) {
                     Call.sendMessage("[sky]" + ctx.author.getName() + " @discord >[] " + ctx.message);
                     eb.setTitle("Command executed");
@@ -134,10 +130,17 @@ public class ComCommands {
             }
             public void run(Context ctx) {
                 EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("All available commands:");
+                        .setTitle("Public commands:");
+                EmbedBuilder embed2 = new EmbedBuilder()
+                        .setTitle("Restricted commands:");
                 for(Command command : handler.getAllCommands()) {
-                    embed.addInlineField(command.name, command.help);
+                    if(command instanceof RoleRestrictedCommand) {
+                        embed2.addInlineField("**" + command.name + "**", command.help);
+                    } else {
+                        embed.addInlineField("**" + command.name + "**", command.help);
+                    }
                 }
+                ctx.channel.sendMessage(embed2);
                 ctx.channel.sendMessage(embed);
             }
         });
@@ -160,7 +163,7 @@ public class ComCommands {
                         roles.add(r.getIdAsString());
                     }
                 }
-                if(target.length() > 0 && roles != null) {
+                if(target.length() > 0) {
                     int rank = 0;
                     for(String role : roles){
                         if(rankRoles.containsKey(role)){
@@ -169,10 +172,10 @@ public class ComCommands {
                     }
                     Player player = findPlayer(target);
                     if(player!=null && rank > 0){
-                        if(ioMain.database.containsKey(player.uuid)) {
-                            ioMain.database.get(player.uuid).setRank(rank);
-                        } else {
-                            ioMain.database.put(player.uuid, new PlayerData(player.usid, rank));
+                        PlayerData pd = getData(player.uuid);
+                        if(pd != null) {
+                            pd.rank = rank;
+                            setData(player.uuid, pd);
                         }
                         eb.setTitle("Command executed successfully");
                         eb.setDescription("Promoted " + escapeCharacters(player.name) + " to " + escapeColorCodes(rankNames.get(rank)) + ".");
