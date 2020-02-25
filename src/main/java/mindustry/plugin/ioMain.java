@@ -168,6 +168,9 @@ public class ioMain extends Plugin {
                 Administration.PlayerInfo info = netServer.admins.getInfoOptional(player.uuid);
                 if(info == null) return;
                 switch (rank) { // apply new tag
+                    case 0:
+                        info.tag = "";
+                        break;
                     case 1:
                         Call.sendMessage("[sky]active player " + player.name + " joined the server!");
                         info.tag = rankNames.get(1) + " ";
