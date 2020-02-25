@@ -52,7 +52,7 @@ public class BotThread extends Thread {
 
 
                     pd.playTime++;
-                    if(pd.rank == 0 && pd.playTime >= activeRequirements.playtime && pd.buildingsBuilt >= activeRequirements.buildingsBuilt && pd.gamesPlayed >= activeRequirements.gamesPlayed){
+                    if(pd.rank >= 0 && pd.playTime >= activeRequirements.playtime && pd.buildingsBuilt >= activeRequirements.buildingsBuilt && pd.gamesPlayed >= activeRequirements.gamesPlayed){
                         Call.onInfoMessage(p.con, Utils.formatMessage(p, promotionMessage));
                         if (pd.rank < 1) pd.rank = 1;
                     }
