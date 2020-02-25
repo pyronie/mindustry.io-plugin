@@ -2,10 +2,11 @@ package mindustry.plugin;
 
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.Bullets;
 import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
+import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
-import mindustry.game.Teams;
 import mindustry.net.Administration;
 import mindustry.plugin.discordcommands.Command;
 import mindustry.plugin.discordcommands.Context;
@@ -149,27 +150,25 @@ public class ServerCommands {
                     int targetRank = Integer.parseInt(ctx.args[2]);
                     if(target.length() > 0 && targetRank > -1 && targetRank < 6) {
                         Player player = findPlayer(target);
-                        if(player!=null){
-                            if(ioMain.database.containsKey(player.uuid)) {
-                                ioMain.database.get(player.uuid).setRank(targetRank);
-                            } else {
-                                ioMain.database.put(player.uuid, new PlayerData(player.usid, targetRank));
-                            }
-                            if(targetRank==5) { // give admin to administrators
-                                netServer.admins.adminPlayer(player.uuid, player.usid);
-                            }
+                        if(player == null){
+                            eb.setTitle("Command terminated");
+                            eb.setDescription("Player not found.");
+                            eb.setColor(Pals.error);
+                            ctx.channel.sendMessage(eb);
+                            return;
+                        }
+
+                        PlayerData pd = getData(player.uuid);
+                        if(pd != null) {
+                            pd.rank = targetRank;
+                            setData(player.uuid, pd);
                             eb.setTitle("Command executed successfully");
                             eb.setDescription("Promoted " + escapeCharacters(player.name) + " to " + targetRank);
                             ctx.channel.sendMessage(eb);
                             player.con.kick("Your rank was modified, please rejoin.", 0);
-                        } else {
-                            if(ioMain.database.containsKey(target)){
-                                ioMain.database.get(target).setRank(targetRank);
-                                eb.setTitle("Command executed successfully");
-                                eb.setDescription("Promoted `" + target + "` to " + targetRank);
-                                ctx.channel.sendMessage(eb);
-                            }
                         }
+
+                        if(targetRank==5) netServer.admins.adminPlayer(player.uuid, player.usid);
                     }
                 }
 
@@ -316,6 +315,11 @@ public class ServerCommands {
                     if (target.length() > 0) {
                         Player p = findPlayer(target);
                         if (p != null) {
+                            PlayerData pd = getData(p.uuid);
+                            if (pd != null){
+                                pd.banned = true;
+                                setData(p.uuid, pd);
+                            }
                             netServer.admins.banPlayer(p.uuid);
                             eb.setTitle("Command executed.");
                             eb.setDescription("Banned " + p.name + "(#" + p.id + ") `" + p.con.address + "` successfully!");
@@ -364,23 +368,30 @@ public class ServerCommands {
             handler.registerCommand(new RoleRestrictedCommand("unban") {
                 EmbedBuilder eb = new EmbedBuilder();
                 {
-                    help = "Unban a player by the provided ip.";
+                    help = "<ip/uuid> Unban a player by the provided ip or uuid.";
                     role = banRole;
                 }
                 public void run(Context ctx) {
-                    String ip;
-                    if(ctx.args.length==2){ ip = ctx.args[1]; } else {ctx.reply("Invalid arguments provided, use the following format: %unban <ip>".replace("%", ioMain.prefix)); return;}
+                    String target;
+                    if(ctx.args.length==2){ target = ctx.args[1]; } else {ctx.reply("Invalid arguments provided, use the following format: %unban <ip>".replace("%", ioMain.prefix)); return;}
 
-                    if (netServer.admins.unbanPlayerIP(ip)) {
-                        eb.setTitle("Command executed.");
-                        eb.setDescription("Unbanned `" + ip + "` successfully");
-                        ctx.channel.sendMessage(eb);
+                    if (netServer.admins.unbanPlayerIP(target)) {
+                        eb.setTitle("Command executed");
+                        eb.setDescription("Unbanned `" + target + "` successfully");
                     } else {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("No such ban exists.");
-                        ctx.channel.sendMessage(eb);
+                        PlayerData pd = getData(target);
+                        if (pd != null){
+                            pd.banned = false;
+                            setData(target, pd);
+                            eb.setTitle("Command executed");
+                            eb.setDescription(target + " was unbanned successfully.");
+                        } else {
+                            eb.setTitle("Command terminated");
+                            eb.setColor(Pals.error);
+                            eb.setDescription("No such ban exists.");
+                        }
                     }
+                    ctx.channel.sendMessage(eb);
                 }
             });
 
@@ -544,7 +555,8 @@ public class ServerCommands {
                 }
                 public void run(Context ctx) {
                     for(Player p : playerGroup.all()) {
-                        Call.onInfoMessage(p.con, "Desync detected, please use the /sync command.");
+                        Call.onWorldDataBegin(p.con);
+                        netServer.sendWorldData(p);
                     }
                     EmbedBuilder eb = new EmbedBuilder()
                             .setTitle("Command executed.")
@@ -603,7 +615,7 @@ public class ServerCommands {
 
                     if(target.length() > 0 && targetTeam.length() > 0) {
                         try {
-                            Field field = Teams.class.getDeclaredField(targetTeam);
+                            Field field = Team.class.getDeclaredField(targetTeam);
                             desiredTeam = (Team)field.get(null);
                         } catch (NoSuchFieldException | IllegalAccessException ignored) {}
 
@@ -673,7 +685,7 @@ public class ServerCommands {
                         Player player = findPlayer(target);
                         if (player != null) {
                             player.name = name;
-                            TempPlayerData tdata = ioMain.tempPlayerDatas.get(player.uuid);
+                            TempPlayerData tdata = ioMain.playerDataGroup.get(player.uuid);
                             if (tdata != null) tdata.origName = name;
                             eb.setTitle("Command executed successfully");
                             eb.setDescription("Changed name to " + escapeCharacters(player.name));
@@ -694,17 +706,17 @@ public class ServerCommands {
                 public void run(Context ctx) {
                     EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1];
-                    if(ioMain.verifiedIPs.containsKey(target)) {
-                        ioMain.verifiedIPs.put(target, true);
+                    PlayerData pd = getData(target);
+                    if(pd != null) {
+                        pd.verified = true;
+                        setData(target, pd);
                         eb.setTitle("Command executed successfully");
-                        eb.setDescription("Verified " + escapeCharacters(target));
-                        ctx.channel.sendMessage(eb);
+                        eb.setDescription("Verified " + escapeCharacters(target) + ".");
                     } else {
                         eb.setTitle("Command terminated");
                         eb.setDescription("Couldn't find " + escapeCharacters(target) + " in the database.");
                         eb.setColor(Pals.error);
-                        ctx.channel.sendMessage(eb);
-                    }
+                    } ctx.channel.sendMessage(eb);
                 }
 
             });
@@ -755,37 +767,13 @@ public class ServerCommands {
             });
 
 
-            handler.registerCommand(new RoleRestrictedCommand("getrank"){
-                {
-                    help = "<rankid> Returns all players and their uuids for the specified rank.";
-                    role = banRole;
-                }
-
-                public void run(Context ctx) {
-                    int targetRank = Integer.parseInt(ctx.args[1]);
-                    if(targetRank > 0) {
-                        StringBuilder msg = new StringBuilder().append("**Players with rank** `").append(rankNames.get(targetRank)).append("`:```");
-                        for(java.util.Map.Entry<String, PlayerData> entrySet : ioMain.database.entrySet()) {
-                            String uuid = entrySet.getKey();
-                            PlayerData pd = entrySet.getValue();
-                            if(uuid != null && pd != null) {
-                                if(pd.getRank() == targetRank) {
-                                    msg.append("· ").append(uuid).append("\n");
-                                }
-                            }
-                        }
-                        msg.append("```");
-                        ctx.reply(String.valueOf(msg));
-                    }
-                }
-            });
-
             handler.registerCommand(new RoleRestrictedCommand("spawn") {
                 {
                     help = "<playerid|ip|name> <unit> <amount> Spawn x units at the location of the specified player";
                     role = banRole;
                 }
                 public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1];
                     String targetUnit = ctx.args[2];
                     int amount = Integer.parseInt(ctx.args[3]);
@@ -796,7 +784,6 @@ public class ServerCommands {
                             desiredUnit = (UnitType)field.get(null);
                         } catch (NoSuchFieldException | IllegalAccessException ignored) {}
 
-                        EmbedBuilder eb = new EmbedBuilder();
                         Player player = findPlayer(target);
                         if(player!=null){
                             UnitType finalDesiredUnit = desiredUnit;
@@ -809,6 +796,11 @@ public class ServerCommands {
                             eb.setDescription("Spawned " + amount + " " + targetUnit + " near " + Utils.escapeCharacters(player.name) + ".");
                             ctx.channel.sendMessage(eb);
                         }
+                    } else{
+                        eb.setTitle("Command terminated");
+                        eb.setDescription("Invalid arguments provided.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
                     }
                 }
             });
@@ -819,6 +811,7 @@ public class ServerCommands {
                     role = banRole;
                 }
                 public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1];
                     String targetUnit = ctx.args[2];
                     UnitType desiredUnit = UnitTypes.dagger;
@@ -828,7 +821,6 @@ public class ServerCommands {
                             desiredUnit = (UnitType)field.get(null);
                         } catch (NoSuchFieldException | IllegalAccessException ignored) {}
 
-                        EmbedBuilder eb = new EmbedBuilder();
                         Player player = findPlayer(target);
                         if(player!=null){
                             int amount = 0;
@@ -844,6 +836,11 @@ public class ServerCommands {
                             eb.setDescription("Killed " + amount + " " + targetUnit + "s on team " + player.getTeam());
                             ctx.channel.sendMessage(eb);
                         }
+                    } else{
+                        eb.setTitle("Command terminated");
+                        eb.setDescription("Invalid arguments provided.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
                     }
                 }
             });
@@ -875,82 +872,77 @@ public class ServerCommands {
                         eb.setTitle("Command executed successfully.");
                         eb.setDescription("Spawned " + desiredBlock.name + " on " + Utils.escapeCharacters(player.name) + "'s position.");
                         ctx.channel.sendMessage(eb);
-                    }
-                }
-            });
-
-            handler.registerCommand(new RoleRestrictedCommand("strictusid") {
-                {
-                    help = "Whether to kick players with a usid mismatch.";
-                    role = banRole;
-                }
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    if (ctx.args.length < 2) {
+                    } else{
                         eb.setTitle("Command terminated");
-                        eb.setDescription("Not enough arguments.");
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-                    String opt = ctx.args[1].toLowerCase();
-                    switch (opt) {
-                        case "on":
-                        case "true":
-                        case "yes":
-                            ioMain.rejectUsidMismatch = true;
-                            eb.setTitle("Command executed.");
-                            eb.setDescription("Strict usid checking enabled.");
-                            break;
-                        case "off":
-                        case "false":
-                        case "no":
-                            ioMain.rejectUsidMismatch = false;
-                            eb.setTitle("Command executed.");
-                            eb.setDescription("Strict usid checking disabled");
-                            break;
-                        default:
-                            eb.setTitle("Command terminated.");
-                            eb.setDescription("Unknown argument `" + ctx.args[1] + "`");
-                    }
-                    ctx.channel.sendMessage(eb);
-                }
-            });
-
-            handler.registerCommand(new RoleRestrictedCommand("resetusid"){
-                {
-                    help = "<uuid> Reset usid associated with uuid in playerdata";
-                    role = banRole;
-                }
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    if (ctx.args.length < 2) {
-                        eb.setTitle("Command terminated");
-                        eb.setDescription("Not enough arguments");
+                        eb.setDescription("Invalid arguments provided.");
                         eb.setColor(Pals.error);
                         ctx.channel.sendMessage(eb);
-                        return;
                     }
+                }
+            });
+
+            handler.registerCommand(new RoleRestrictedCommand("weaponmod") { // OH NO
+                {
+                    help = "<playerid|ip|name|all(oh no)> <bullet-type> <lifetime-modifier> <velocity-modifier> Mod the current weapon of a player.";
+                    role = banRole;
+                }
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+
                     String target = ctx.args[1];
-                    if (ioMain.database.containsKey(target)) {
-                        PlayerData data = ioMain.database.get(target);
-                        Player found = playerGroup.find(p -> p.uuid.equals(target));
-                        if (found != null) {
-                            data.usid = found.usid;
-                            found.con.kick("Your rank was modified, please rejoin.", 0);
-                        } else {
-                            data.usid = null;
-                        }
-                        eb.setTitle("Command executed successfully");
-                        eb.setDescription("Reset usid of " + escapeCharacters(target));
-                    } else {
-                        eb.setTitle("Command terminated");
-                        eb.setDescription("Couldn't find " + escapeCharacters(target) + " in the database.");
-                        eb.setColor(Pals.error);
-                    }
-                    ctx.channel.sendMessage(eb);
-                }
+                    String targetBullet = ctx.args[2];
+                    float targetL = Float.parseFloat(ctx.args[3]);
+                    float targetV = Float.parseFloat(ctx.args[4]);
+                    BulletType desiredBullet = null;
 
+                    if(target.length() > 0 && targetBullet.length() > 0) {
+                        try {
+                            Field field = Bullets.class.getDeclaredField(targetBullet);
+                            desiredBullet = (BulletType)field.get(null);
+                        } catch (NoSuchFieldException | IllegalAccessException ignored) {}
+
+                        if(target.equals("all")){
+                            for(Player p : playerGroup.all()){
+                                TempPlayerData tdata = ioMain.playerDataGroup.get(p.uuid);
+                                if(desiredBullet == null){
+                                    tdata.bt = null;
+                                } else{
+                                    tdata.bt = desiredBullet;
+                                    tdata.sclLifetime = targetL;
+                                    tdata.sclVelocity = targetV;
+                                }
+                            }
+                            eb.setTitle("Command executed");
+                            eb.setDescription("Changed everyone's weapon mod. sorry. i dont know how to explain the rest");
+                            ctx.channel.sendMessage(eb);
+                        }
+
+                        Player player = findPlayer(target);
+                        if(player!=null){
+                            TempPlayerData tdata = ioMain.playerDataGroup.get(player.uuid);
+                            if(desiredBullet == null){
+                                tdata.bt = null;
+                                eb.setTitle("Command executed");
+                                eb.setDescription("Reverted " + escapeCharacters(player.name) + "'s weapon to default.");
+                                ctx.channel.sendMessage(eb);
+                            } else{
+                                tdata.bt = desiredBullet;
+                                tdata.sclLifetime = targetL;
+                                tdata.sclVelocity = targetV;
+                                eb.setTitle("Command executed");
+                                eb.setDescription("Modded " + escapeCharacters(player.name) + "'s weapon to " + targetBullet + " with " + targetL + "x lifetime modifier and " + targetV + "x velocity modifier.");
+                                ctx.channel.sendMessage(eb);
+                            }
+                        }
+                    } else{
+                        eb.setTitle("Command terminated");
+                        eb.setDescription("Invalid arguments provided.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
+                    }
+                }
             });
+
         }
 
             /*handler.registerCommand(new Command("sendm"){ // use sendm to send embed messages when needed locally, disable for now

@@ -1,30 +1,24 @@
 package mindustry.plugin;
 
-import arc.files.Fi;
 import arc.struct.Array;
-import arc.util.Log;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
-import mindustry.game.Schematic;
-import mindustry.game.Schematics;
-import mindustry.gen.Call;
 import mindustry.maps.Map;
 import mindustry.world.Block;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.exceptions.JedisException;
 
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 
 import static mindustry.Vars.*;
+import static mindustry.plugin.ioMain.*;
 
 public class Utils {
-    static int messageBufferSize = 24; // number of messages sent at once to discord
     public static int chatMessageMaxSize = 256;
-    public static float respawnTimeEnforced = 1f;
-    public static int respawnTimeEnforcedDuration = 10; // duration of insta spawn
     static String welcomeMessage = "";
-    static String noPermissionMessage = "You don't have permissions to execute this command! Purchase vip at https://donate.mindustry.io";
+    static String noPermissionMessage = "[accent]You don't have permissions to execute this command!\nObtain the donator rank here: http://donate.mindustry.io";
     static String statMessage = "";
 
     // wheter ip verification is in place (detect vpns, disallow their build rights)
@@ -47,19 +41,24 @@ public class Utils {
 
     static HashMap<Integer, String> rankNames = new HashMap<>();
     static HashMap<String, Integer> rankRoles = new HashMap<>();
+    static Array<String> bannedNames = new Array<>();
 
     public static void init(){
         rankNames.put(0, "[#7d7d7d]<none>[]");
-        rankNames.put(1, "[sky]<active player>[]");
-        rankNames.put(2, "[#fcba03]<regular>[]");
-        rankNames.put(3, "[scarlet]<donator>[]");
-        rankNames.put(4, "[orange]<[][white]io moderator[][orange]>[]");
-        rankNames.put(5, "[orange]<[][white]io administrator[][orange]>[]");
+        rankNames.put(1, "[accent]<[white]\uE810[accent]>[]");
+        rankNames.put(2, "[accent]<[white]\uE809[accent]>[]");
+        rankNames.put(3, "[accent]<[white]\uE84E[accent]>[]");
+        rankNames.put(4, "[accent]<[white]\uE84F[accent]>[]");
+        rankNames.put(5, "[accent]<[white]\uE828[accent]>[]");
 
         rankRoles.put("627985513600516109", 1);
         rankRoles.put("636968410441318430", 2);
         rankRoles.put("674778262857187347", 3);
         rankRoles.put("624959361789329410", 4);
+
+        bannedNames.add("IGGGAMES");
+        bannedNames.add("CODEX");
+        bannedNames.add("VALVE");
 
         activeRequirements.bannedBlocks.add(Blocks.conveyor);
         activeRequirements.bannedBlocks.add(Blocks.titaniumConveyor);
@@ -96,7 +95,7 @@ public class Utils {
         } catch (Exception e) {
             // try by name
             for (Map m : maps.customMaps()) {
-                if (m.name().equals(query)) {
+                if (m.name().replaceAll(" ", "").toLowerCase().contains(query.toLowerCase().replaceAll(" ", ""))) {
                     found = m;
                     break;
                 }
@@ -108,6 +107,11 @@ public class Utils {
     public static Player findPlayer(String identifier){
         Player found = null;
         for (Player player : playerGroup.all()) {
+            if(player == null) return null;
+            if(player.uuid == null) return null;
+            if(player.con == null) return null;
+            if(player.con.address == null) return null;
+
             if (player.con.address.equals(identifier.replaceAll(" ", "")) || String.valueOf(player.id).equals(identifier.replaceAll(" ", "")) || player.uuid.equals(identifier.replaceAll(" ", "")) || escapeColorCodes(player.name.toLowerCase().replaceAll(" ", "")).replaceAll("<.*?>", "").contains(identifier.toLowerCase().replaceAll(" ", ""))) {
                 found = player;
             }
@@ -119,14 +123,38 @@ public class Utils {
         message = message.replaceAll("%player%", escapeCharacters(player.name));
         message = message.replaceAll("%map%", world.getMap().name());
         message = message.replaceAll("%wave%", String.valueOf(state.wave));
-
-        if(ioMain.database.containsKey(player.uuid)) {
-            message = message.replaceAll("%playtime%", String.valueOf(ioMain.database.get(player.uuid).getPlaytime()));
-            message = message.replaceAll("%games%", String.valueOf(ioMain.database.get(player.uuid).getGames()));
-            message = message.replaceAll("%buildings%", String.valueOf(ioMain.database.get(player.uuid).getBuildings()));
-            message = message.replaceAll("%rank%", escapeColorCodes(rankNames.get(ioMain.database.get(player.uuid).getRank())));
+        PlayerData pd = getData(player.uuid);
+        if(pd != null) {
+            message = message.replaceAll("%playtime%", String.valueOf(pd.playTime));
+            message = message.replaceAll("%games%", String.valueOf(pd.gamesPlayed));
+            message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
+            message = message.replaceAll("%rank%", escapeColorCodes(rankNames.get(pd.rank)));
         }
         return message;
     }
 
+    public static PlayerData getData(String uuid) {
+        try(Jedis jedis = ioMain.pool.getResource()) {
+            String json = jedis.get(uuid);
+            if(json == null) return null;
+
+            try {
+                return gson.fromJson(json, PlayerData.class);
+            } catch(Exception e){
+                e.printStackTrace();
+                return null;
+            }
+        }
+    }
+
+    public static void setData(String uuid, PlayerData pd) {
+        try(Jedis jedis = ioMain.pool.getResource()) {
+            try {
+                String json = gson.toJson(pd);
+                jedis.set(uuid, json);
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
 }

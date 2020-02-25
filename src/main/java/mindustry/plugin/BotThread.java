@@ -4,16 +4,9 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import org.javacord.api.DiscordApi;
-import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.MessageBuilder;
-import org.javacord.api.entity.permission.Role;
 import org.json.JSONObject;
 
 import mindustry.plugin.discordcommands.DiscordCommands;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
 
 import static mindustry.plugin.Utils.*;
 
@@ -41,68 +34,38 @@ public class BotThread extends Thread {
                 Thread.sleep(60 * 1000);
 
                 for (Player p : Vars.playerGroup.all()) {
-                    PlayerData pd = ioMain.getData(p);
-                    if (pd == null) continue;
-                    // increment playtime for users in-game
-                    pd.incrementPlaytime(1); // 1 minute
-                    if(pd.getRank() == 0 && pd.getPlaytime() >= activeRequirements.playtime && pd.getBuildings() >= activeRequirements.buildingsBuilt && pd.getGames() >= activeRequirements.gamesPlayed){
-                        Call.onInfoMessage(p.con, Utils.formatMessage(p, promotionMessage));
-                        if (pd.rank < 1) pd.setRank(1);
+
+                    PlayerData pd = getData(p.uuid);
+                    if (pd == null) return;
+
+                    // cooldowns
+                    TempPlayerData tdata = (ioMain.playerDataGroup.getOrDefault(p.uuid, null));
+                    if (tdata != null){
+                        if (tdata.burstCD > 0){
+                            tdata.burstCD--;
+                        }
+                        if (tdata.bbIncrementor > 0){
+                            pd.buildingsBuilt = pd.buildingsBuilt + tdata.bbIncrementor;
+                            tdata.bbIncrementor = 0;
+                        }
                     }
+
+
+                    pd.playTime++;
+                    if(pd.rank >= 0 && pd.playTime >= activeRequirements.playtime && pd.buildingsBuilt >= activeRequirements.buildingsBuilt && pd.gamesPlayed >= activeRequirements.gamesPlayed){
+                        Call.onInfoMessage(p.con, Utils.formatMessage(p, promotionMessage));
+                        if (pd.rank < 1) pd.rank = 1;
+                    }
+                    setData(p.uuid, pd);
+                    ioMain.playerDataGroup.put(p.uuid, tdata); // update tdata with the new stuff
                 }
 
-                // save database
-                try {
-                    File fileOne = new File("database.io");
-                    FileOutputStream fos = new FileOutputStream(fileOne);
-                    ObjectOutputStream oos = new ObjectOutputStream(fos);
 
-                    oos.writeObject(ioMain.database);
-                    oos.flush();
-                    oos.close();
-                    fos.close();
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
-
-                // save verified ips database
-                try {
-                    File fileTwo = new File("ipdb.io");
-                    FileOutputStream fos = new FileOutputStream(fileTwo);
-                    ObjectOutputStream oos = new ObjectOutputStream(fos);
-
-                    oos.writeObject(ioMain.verifiedIPs);
-                    oos.flush();
-                    oos.close();
-                    fos.close();
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        if (data.has("serverdown_role_id")){
-            Role r = new UtilMethods().getRole(api, data.getString("serverdown_role_id"));
-            TextChannel tc = new UtilMethods().getTextChannel(api, data.getString("serverdown_channel_id"));
-            if (r == null || tc ==  null) {
-                try {
-                    Thread.sleep(1000);
-                } catch (Exception e) {}
-            } else {
-                if (data.has("server_name")){
-                    String serverName = data.getString("server_name");
-                    new MessageBuilder()
-                            .append(String.format("%s\nServer %s is down", r.getMentionTag(), (!serverName.isEmpty() ? ("**" + serverName + "**") : "")))
-                            .send(tc);
-                } else {
-                    new MessageBuilder()
-                            .append(String.format("%s\nServer is down.", r.getMentionTag()))
-                            .send(tc);
-                }
-            }
-        }
         api.disconnect();
     }
 }

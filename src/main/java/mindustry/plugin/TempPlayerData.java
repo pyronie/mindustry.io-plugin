@@ -1,5 +1,6 @@
 package mindustry.plugin;
 import arc.struct.Array;
+import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 
@@ -11,14 +12,18 @@ public class TempPlayerData implements Serializable {
     public String origName;
     public Array<BaseUnit> draugPets = new Array<>();
     public int hue;
+    public int bbIncrementor = 0;
     public boolean doRainbow;
+    public boolean doTrail;
     public boolean spawnedLichPet;
     public boolean spawnedPowerGen;
 
-    // 50 configures per 1000 ms
-    public Ratelimit configureRatelimit = new Ratelimit(50, 1000);
-    // 10 rotates per 1000 ms
-    public Ratelimit rotateRatelimit = new Ratelimit(10, 1000);
+    public int burstCD = 0;
+
+    public BulletType bt;
+    public float sclLifetime = 1f;
+    public float sclVelocity = 1f;
+
 
     public TempPlayerData(Player p) {
         playerRef = new WeakReference<>(p);
@@ -33,4 +38,5 @@ public class TempPlayerData implements Serializable {
     public void setHue(int i) {
         this.hue = i;
     }
+
 }

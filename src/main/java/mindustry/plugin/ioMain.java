@@ -1,21 +1,20 @@
 package mindustry.plugin;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
 import java.lang.ref.WeakReference;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.IntStream;
 
-import arc.struct.Array;
+import com.google.gson.Gson;
 import arc.util.Timer;
 import arc.util.Timer.Task;
-import mindustry.content.Blocks;
-import mindustry.content.Items;
-import mindustry.content.UnitTypes;
+import mindustry.content.*;
+import mindustry.core.GameState;
+import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
+import mindustry.graphics.Pal;
+import mindustry.net.Administration;
 import mindustry.world.Build;
 import mindustry.world.Tile;
 import org.javacord.api.DiscordApi;
@@ -23,7 +22,6 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.Channel;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.permission.Role;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -35,6 +33,8 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.gen.Call;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
@@ -43,18 +43,22 @@ import static mindustry.Vars.*;
 import static mindustry.plugin.Utils.*;
 
 public class ioMain extends Plugin {
+    public static JedisPool pool;
+    static Gson gson = new Gson();
+
     public static DiscordApi api = null;
     public static String prefix = ".";
     public static String serverName = "<untitled>";
-    public static HashMap<String, PlayerData> database  = new HashMap<>(); // uuid, rank
-    public static HashMap<String, Boolean> verifiedIPs = new HashMap<>(); // uuid, verified?
-    public static HashMap<String, TempPlayerData> tempPlayerDatas = new HashMap<>(); // uuid, data
-    public static Boolean intermission = false;
+    
+    //public static HashMap<String, PlayerData> database  = new HashMap<>(); // uuid, rank
+    //public static HashMap<String, Boolean> verifiedIPs = new HashMap<>(); // uuid, verified?
+
+    public static HashMap<String, TempPlayerData> playerDataGroup = new HashMap<>(); // uuid, data
+
     private final String fileNotFoundErrorMessage = "File not found: config\\mods\\settings.json";
     private JSONObject alldata;
     public static JSONObject data; //token, channel_id, role_id
     public static String apiKey = "";
-    public static boolean rejectUsidMismatch = true;
 
     //register event handlers and create variables in the constructor
     public ioMain() {
@@ -64,100 +68,41 @@ public class ioMain extends Plugin {
             String pureJson = Core.settings.getDataDirectory().child("mods/settings.json").readString();
             data = alldata = new JSONObject(new JSONTokener(pureJson));
         } catch (Exception e) {
-            if (e.getMessage().contains(fileNotFoundErrorMessage)){
-                Log.err("[ERR!] discordplugin: settings.json file is missing.\nBot can't start.");
-                //this.makeSettingsFile("settings.json");
-                return;
-            } else {
-                Log.err("[ERR!] discordplugin: Init Error");
-                e.printStackTrace();
-                return;
-            }
+            Log.err("Couldn't read settings.json file.");
         }
         try {
             api = new DiscordApiBuilder().setToken(alldata.getString("token")).login().join();
         }catch (Exception e){
-            if (e.getMessage().contains("READY packet")){
-                Log.err("\n[ERR!] discordplugin: invalid token.\n");
-            } else {
-                e.printStackTrace();
-            }
+            Log.err("Couldn't log into discord.");
         }
         BotThread bt = new BotThread(api, Thread.currentThread(), alldata);
         bt.setDaemon(false);
         bt.start();
 
 
-        // setup database
+
+        // database
         try {
-            File toRead = new File("database.io");
-            if(toRead.length() > 0) {
-                FileInputStream fis = new FileInputStream(toRead);
-                ObjectInputStream ois = new ObjectInputStream(fis);
-
-                database = (HashMap<String, PlayerData>) ois.readObject();
-
-                ois.close();
-                fis.close();
-
-                Log.info("discordplugin: database loaded successfully");
-            }
-        } catch(Exception e){
+            pool = new JedisPool(new JedisPoolConfig(), "localhost");
+            Log.info("jedis database loaded");
+        } catch (Exception e){
             e.printStackTrace();
-        }
-
-        // setup ipdatabase
-        try {
-            File toRead2 = new File("ipdb.io");
-            if(toRead2.length() > 0) {
-                FileInputStream fis2 = new FileInputStream(toRead2);
-                ObjectInputStream ois2 = new ObjectInputStream(fis2);
-
-                verifiedIPs = (HashMap<String, Boolean>) ois2.readObject();
-
-                ois2.close();
-                fis2.close();
-
-                Log.info("discordplugin: ip database loaded successfully");
-            }
-        } catch(Exception e){
-            e.printStackTrace();
+            Core.app.exit();
         }
 
         // setup prefix
         if (data.has("prefix")) {
             prefix = String.valueOf(data.getString("prefix").charAt(0));
-            api.updateActivity("prefix: " + prefix);
         } else {
-            Log.warn("[WARN!] discordplugin: no prefix setting detected, using default \".\" prefix.");
+            Log.warn("Prefix not found, using default '.' prefix.");
         }
+        api.updateActivity("prefix: " + prefix);
 
         // setup name
         if (data.has("server_name")) {
             serverName = String.valueOf(data.getString("server_name"));
         } else {
-            Log.warn("[WARN!] discordplugin: no server_name setting detected.");
-        }
-
-        // live chat
-        if (data.has("live_chat_channel_id")) {
-            TextChannel tc = getTextChannel(data.getString("live_chat_channel_id"));
-            if (tc != null) {
-                HashMap<String, String> messageBuffer = new HashMap<>();
-                Events.on(EventType.PlayerChatEvent.class, event -> {
-                    messageBuffer.put(escapeCharacters(event.player.name), escapeCharacters(event.message));
-                    if(messageBuffer.size() >= messageBufferSize) { // if message buffer size is below the expected size
-                        EmbedBuilder eb = new EmbedBuilder().setTitle(new SimpleDateFormat("yyyy_MM_dd").format(Calendar.getInstance().getTime()));
-                        for (Map.Entry<String, String> entry : messageBuffer.entrySet()) {
-                            String username = entry.getKey();
-                            String message = entry.getValue();
-                            eb.addField(escapeCharacters(username), escapeCharacters(message));
-                        }
-                        tc.sendMessage(eb);
-                        messageBuffer.clear();
-                    }
-                });
-            }
+            Log.warn("No server name setting detected!");
         }
 
         if(data.has("api_key")){
@@ -168,41 +113,37 @@ public class ioMain extends Plugin {
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
             Player player = event.player;
+            if(bannedNames.contains(player.name)) player.con.kick("[scarlet]Error #103, please join http://discord.mindustry.io and tell an admin.");
+            PlayerData pd = getData(player.uuid);
             Thread verThread = new Thread(() -> {
                 if(verification) {
-                    if (verifiedIPs.containsKey(player.uuid)) {
-                        Boolean verified = verifiedIPs.get(player.uuid);
-                        if (!verified) {
-                            Log.info("Unverified player joined: " + player.name);
-                            Call.onInfoMessage(player.con, verificationMessage);
-                        }
-                    } else {
+                    if (pd != null && !pd.verified) {
+                        Log.info("Unverified player joined: " + player.name);
+                        Call.onInfoMessage(player.con, verificationMessage);
+                    } else if (pd != null){ // if verified, but we wanna be extra cautious and check again :)
                         String url = "http://api.vpnblocker.net/v2/json/" + player.con.address + "/" + apiKey;
                         String pjson = ClientBuilder.newClient().target(url).request().accept(MediaType.APPLICATION_JSON).get(String.class);
 
                         JSONObject json = new JSONObject(new JSONTokener(pjson));
-                        boolean cont = true;
-
-                        if (!json.has("host-ip")) cont = false;
-                        if (cont) {
+                        if (json.has("host-ip")) {
                             if (json.getBoolean("host-ip")) { // verification failed
                                 Log.info("IP verification failed for: " + player.name);
-                                verifiedIPs.put(player.uuid, false);
+                                pd.verified = false;
+                                setData(player.uuid, pd);
                                 Call.onInfoMessage(player.con, verificationMessage);
                                 if (data.has("warnings_chat_channel_id")) {
                                     TextChannel tc = getTextChannel(data.getString("warnings_chat_channel_id"));
                                     if (tc != null) {
-                                        EmbedBuilder eb = new EmbedBuilder().setTitle("IP verification failure: " + serverName);
+                                        EmbedBuilder eb = new EmbedBuilder().setTitle("IP verification failure for: " + escapeCharacters(player.name));
                                         eb.addField("IP", player.con.address);
-                                        eb.addField("Username", escapeCharacters(player.name));
                                         eb.addField("UUID", player.uuid);
+                                        eb.setDescription("Verify this player by using the `" + prefix + "verify " + player.uuid + "` command.");
                                         eb.setColor(Pals.info);
                                         tc.sendMessage(eb);
                                     }
                                 }
                             } else {
                                 Log.info("IP verification success for: " + player.name);
-                                verifiedIPs.put(player.uuid, true); // verification successful
                             }
                         }
                     }
@@ -210,66 +151,55 @@ public class ioMain extends Plugin {
             });
             verThread.start();
 
-            // reset all previous tags
-            player.name = player.name.replaceFirst("<(.*)>", "");
-            player.name = player.name.replaceAll("<", "");
-            player.name = player.name.replaceAll(">", "");
-
-            TempPlayerData tempData = tempPlayerDatas.get(player.uuid);
+            TempPlayerData tempData = playerDataGroup.get(player.uuid);
             if (tempData == null) {
                 tempData = new TempPlayerData(player);
-                tempPlayerDatas.put(player.uuid, tempData);
+                playerDataGroup.put(player.uuid, tempData);
             } else {
                 tempData.playerRef = new WeakReference<>(player);
                 tempData.origName = player.name;
                 tempData.doRainbow = false;
             }
 
-            if(database.containsKey(player.uuid)) {
-                PlayerData data = database.get(player.uuid);
-                int rank = data.getRank();
-                if (data.usid == null) {
-                    data.usid = player.usid;
-                } else {
-                    if (!data.usid.equals(player.usid)) {
-                        if (rejectUsidMismatch) {
-                            player.con.kick("USID mismatch. Please join http://discord.mindustry.io and ask for a moderator.");
-                        } else {
-                            Call.onInfoMessage(player.con, "USID mismatch. Please join http://discord.mindustry.io and ask for a moderator.\nProgress towards the active rank will not be counted and you will not be able to use commands.");
-                        }
-                        return;
-                    }
-                }
-                if (rank > 0) {
-                    // trusted players should have higher limits
-                    tempData.configureRatelimit.eventLimit *= 2;
-                    tempData.rotateRatelimit.eventLimit *= 2;
-                }
+
+            if(pd != null) {
+                if(pd.banned) player.con.kick("uuid: " + player.uuid + " you are banned.");
+                int rank = pd.rank;
+                Administration.PlayerInfo info = netServer.admins.getInfoOptional(player.uuid);
+                if(info == null) return;
                 switch (rank) { // apply new tag
+                    case 0:
+                        info.tag = "";
+                        break;
                     case 1:
                         Call.sendMessage("[sky]active player " + player.name + " joined the server!");
-                        player.name = "[sky]<active>[] " + player.name;
+                        info.tag = rankNames.get(1) + " ";
                         break;
                     case 2:
                         Call.sendMessage("[#fcba03]regular player " + player.name + " joined the server!");
-                        player.name = "[#fcba03]<regular>[] " + player.name;
+                        info.tag = rankNames.get(2) + " ";
                         break;
                     case 3:
                         Call.sendMessage("[scarlet]donator " + player.name + " joined the server!");
-                        player.name = "[scarlet]<donator>[] " + player.name;
+                        info.tag = rankNames.get(3) + " ";
                         break;
                     case 4:
                         Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + " joined the server!");
-                        player.name = "[white]<mod>[] " + player.name;
+                        info.tag = rankNames.get(4) + " ";
                         break;
                     case 5:
                         Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + " joined the server!");
-                        player.name = "[white]<admin>[] " + player.name;
+                        info.tag = rankNames.get(5) + " ";
                         break;
                 }
                 tempData.origName = player.name;
             } else { // not in database
-                database.put(player.uuid, new PlayerData(player.usid, 0));
+                setData(player.uuid, new PlayerData(0));
+            }
+
+            if(pd != null && !pd.ips.contains(player.con.address)) {
+                pd.ips.add(player.con.address);
+                setData(player.uuid, pd);
             }
 
             if (welcomeMessage.length() > 0) {
@@ -281,59 +211,47 @@ public class ioMain extends Plugin {
         Events.on(EventType.BlockBuildEndEvent.class, event -> {
             if (event.player == null) return;
             if (event.breaking) return;
-            PlayerData data = getData(event.player);
-            if (data == null) return;
-            if (event.tile.block() != null) {
+            PlayerData pd = getData(event.player.uuid);
+            TempPlayerData td = (playerDataGroup.getOrDefault(event.player.uuid, null));
+            if (pd == null || td == null) return;
+            if (event.tile.entity != null) {
                 if (!activeRequirements.bannedBlocks.contains(event.tile.block())) {
-                    data.incrementBuilding(1);
+                    td.bbIncrementor++;
                 }
             }
         });
 
         Events.on(EventType.GameOverEvent.class, event -> {
             for (Player p : playerGroup.all()) {
-                PlayerData data = getData(p);
-                if (data != null) {
-                    data.incrementGames();
-                    Call.onInfoToast(p.con, "[scarlet]+1 games played", 9);
+                PlayerData pd = getData(p.uuid);
+                if (pd != null) {
+                    pd.gamesPlayed++;
+                    setData(p.uuid, pd);
+                    Call.onInfoToast(p.con, "[accent]+1 games played", 10);
                 }
             }
-            intermission = true;
         });
 
         Events.on(EventType.WorldLoadEvent.class, event -> {
-            MapRules.run();
-            intermission = false;
-            for (Player p : playerGroup.all()) Call.onInfoMessage(p.con, formatMessage(p, welcomeMessage));
-
-            for (Entry<String, TempPlayerData> entry : tempPlayerDatas.entrySet()) {
-                TempPlayerData tdata = entry.getValue();
-                if (tdata.playerRef.get() == null) {
-                    tempPlayerDatas.remove(entry.getKey());
-                    continue;
-                }
-                tdata.spawnedPowerGen = false;
-                tdata.spawnedLichPet = false;
-                tdata.draugPets.clear();
-            }
-        });
-
-        Events.on(EventType.PlayerLeave.class, event -> {
-            // commented out to prevent infinite spawning of pets by rejoining
-            // tempPlayerDatas.remove(event.player.uuid);
+            Timer.schedule(MapRules::run, 5); // idk
         });
 
         Core.app.post(this::loop);
     }
 
-    // run things here instead of in threads please
-    public void loop() {
-        for (Entry<String, TempPlayerData> entry : tempPlayerDatas.entrySet()) {
-            TempPlayerData tdata = entry.getValue();
-            Player p = tdata.playerRef.get();
-            if (p == null) continue;
 
-            if (tdata.doRainbow) {
+    public void loop() {
+        for (Entry<String, TempPlayerData> entry : playerDataGroup.entrySet()) {
+            TempPlayerData tdata = entry.getValue();
+            if (tdata == null) return;
+            String uuid = entry.getKey();
+            if (uuid == null) return;
+            Player p = findPlayer(uuid);
+
+            // update pets
+            for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
+
+            if (p != null && tdata.doRainbow) {
                 // update rainbows
                 String playerNameUnmodified = tdata.origName;
                 int hue = tdata.hue;
@@ -350,24 +268,19 @@ public class ioMain extends Plugin {
                 tdata.setHue(hue);
             }
 
-            // update pets
-            for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
+            if (p != null && tdata.doTrail) {
+                String hex = Integer.toHexString(Color.getHSBColor(tdata.hue / 360f, 1f, 1f).getRGB()).substring(2);
+
+                arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
+                Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c); // this inverse rotation thing gave me a headache
+            }
+
+            if(p != null && tdata.bt != null && p.isShooting()){
+                Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
+            }
         }
 
         Core.app.post(this::loop);
-    }
-
-    public static PlayerData getData(Player p) {
-        PlayerData data = database.get(p.uuid);
-        if (data == null) return null;
-        if (!p.usid.equals(data.usid)) return null;
-        return data;
-    }
-
-    public static int getRank(Player p) {
-        PlayerData data = getData(p);
-        if (data == null) return 0;
-        return data.getRank();
     }
 
     //register commands that run on the server
@@ -380,7 +293,7 @@ public class ioMain extends Plugin {
     @Override
     public void registerClientCommands(CommandHandler handler){
         if (api != null) {
-            handler.<Player>register("d", "<text...>", "Sends a message to moderators. (Please provide the griefer's name and the current server's ip.)", (args, player) -> {
+            handler.<Player>register("d", "<text...>", "Sends a message to moderators. Use when no moderators are online and there's a griefer.", (args, player) -> {
 
                 if (!data.has("warnings_chat_channel_id")) {
                     player.sendMessage("[scarlet]This command is disabled.");
@@ -401,7 +314,7 @@ public class ioMain extends Plugin {
                 builder.append("[orange]List of players: \n");
                 for (Player p : Vars.playerGroup.all()) {
                     if(p.isAdmin) {
-                        builder.append("[scarlet]<ADMIN>[] ");
+                        builder.append("[accent]");
                     } else{
                         builder.append("[lightgray]");
                     }
@@ -410,17 +323,27 @@ public class ioMain extends Plugin {
                 player.sendMessage(builder.toString());
             });
 
-            handler.<Player>register("rainbow", "[regular+] Give your username a rainbow animation", (args, player) -> {
-                if (getRank(player) >= 2) {
-                    TempPlayerData tdata = tempPlayerDatas.get(player.uuid);
+            handler.<Player>register("rainbow", "[regular+]Give your username a rainbow animation", (args, player) -> {
+                PlayerData pd = getData(player.uuid);
+                if (pd != null && pd.rank > 2) {
+                    TempPlayerData tdata = playerDataGroup.get(player.uuid);
                     if (tdata == null) return; // shouldn't happen, ever
-                    if (tdata.doRainbow) {
-                        player.sendMessage("[sky]Rainbow effect toggled off.");
-                        tdata.doRainbow = false;
-                    } else {
-                        player.sendMessage("[sky]Rainbow effect toggled on.");
-                        tdata.doRainbow = true;
-                    }
+
+                    player.sendMessage("[sky]Rainbow effect toggled.");
+                    tdata.doRainbow = !tdata.doRainbow;
+                } else {
+                    player.sendMessage(noPermissionMessage);
+                }
+            });
+
+            handler.<Player>register("trail", "[regular+]Give your username an in-world trail animation.", (args, player) -> {
+                PlayerData pd = getData(player.uuid);
+                if (pd != null && pd.rank > 2) {
+                    TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                    if (tdata == null) return; // shouldn't happen, ever
+
+                    player.sendMessage("[sky]Trail effect toggled.");
+                    tdata.doTrail = !tdata.doTrail;
                 } else {
                     player.sendMessage(noPermissionMessage);
                 }
@@ -428,31 +351,32 @@ public class ioMain extends Plugin {
 
             handler.<Player>register("draugpet", "[active+] Spawn a draug mining drone for your team (disabled on pvp)", (args, player) -> {
                 if(!state.rules.pvp || player.isAdmin) {
-                    int rank = getRank(player);
-                    if (rank >= 1) {
-                        TempPlayerData tdata = tempPlayerDatas.get(player.uuid);
-                        if (tdata == null) return; // should never happen
-                        if (tdata.draugPets.size < rank || player.isAdmin) {
+                    PlayerData pd = getData(player.uuid);
+                    if (pd != null && pd.rank >= 1) {
+                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                        if (tdata == null) return;
+                        if (tdata.draugPets.size < pd.rank || player.isAdmin) {
                             BaseUnit baseUnit = UnitTypes.draug.create(player.getTeam());
                             baseUnit.set(player.getX(), player.getY());
                             baseUnit.add();
                             tdata.draugPets.add(baseUnit);
-                            Call.sendMessage(player.name + "[#b177fc] spawned in a draug pet! " + tdata.draugPets.size + "/" + rank + " spawned.");
+                            Call.sendMessage(player.name + "[#b177fc] spawned in a draug pet! " + tdata.draugPets.size + "/" + pd.rank + " spawned.");
                         } else {
-                            player.sendMessage("[#b177fc]You already have " + rank + " draug pets active!");
+                            player.sendMessage("[#b177fc]You already have " + pd.rank + " draug pets active!");
                         }
                     } else {
                         player.sendMessage(noPermissionMessage);
                     }
                 } else {
-                    player.sendMessage("[scarlet] This command is disabled on pvp.");
+                    player.sendMessage("[scarlet]This command is disabled on pvp.");
                 }
             });
 
             handler.<Player>register("lichpet", "[donator+] Spawn yourself a lich defense pet (max. 1 per game, lasts 2 minutes, disabled on pvp)", (args, player) -> {
                 if(!state.rules.pvp || player.isAdmin) {
-                    if (getRank(player) >= 3) {
-                        TempPlayerData tdata = tempPlayerDatas.get(player.uuid);
+                    PlayerData pd = getData(player.uuid);
+                    if (pd != null && pd.rank >= 3) {
+                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
                         if (tdata == null) return;
                         if (!tdata.spawnedLichPet || player.isAdmin) {
                             tdata.spawnedLichPet = true;
@@ -469,14 +393,15 @@ public class ioMain extends Plugin {
                         player.sendMessage(noPermissionMessage);
                     }
                 } else {
-                    player.sendMessage("[scarlet] This command is disabled on pvp.");
+                    player.sendMessage("[scarlet]This command is disabled on pvp.");
                 }
             });
 
             handler.<Player>register("powergen", "[donator+] Spawn yourself a power generator.", (args, player) -> {
                 if(!state.rules.pvp || player.isAdmin) {
-                    if (getRank(player) >= 3) {
-                        TempPlayerData tdata = tempPlayerDatas.get(player.uuid);
+                    PlayerData pd = getData(player.uuid);
+                    if (pd != null && pd.rank >= 3) {
+                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
                         if (tdata == null) return;
                         if (!tdata.spawnedPowerGen || player.isAdmin) {
                             tdata.spawnedPowerGen = true;
@@ -485,17 +410,16 @@ public class ioMain extends Plugin {
                             float y = player.getY();
 
                             Tile targetTile = world.tileWorld(x, y);
-                            if (targetTile == null) {
-                                player.sendMessage("[scarlet]Invalid tile");
-                                return;
-                            }
 
-                            if (!Build.validPlace(player.getTeam(), targetTile.x, targetTile.y, Blocks.rtgGenerator, 0)) {
-                                player.sendMessage("[scarlet]Cannot place a power generator here");
+                            if (targetTile == null || !Build.validPlace(player.getTeam(), targetTile.x, targetTile.y, Blocks.rtgGenerator, 0)) {
+                                Call.onInfoToast(player.con, "[scarlet]Cannot place a power generator here.",5f);
                                 return;
                             }
 
                             targetTile.setNet(Blocks.rtgGenerator, player.getTeam(), 0);
+                            Call.onLabel("[accent]" + escapeCharacters(escapeColorCodes(player.name)) + "'s[] generator", 60f, targetTile.worldx(), targetTile.worldy());
+                            Call.onEffectReliable(Fx.explosion, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
+                            Call.onEffectReliable(Fx.placeBlock, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
                             Call.sendMessage(player.name + "[#ff82d1] spawned in a power generator!");
 
                             // ok seriously why is this necessary
@@ -519,78 +443,90 @@ public class ioMain extends Plugin {
                         player.sendMessage(noPermissionMessage);
                     }
                 } else {
-                    player.sendMessage("[scarlet] This command is disabled on pvp.");
+                    player.sendMessage("[scarlet]This command is disabled on pvp.");
                 }
             });
 
-            handler.<Player>register("spawn", "[active+] Skip the core spawning stage and spawn instantly.", (args, player) -> {
+            handler.<Player>register("waterburst", "[donator+] Extinguish all ongoing fires (3 minute cooldown)", (args, player) -> {
                 if(!state.rules.pvp || player.isAdmin) {
-                    if (getRank(player) >= 1) {
+                    PlayerData pd = getData(player.uuid);
+                    if (pd != null && pd.rank >= 3) {
+                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                        if (tdata == null) return;
+                        if (tdata.burstCD <= 0 || player.isAdmin) {
+                            tdata.burstCD = 3;
+                            float x = player.getX();
+                            float y = player.getY();
+
+                            Tile targetTile = world.tileWorld(x, y);
+                            Call.onEffectReliable(Fx.healWave, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
+
+                            IntStream.range(0, 90).forEach(i -> {
+                                Call.onEffectReliable(Fx.shootLiquid, targetTile.worldx(), targetTile.worldy(), i * 4, arc.graphics.Color.valueOf("65bdf7"));
+                            });
+
+                            for(Entity fire : fireGroup){
+                                Call.onRemoveFire(fire.getID());
+                            }
+                            Call.sendMessage(player.name + "[#3279a8] extinguished all fires!");
+                        } else {
+                            player.sendMessage("[#3279a8]This command is on a cooldown. " + tdata.burstCD + "m remaining.");
+                        }
+                    } else {
+                        player.sendMessage(noPermissionMessage);
+                    }
+                } else {
+                    player.sendMessage("[scarlet]This command is disabled on pvp.");
+                }
+            });
+
+            handler.<Player>register("spawn", "[active+]Skip the core spawning stage and spawn instantly.", (args, player) -> {
+                if(!state.rules.pvp || player.isAdmin) {
+                    PlayerData pd = getData(player.uuid);
+                    if (pd != null && pd.rank >= 1) {
                         player.onRespawn(player.getClosestCore().tile);
-                        player.sendMessage("Spawned!");
+                        player.sendMessage("[accent]Spawned!");
                     } else {
                         player.sendMessage(noPermissionMessage);
                     }
                 } else {
-                    player.sendMessage("[scarlet] This command is disabled on pvp.");
+                    player.sendMessage("[scarlet]This command is disabled on pvp.");
                 }
             });
 
-            handler.<Player>register("buildpower", "[donator+] Increase your build power 5x, making you build almost instantly.", (args, player) -> {
-                if(!state.rules.pvp || player.isAdmin) {
-                    if (getRank(player) >= 3) {
-                        player.mech.buildPower = 5f;
-                        player.sendMessage("Buildpower applied!");
-                    } else {
-                        player.sendMessage(noPermissionMessage);
-                    }
-                } else {
-                    player.sendMessage("[scarlet] This command is disabled on pvp.");
-                }
-            });
-
-            handler.<Player>register("stats", "<playerid/playername>", "Get information (playtime, buildings built, etc.) of the specified user. [get playerid from /players]", (args, player) -> {
+            handler.<Player>register("stats", "<player>", "Display stats of the specified player.", (args, player) -> {
                 if(args[0].length() > 0) {
                     Player p = findPlayer(args[0]);
                     if(p != null){
-                        if(database.containsKey(p.uuid)) {
+                        PlayerData pd = getData(p.uuid);
+                        if (pd != null) {
                             Call.onInfoMessage(player.con, formatMessage(p, statMessage));
-                        } else {
-                            player.sendMessage("[scarlet]Error: " + p.name + "'s playtime is lower than 60 seconds");
                         }
                     } else {
-                        player.sendMessage("[scarlet]Error: player not found or offline");
+                        player.sendMessage("[scarlet]Error: Player not found or offline");
                     }
                 } else {
                     Call.onInfoMessage(player.con, formatMessage(player, statMessage));
                 }
             });
 
-            handler.<Player>register("info", "Get information (playtime, buildings built, etc.) about yourself.", (args, player) -> { // self info
-                if (database.containsKey(player.uuid)) {
+            handler.<Player>register("info", "Display your stats.", (args, player) -> { // self info
+                PlayerData pd = getData(player.uuid);
+                if (pd != null) {
                     Call.onInfoMessage(player.con, formatMessage(player, statMessage));
                 }
             });
 
-            handler.<Player>register("verify", "<playerid/playername>", "<mod+> Verify the specified player and allow them to build.", (args, player) -> {
-                if(args[0].length() > 0) {
-                    if (getRank(player) >= 4) { // 4 = moderator
-                        Player p = findPlayer(args[0]);
-                        if (p != null) {
-                            if (verifiedIPs.containsKey(p.uuid)) {
-                                verifiedIPs.put(p.uuid, true);
-                                player.sendMessage("[sky]Verified " + p.name + " successfully.");
-                            } else {
-                                player.sendMessage("[scarlet]Error: uuid not found in ip database");
-                            }
-                        } else {
-                            player.sendMessage("[scarlet]Error: player not found or offline");
-                        }
-                    } else {
-                        Call.onInfoMessage(noPermissionMessage);
-                    }
+            handler.<Player>register("label", "<duration> <text...>", "[admin only] Create an in-world label at the current position.", (args, player) -> {
+                if(args[0].length() <= 0 || args[1].length() <= 0) player.sendMessage("[scarlet]Invalid arguments provided.");
+                if (player.isAdmin) {
+                    float x = player.getX();
+                    float y = player.getY();
+
+                    Tile targetTile = world.tileWorld(x, y);
+                    Call.onLabel(args[1], Float.parseFloat(args[0]), targetTile.worldx(), targetTile.worldy());
                 } else {
-                    Call.onInfoMessage(player.con, formatMessage(player, statMessage));
+                    player.sendMessage(noPermissionMessage);
                 }
             });
 
@@ -610,15 +546,6 @@ public class ioMain extends Plugin {
             return null;
         }
         return dtc.get();
-    }
-
-    public Role getRole(String id){
-        Optional<Role> r1 = api.getRoleById(id);
-        if (!r1.isPresent()) {
-            Log.err("[ERR!] discordplugin: adminrole not found! " + id);
-            return null;
-        }
-        return r1.get();
     }
 
 }

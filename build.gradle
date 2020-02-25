@@ -11,22 +11,22 @@ repositories{
 }
 
 ext{
-    //the build number that this plugin is made for
-    mindustryVersion = 'v104' // v100 doesn't seem to exist on gitpack, use this for now
+    mindustryVersion = 'v104.5'
     arcVersion = 'v104'
 }
 
 dependencies{
 
     compileOnly "com.github.Anuken.Arc:arc-core:$arcVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:server:$mindustryVersion"
+    compileOnly "com.github.fuzzbuck.Mindustry:core:$mindustryVersion"
+    compileOnly "com.github.fuzzbuck.Mindustry:server:$mindustryVersion"
 
     compile "org.glassfish.jersey.core:jersey-client:2.25.1"
-
+    compile "redis.clients:jedis:3.2.0"
     compile group: 'org.json', name: 'json', version: '20190722'
-    //javacord
+
     implementation 'org.javacord:javacord:3.0.4'
+    implementation 'com.google.code.gson:gson:2.8.6'
 }
 
 jar{
