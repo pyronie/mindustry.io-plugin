@@ -1,19 +1,17 @@
 {
-  "token" : "your token from discord",
-  "in-game":
-    {
-      "dchannel_id" : "id of the channel where /d messages will be posted",
-      "channel_id": "id of the channel where /gr messages will be posted",
-      "role_id": "id of the admin role",
-      "live_chat_channel_id" : "id of the channel where all (in-game) messages will be posted"
-    },
-  "discord": {
-    "closeServer_role_id": "id of the role which has the permission to close the server",
-    "gameOver_role_id": "id of the role which has the 'gameOver' permission ",
-    "changeMap_role_id": "id of the role which has the 'changeMap' permission",
+  "token" : "DISCORD_TOKEN",
+  "prefix": "!",
+  "server_name": "Server name goes here",
 
-    "serverdown_channel_id": "id of the channel where the bot needs to post the info/ping message",
-    "serverdown_role_id": "id of the role which needs to know/be pinged if the server is down",
-    "serverdown_name" : "name/url of server (if this is blank the bot won't specify which server is down"
-  }
+  "mapSubmissions_id": "660823042804678678",
+  "warnings_chat_channel_id": "676851314310774814",
+  "exit_roleid": "623931274020651101",
+  "administrator_roleid": "624275082482679808",
+  "moderator_roleid": "624959361789329410",
+  "role_id": "624959361789329410",
+  "live_chat_channel_id" : "",
+
+  "donator_roleid": "636968410441318430",
+  "activeplayer_roleid": "627985513600516109",
+  "mvp_roleid": "674778262857187347"
 }
