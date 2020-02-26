@@ -24,8 +24,7 @@ public class Utils {
     // wheter ip verification is in place (detect vpns, disallow their build rights)
     static Boolean verification = true;
 
-    static String promotionMessage =  "mindustry[orange]<[white].io[orange]>[white]\n" +
-            "\n" +
+    static String promotionMessage =
             "[sky]%player%, you have been promoted to [sky]<active>[]!\n" +
             "[#4287f5]You reached a playtime of - %playtime% minutes! That's 10+ hours!\n" +
             "[#f54263]You played a total of %games% games!\n" +
