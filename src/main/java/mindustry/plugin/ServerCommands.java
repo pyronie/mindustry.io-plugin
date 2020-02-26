@@ -7,6 +7,9 @@ import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
+import mindustry.entities.Damage;
+import mindustry.game.Teams;
+import mindustry.graphics.Pal;
 import mindustry.net.Administration;
 import mindustry.plugin.discordcommands.Command;
 import mindustry.plugin.discordcommands.Context;
@@ -219,7 +222,7 @@ public class ServerCommands {
 
             handler.registerCommand(new RoleRestrictedCommand("alert") {
                 {
-                    help = "<playerid|ip|name> <message> Alerts a player(s) using on-screen messages.";
+                    help = "<playerid|ip|name|teamid> <message> Alerts a player(s) using on-screen messages.";
                     role = banRole;
                 }
                 public void run(Context ctx) {
@@ -229,6 +232,15 @@ public class ServerCommands {
                     if(target.equals("all")) {
                         for (Player p : playerGroup.all()) {
                             Call.onInfoMessage(p.con, ctx.message.split(" ", 2)[1]);
+                        }
+                        eb.setTitle("Command executed");
+                        eb.setDescription("Alert was sent to all players.");
+                        ctx.channel.sendMessage(eb);
+                    } else if(target.matches("[0-9]+") && target.length()==1){
+                        for(Player p : playerGroup.all()){
+                            if(p.getTeam().id== Byte.parseByte(target)){
+                                Call.onInfoMessage(p.con, ctx.message.split(" ", 2)[1]);
+                            }
                         }
                         eb.setTitle("Command executed");
                         eb.setDescription("Alert was sent to all players.");
@@ -567,7 +579,7 @@ public class ServerCommands {
 
             handler.registerCommand(new RoleRestrictedCommand("mech") {
                 {
-                    help = "<mechname> <playerid|ip|all|name> Change the provided player into a specific mech.";
+                    help = "<mechname> <playerid|ip|all|name|teamid> Change the provided player into a specific mech.";
                     role = banRole;
                 }
                 public void run(Context ctx) {
@@ -591,6 +603,17 @@ public class ServerCommands {
                             ctx.channel.sendMessage(eb);
                             return;
                         }
+                        else if(target.matches("[0-9]+") && target.length()==1){
+                        for(Player p : playerGroup.all()){
+                            if(p.getTeam().id== Byte.parseByte(target)){
+                                p.mech = desiredMech;
+                            }
+                        }
+                            eb.setTitle("Command executed successfully.");
+                            eb.setDescription("Changed everyone's mech into " + desiredMech.name);
+                            ctx.channel.sendMessage(eb);
+                        return;
+                    }
                         Player player = findPlayer(target);
                         if(player!=null){
                             player.mech = desiredMech;
@@ -604,7 +627,7 @@ public class ServerCommands {
 
             handler.registerCommand(new RoleRestrictedCommand("changeteam") {
                 {
-                    help = "<playerid|ip|all|name> <team> Change the provided player's team into the provided one.";
+                    help = "<playerid|ip|all|name|teamid> <team> Change the provided player's team into the provided one.";
                     role = banRole;
                 }
                 public void run(Context ctx) {
@@ -629,6 +652,17 @@ public class ServerCommands {
                             ctx.channel.sendMessage(eb);
                             return;
                         }
+                        else if(target.matches("[0-9]+") && target.length()==1){
+                        for(Player p : playerGroup.all()){
+                            if(p.getTeam().id== Byte.parseByte(target)){
+                                p.setTeam(desiredTeam);
+                            }
+                        }
+                        eb.setTitle("Command executed successfully.");
+                            eb.setDescription("Changed everyone's team to " + desiredTeam.name);
+                            ctx.channel.sendMessage(eb);
+                            return;
+                    }
                         Player player = findPlayer(target);
                         if(player!=null){
                             player.setTeam(desiredTeam);
@@ -660,6 +694,17 @@ public class ServerCommands {
                             ctx.channel.sendMessage(eb);
                             return;
                         }
+                        else if(target.matches("[0-9]+") && target.length()==1){
+                        for(Player p : playerGroup.all()){
+                            if(p.getTeam().id == Byte.parseByte(target)){
+                                p.setTeam(Team.get(targetTeam));
+                            }
+                        }
+                        eb.setTitle("Command executed successfully.");
+                            eb.setDescription("Changed everyone's team to " + targetTeam);
+                            ctx.channel.sendMessage(eb);
+                            return;
+                    }
                         Player player = findPlayer(target);
                         if(player!=null){
                             player.setTeam(Team.get(targetTeam));
@@ -801,6 +846,32 @@ public class ServerCommands {
                         eb.setDescription("Invalid arguments provided.");
                         eb.setColor(Pals.error);
                         ctx.channel.sendMessage(eb);
+                    }
+                }
+            });
+            handler.registerCommand(new RoleRestrictedCommand("boom") {
+                {
+                    help = "<playerid|ip|name> <flammability> <explosiveness> <power> <radius> Explodes with given specifications at given players position";
+                    role = banRole;
+                } // Pal.darkFlame
+                public void run(Context ctx) {
+                    
+                    String target = ctx.args[1];
+                    int flammability = Integer.parseInt(ctx.args[2]);
+                    int explosiveness = Integer.parseInt(ctx.args[3]);
+                    int power = Integer.parseInt(ctx.args[4]);
+                    int radius = Integer.parseInt(ctx.args[5]);
+                    if(target.length() > 0  && flammability > 0 && flammability< 1000 && explosiveness > 0 && explosiveness< 1000 && power > 0 && power< 1000 && radius > 0 && radius< 1000) {
+                        
+
+                        EmbedBuilder eb = new EmbedBuilder();
+                        Player player = findPlayer(target);
+                        if(player!=null){
+                            Damage.dynamicExplosion(player.getX(),player.getY(),flammability,explosiveness,power,radius,Pal.darkFlame);
+                            eb.setTitle("Command executed successfully.");
+                            eb.setDescription("Exploded with: " + flammability + " Flammability,  " + explosiveness+" Explosiveness, "+power+" Power, and with a Radius of "+ radius + " near " + Utils.escapeCharacters(player.name) + ".");
+                            ctx.channel.sendMessage(eb);
+                        }
                     }
                 }
             });
