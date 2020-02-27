@@ -919,7 +919,7 @@ public class ServerCommands {
                         if(player!=null){
                             Damage.dynamicExplosion(player.getX(),player.getY(),flammability,explosiveness,power,radius,Pal.darkFlame);
                             eb.setTitle("Command executed successfully.");
-                            eb.setDescription("Exploded with: " + flammability + " Flammability,  " + explosiveness+" Explosiveness, "+power+" Power, and with a Radius of "+ radius + " near " + Utils.escapeCharacters(player.name) + ".");
+                            eb.setDescription("Exploded with: " + flammability + " Flammability,  " + explosiveness+" Explosiveness, "+power+" Power, and with a Radius of "+ radius + " near " + escapeCharacters(player.name) + ".");
                             ctx.channel.sendMessage(eb);
                         }
                     }
