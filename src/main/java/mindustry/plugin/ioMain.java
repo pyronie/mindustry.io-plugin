@@ -6,6 +6,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
+import arc.math.Mathf;
+import arc.struct.Array;
 import com.google.gson.Gson;
 import arc.util.Timer;
 import arc.util.Timer.Task;
@@ -515,6 +517,23 @@ public class ioMain extends Plugin {
                 if (pd != null) {
                     Call.onInfoMessage(player.con, formatMessage(player, statMessage));
                 }
+            });
+
+            handler.<Player>register("maps","<page>", "Display all maps in the playlist.", (args, player) -> { // self info
+                int limit = 5;
+                int page = Integer.parseInt(args[0]);
+                StringBuilder msg = new StringBuilder();
+                Array<mindustry.maps.Map> maps = Vars.maps.customMaps();
+                msg.append("[accent]showing []").append(limit).append("[accent] entries from page []").append(page).append("/").append(Mathf.floor(maps.size / 5f)).append("\n");
+                page = (page == 1 ? 0 : page);
+
+                for (int i = 0; i < maps.size; i++) {
+                    mindustry.maps.Map map = maps.get(i);
+                    if(i > page * limit && i <= page * limit + limit){
+                        msg.append("· [accent]").append(Utils.escapeColorCodes(map.name())).append("\n");
+                    }
+                }
+                player.sendMessage(msg.toString());
             });
 
             handler.<Player>register("label", "<duration> <text...>", "[admin only] Create an in-world label at the current position.", (args, player) -> {
