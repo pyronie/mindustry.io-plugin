@@ -46,6 +46,9 @@ public class Utils {
     static HashMap<Integer, Rank> rankNames = new HashMap<>();
     static HashMap<String, Integer> rankRoles = new HashMap<>();
     static Array<String> bannedNames = new Array<>();
+    static Array<String> onScreenMessages = new Array<>();
+    static String eventIp = "";
+    static int eventPort = 6567;
 
     public static class Rank{
         public String tag = "";
@@ -90,7 +93,7 @@ public class Utils {
         public static Array<Block> bannedBlocks = new Array<>();
         public static int playtime = 60 * 10;
         public static int buildingsBuilt = 1000 * 10;
-        public static int gamesPlayed = 1 * 10;
+        public static int gamesPlayed = 10;
     }
 
     public static String escapeCharacters(String string){
