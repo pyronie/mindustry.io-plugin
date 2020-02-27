@@ -325,9 +325,9 @@ public class ioMain extends Plugin {
                 player.sendMessage(builder.toString());
             });
 
-            handler.<Player>register("rainbow", "[regular+]Give your username a rainbow animation", (args, player) -> {
+            handler.<Player>register("rainbow", "[regular+] Give your username a rainbow animation", (args, player) -> {
                 PlayerData pd = getData(player.uuid);
-                if (pd != null && pd.rank > 2) {
+                if (pd != null && pd.rank >= 2) {
                     TempPlayerData tdata = playerDataGroup.get(player.uuid);
                     if (tdata == null) return; // shouldn't happen, ever
 
@@ -338,9 +338,9 @@ public class ioMain extends Plugin {
                 }
             });
 
-            handler.<Player>register("trail", "[regular+]Give your username an in-world trail animation.", (args, player) -> {
+            handler.<Player>register("trail", "[regular+] Give your username an in-world trail animation.", (args, player) -> {
                 PlayerData pd = getData(player.uuid);
-                if (pd != null && pd.rank > 2) {
+                if (pd != null && pd.rank >= 2) {
                     TempPlayerData tdata = playerDataGroup.get(player.uuid);
                     if (tdata == null) return; // shouldn't happen, ever
 
