@@ -189,6 +189,32 @@ public class ServerCommands {
                 }
             });
 
+            handler.registerCommand(new RoleRestrictedCommand("event") {
+                {
+                    help = "<ip/none> Changes the event command ip.";
+                    role = banRole;
+                }
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+
+                    if (ctx.message.length() <= 0) {
+                        eb.setTitle("Command terminated");
+                        eb.setColor(Pals.error);
+                        eb.setDescription("No message given");
+                        ctx.channel.sendMessage(eb);
+                        return;
+                    }
+
+                    String[] m = ctx.message.split(":");
+                    eventIp = m[0];
+                    eventPort = Integer.parseInt(m[1]);
+
+                    eb.setTitle("Command executed");
+                    eb.setDescription("Event ip was changed to " + ctx.message);
+                    ctx.channel.sendMessage(eb);
+                }
+            });
+
             handler.registerCommand(new RoleRestrictedCommand("alert") {
                 {
                     help = "<playerid|ip|name|teamid> <message> Alerts a player(s) using on-screen messages.";
