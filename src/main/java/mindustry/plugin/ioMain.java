@@ -520,7 +520,7 @@ public class ioMain extends Plugin {
             });
 
             handler.<Player>register("maps","<page>", "Display all maps in the playlist.", (args, player) -> { // self info
-                int limit = 5;
+                int limit = 10;
                 int page = Integer.parseInt(args[0]);
                 StringBuilder msg = new StringBuilder();
                 Array<mindustry.maps.Map> maps = Vars.maps.customMaps();
