@@ -757,6 +757,61 @@ public class ServerCommands {
 
             });
 
+            handler.registerCommand(new RoleRestrictedCommand("screenmessage") {
+                {
+                    help = "<list/remove/add> <message> List, remove or add on-screen messages.";
+                    role = banRole;
+                }
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+                    String target = ctx.args[1].toLowerCase();
+                    String message = ctx.message.split(" ", 2)[1];
+
+                    switch (target) {
+                        case "list":
+                            eb.setTitle("All on-screen messages:");
+                            for (String msg : onScreenMessages) {
+                                eb.addField(String.valueOf(onScreenMessages.indexOf(msg)), msg);
+                            }
+                            ctx.channel.sendMessage(eb);
+                            break;
+
+                        case "remove":
+                            if (onScreenMessages.get(Integer.parseInt(message.trim())) != null) {
+                                onScreenMessages.remove(Integer.parseInt(message.trim()));
+                                eb.setTitle("Command executed");
+                                eb.setDescription("Removed provided on-screen message.");
+                            } else {
+                                eb.setTitle("Command terminated");
+                                eb.setDescription("That on-screen message does not exist.");
+                                eb.setColor(Pals.error);
+                            }
+                            ctx.channel.sendMessage(eb);
+                            break;
+
+                        case "add":
+                            if (message.length() > 0) {
+                                onScreenMessages.add(message);
+                                eb.setTitle("Command executed");
+                                eb.setDescription("Removed on-screen message `" + message + "`.");
+                            } else {
+                                eb.setTitle("Command terminated");
+                                eb.setDescription("On-screen messages must be longer than 0 characters.");
+                                eb.setColor(Pals.error);
+                            }
+                            ctx.channel.sendMessage(eb);
+                            break;
+
+                        default:
+                            eb.setTitle("Command terminated");
+                            eb.setDescription("Invalid arguments provided.");
+                            eb.setColor(Pals.error);
+                            ctx.channel.sendMessage(eb);
+                            break;
+                    }
+                }
+            });
+
             handler.registerCommand(new RoleRestrictedCommand("statmessage"){
                 {
                     help = "<newmessage> Change / set a stat message";
