@@ -8,14 +8,15 @@ import java.util.stream.IntStream;
 
 import arc.math.Mathf;
 import arc.struct.Array;
-import arc.util.Strings;
-import com.google.gson.Gson;
+import arc.util.*;
 import arc.util.Timer;
+import com.google.gson.Gson;
 import arc.util.Timer.Task;
 import mindustry.content.*;
 import mindustry.core.GameState;
 import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
+import mindustry.game.Team;
 import mindustry.graphics.Pal;
 import mindustry.net.Administration;
 import mindustry.world.Build;
@@ -30,8 +31,6 @@ import org.json.JSONTokener;
 
 import arc.Core;
 import arc.Events;
-import arc.util.CommandHandler;
-import arc.util.Log;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
@@ -547,6 +546,52 @@ public class ioMain extends Plugin {
                     result.append("[white] - [accent]").append(escapeColorCodes(map.name())).append("\n");
                 }
                 player.sendMessage(result.toString());
+            });
+
+            Timekeeper vtime = new Timekeeper(voteCooldown);
+
+            VoteSession[] currentlyKicking = {null};
+
+            handler.<Player>register("nominate","[map...]", "[regular+] Vote to change to a specific map.", (args, player) -> {
+                if(!state.rules.pvp || player.isAdmin) {
+                    PlayerData pd = getData(player.uuid);
+                    if (pd != null && pd.rank >= 2) {
+                        mindustry.maps.Map found = getMapBySelector(args[0]);
+
+                        if(found != null){
+                            if(!vtime.get()){
+                                player.sendMessage("[scarlet]You must wait " + voteCooldown/60 + " minutes between nominations.");
+                                return;
+                            }
+
+                            VoteSession session = new VoteSession(currentlyKicking, found);
+
+                            session.vote(player, 1);
+                            vtime.reset();
+                            currentlyKicking[0] = session;
+                        }else{
+                            player.sendMessage("[scarlet]No map[orange]'" + args[0] + "'[scarlet] found.");
+                        }
+                    } else {
+                        player.sendMessage(noPermissionMessage);
+                    }
+                } else {
+                    player.sendMessage("[scarlet]This command is disabled on pvp.");
+                }
+            });
+
+            handler.<Player>register("rtv", "Vote to change the map.", (args, player) -> { // self info
+                if(currentlyKicking[0] == null){
+                    player.sendMessage("[scarlet]No map is being voted on.");
+                }else{
+                    //hosts can vote all they want
+                    if(player.uuid != null && (currentlyKicking[0].voted.contains(player.uuid) || currentlyKicking[0].voted.contains(netServer.admins.getInfo(player.uuid).lastIP))){
+                        player.sendMessage("[scarlet]You've already voted. Sit down.");
+                        return;
+                    }
+
+                    currentlyKicking[0].vote(player, 1);
+                }
             });
 
             handler.<Player>register("label", "<duration> <text...>", "[admin only] Create an in-world label at the current position.", (args, player) -> {
