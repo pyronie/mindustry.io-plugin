@@ -38,17 +38,27 @@ public class Utils {
             "http://discord.mindustry.io\n" +
             "[#7a7a7a]request manual verification in #verification-requests";
 
-    static HashMap<Integer, String> rankNames = new HashMap<>();
+    static HashMap<Integer, Rank> rankNames = new HashMap<>();
     static HashMap<String, Integer> rankRoles = new HashMap<>();
     static Array<String> bannedNames = new Array<>();
 
+    public static class Rank{
+        public String tag = "";
+        public String name = "";
+
+        Rank(String t, String n){
+            this.tag = t;
+            this.name = n;
+        }
+    }
+
     public static void init(){
-        rankNames.put(0, "[#7d7d7d]<none>[]");
-        rankNames.put(1, "[accent]<[white]\uE810[accent]>[]");
-        rankNames.put(2, "[accent]<[white]\uE809[accent]>[]");
-        rankNames.put(3, "[accent]<[white]\uE84E[accent]>[]");
-        rankNames.put(4, "[accent]<[white]\uE84F[accent]>[]");
-        rankNames.put(5, "[accent]<[white]\uE828[accent]>[]");
+        rankNames.put(0, new Rank("[#7d7d7d]<none>[]", "none"));
+        rankNames.put(1, new Rank("[accent]<[white]\uE810[accent]>[]", "active"));
+        rankNames.put(2, new Rank("[accent]<[white]\uE809[accent]>[]", "regular"));
+        rankNames.put(3, new Rank("[accent]<[white]\uE84E[accent]>[]", "donator"));
+        rankNames.put(4, new Rank("[accent]<[white]\uE84F[accent]>[]", "moderator"));
+        rankNames.put(5, new Rank("[accent]<[white]\uE828[accent]>[]", "admin"));
 
         rankRoles.put("627985513600516109", 1);
         rankRoles.put("636968410441318430", 2);

@@ -178,7 +178,7 @@ public class ComCommands {
                             setData(player.uuid, pd);
                         }
                         eb.setTitle("Command executed successfully");
-                        eb.setDescription("Promoted " + escapeCharacters(player.name) + " to " + escapeColorCodes(rankNames.get(rank)) + ".");
+                        eb.setDescription("Promoted " + escapeCharacters(player.name) + " to " + escapeColorCodes(rankNames.get(rank).name) + ".");
                         ctx.channel.sendMessage(eb);
                         player.con.kick("Your rank was modified, please rejoin.", 0);
                     } else {
