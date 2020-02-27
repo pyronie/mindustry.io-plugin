@@ -121,7 +121,7 @@ public class ioMain extends Plugin {
             int currentInc = 0;
             for(String msg : onScreenMessages){
                 Call.onInfoPopup(msg, duration, 20, 50, 20, start + currentInc, 0);
-                currentInc =+ increment;
+                currentInc = currentInc + increment;
             }
         }, 0, 10);
 

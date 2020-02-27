@@ -205,6 +205,14 @@ public class ServerCommands {
                         return;
                     }
 
+                    if(ctx.message.toLowerCase().contains("none")){
+                        eventIp = "";
+                        eb.setTitle("Command executed");
+                        eb.setDescription("Event command is now disabled.");
+                        ctx.channel.sendMessage(eb);
+                        return;
+                    }
+
                     String[] m = ctx.message.split(":");
                     eventIp = m[0];
                     eventPort = Integer.parseInt(m[1]);
@@ -791,7 +799,10 @@ public class ServerCommands {
                 public void run(Context ctx) {
                     EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1].toLowerCase();
-                    String message = ctx.message.split(" ", 2)[1];
+                    String message = "";
+                    if(!target.equals("list")) {
+                        message = ctx.message.split(" ", 2)[1];
+                    }
 
                     switch (target) {
                         case "list":
@@ -819,7 +830,7 @@ public class ServerCommands {
                             if (message.length() > 0) {
                                 onScreenMessages.add(message);
                                 eb.setTitle("Command executed");
-                                eb.setDescription("Removed on-screen message `" + message + "`.");
+                                eb.setDescription("Added on-screen message `" + message + "`.");
                             } else {
                                 eb.setTitle("Command terminated");
                                 eb.setDescription("On-screen messages must be longer than 0 characters.");
