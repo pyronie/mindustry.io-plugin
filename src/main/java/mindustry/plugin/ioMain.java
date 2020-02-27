@@ -8,6 +8,7 @@ import java.util.stream.IntStream;
 
 import arc.math.Mathf;
 import arc.struct.Array;
+import arc.util.Strings;
 import com.google.gson.Gson;
 import arc.util.Timer;
 import arc.util.Timer.Task;
@@ -291,6 +292,9 @@ public class ioMain extends Plugin {
 
     }
 
+    //cooldown between votes
+    int voteCooldown = 120 * 1;
+
     //register commands that player can invoke in-game
     @Override
     public void registerClientCommands(CommandHandler handler){
@@ -519,21 +523,30 @@ public class ioMain extends Plugin {
                 }
             });
 
-            handler.<Player>register("maps","<page>", "Display all maps in the playlist.", (args, player) -> { // self info
-                int limit = 10;
-                int page = Integer.parseInt(args[0]);
-                StringBuilder msg = new StringBuilder();
-                Array<mindustry.maps.Map> maps = Vars.maps.customMaps();
-                msg.append("[accent]showing []").append(limit).append("[accent] entries from page []").append(page).append("/").append(Mathf.floor(maps.size / 5f)).append("\n");
-                page = (page == 1 ? 0 : page);
-
-                for (int i = 0; i < maps.size; i++) {
-                    mindustry.maps.Map map = maps.get(i);
-                    if(i > page * limit && i <= page * limit + limit){
-                        msg.append("· [accent]").append(Utils.escapeColorCodes(map.name())).append("\n");
-                    }
+            handler.<Player>register("maps","[page]", "Display all maps in the playlist.", (args, player) -> { // self info
+                if(args.length > 0 && !Strings.canParseInt(args[0])){
+                    player.sendMessage("[scarlet]'page' must be a number.");
+                    return;
                 }
-                player.sendMessage(msg.toString());
+                int commandsPerPage = 6;
+                int page = args.length > 0 ? Strings.parseInt(args[0]) : 1;
+                int pages = Mathf.ceil((float)Vars.maps.customMaps().size / commandsPerPage);
+
+                page --;
+
+                if(page >= pages || page < 0){
+                    player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
+                    return;
+                }
+
+                StringBuilder result = new StringBuilder();
+                result.append(Strings.format("[orange]-- Maps Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
+
+                for(int i = commandsPerPage * page; i < Math.min(commandsPerPage * (page + 1), Vars.maps.customMaps().size); i++){
+                    mindustry.maps.Map map = Vars.maps.customMaps().get(i);
+                    result.append("[white] - [accent]").append(escapeColorCodes(map.name())).append("\n");
+                }
+                player.sendMessage(result.toString());
             });
 
             handler.<Player>register("label", "<duration> <text...>", "[admin only] Create an in-world label at the current position.", (args, player) -> {
