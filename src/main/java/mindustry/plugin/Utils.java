@@ -1,8 +1,11 @@
 package mindustry.plugin;
 
+import arc.Events;
 import arc.struct.Array;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
+import mindustry.game.EventType;
+import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.world.Block;
 import redis.clients.jedis.Jedis;
@@ -137,7 +140,7 @@ public class Utils {
             message = message.replaceAll("%playtime%", String.valueOf(pd.playTime));
             message = message.replaceAll("%games%", String.valueOf(pd.gamesPlayed));
             message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
-            message = message.replaceAll("%rank%", escapeColorCodes(rankNames.get(pd.rank)));
+            message = message.replaceAll("%rank%", rankNames.get(pd.rank).tag + " " + escapeColorCodes(rankNames.get(pd.rank).name));
         }
         return message;
     }
@@ -166,4 +169,5 @@ public class Utils {
             }
         }
     }
+
 }
