@@ -112,6 +112,19 @@ public class ioMain extends Plugin {
             Log.info("apiKey set successfully");
         }
 
+        // display on screen messages
+        float duration = 10f;
+        int start = 450;
+        int increment = 30;
+
+        Timer.schedule(() -> {
+            int currentInc = 0;
+            for(String msg : onScreenMessages){
+                Call.onInfoPopup(msg, duration, 20, 50, 20, start + currentInc, 0);
+                currentInc =+ increment;
+            }
+        }, 0, 10);
+
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
             Player player = event.player;
@@ -519,6 +532,14 @@ public class ioMain extends Plugin {
                 PlayerData pd = getData(player.uuid);
                 if (pd != null) {
                     Call.onInfoMessage(player.con, formatMessage(player, statMessage));
+                }
+            });
+
+            handler.<Player>register("event", "Join an ongoing event (if there is one)", (args, player) -> { // self info
+                if(eventIp.length() > 0){
+                    Call.onConnect(player.con, eventIp, eventPort);
+                } else{
+                    player.sendMessage("[accent]There is no ongoing event at this time.");
                 }
             });
 
