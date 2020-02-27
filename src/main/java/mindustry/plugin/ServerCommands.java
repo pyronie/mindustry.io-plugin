@@ -29,6 +29,7 @@ import mindustry.maps.Map;
 import mindustry.maps.Maps;
 import mindustry.io.SaveIO;
 
+import mindustry.server.ServerControl;
 import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
@@ -51,19 +52,9 @@ import static mindustry.plugin.Utils.*;
 public class ServerCommands {
 
     private JSONObject data;
-    private final Field mapsListField;
 
     public ServerCommands(JSONObject data){
         this.data = data;
-        Class<Maps> mapsClass = Maps.class;
-        Field mapsField;
-        try {
-            mapsField = mapsClass.getDeclaredField("maps");
-        } catch (NoSuchFieldException ex) {
-            throw new RuntimeException("Could not find field 'maps' of class 'mindustry.maps.Maps'");
-        }
-        mapsField.setAccessible(true);
-        this.mapsListField = mapsField;
     }
 
     public void registerCommands(DiscordCommands handler) {
@@ -91,7 +82,6 @@ public class ServerCommands {
                     role = adminRole;
                 }
 
-                @SuppressWarnings("unchecked")
                 public void run(Context ctx) {
                     EmbedBuilder eb = new EmbedBuilder();
                     if (ctx.args.length < 2) {
@@ -110,28 +100,7 @@ public class ServerCommands {
                         return;
                     }
 
-                    Array<Map> mapsList;
-                    try {
-                        mapsList = (Array<Map>)mapsListField.get(maps);
-                    } catch (IllegalAccessException ex) {
-                        throw new RuntimeException("unreachable");
-                    }
-
-                    Array<Map> tempMapsList = mapsList.removeAll(map -> !map.custom || map != found);
-
-                    try {
-                        mapsListField.set(maps, tempMapsList);
-                    } catch (IllegalAccessException ex) {
-                        throw new RuntimeException("unreachable");
-                    }
-
-                    Events.fire(new GameOverEvent(Team.crux));
-
-                    try {
-                        mapsListField.set(maps, mapsList);
-                    } catch (IllegalAccessException ex) {
-                        throw new RuntimeException("unreachable");
-                    }
+                    changeMap(found);
 
                     eb.setTitle("Command executed.");
                     eb.setDescription("Changed map to " + found.name());

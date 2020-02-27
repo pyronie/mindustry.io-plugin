@@ -7,12 +7,14 @@ import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.maps.Map;
+import mindustry.maps.Maps;
 import mindustry.world.Block;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;
 
 import java.awt.*;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 
 import static mindustry.Vars.*;
@@ -167,6 +169,41 @@ public class Utils {
             } catch(Exception e){
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static void changeMap(Map found){
+        Class<Maps> mapsClass = Maps.class;
+        Field mapsField;
+        try {
+            mapsField = mapsClass.getDeclaredField("maps");
+        } catch (NoSuchFieldException ex) {
+            throw new RuntimeException("Could not find field 'maps' of class 'mindustry.maps.Maps'");
+        }
+        mapsField.setAccessible(true);
+        Field mapsListField = mapsField;
+
+        Array<Map> mapsList;
+        try {
+            mapsList = (Array<Map>)mapsListField.get(maps);
+        } catch (IllegalAccessException ex) {
+            throw new RuntimeException("unreachable");
+        }
+
+        Array<Map> tempMapsList = mapsList.removeAll(map -> !map.custom || map != found);
+
+        try {
+            mapsListField.set(maps, tempMapsList);
+        } catch (IllegalAccessException ex) {
+            throw new RuntimeException("unreachable");
+        }
+
+        Events.fire(new EventType.GameOverEvent(Team.crux));
+
+        try {
+            mapsListField.set(maps, mapsList);
+        } catch (IllegalAccessException ex) {
+            throw new RuntimeException("unreachable");
         }
     }
 
