@@ -11,7 +11,7 @@ repositories{
 }
 
 ext{
-    mindustryVersion = 'v104.5'
+    mindustryVersion = 'v104.6'
     arcVersion = 'v104'
 }
 
