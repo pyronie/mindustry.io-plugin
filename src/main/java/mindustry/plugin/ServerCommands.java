@@ -781,6 +781,7 @@ public class ServerCommands {
                     String message = ctx.message;
                     if(message.length() > 0 && !message.equals("disable")) {
                         welcomeMessage = message;
+                        Core.settings.put("welcomeMessage", message);
                         eb.setDescription("Changed welcome message.");
                         ctx.channel.sendMessage(eb);
                     } else {
@@ -861,6 +862,7 @@ public class ServerCommands {
                     String message = ctx.message;
                     if(message.length() > 0) {
                         statMessage = message;
+                        Core.settings.put("statMessage", message);
                         eb.setDescription("Changed stat message.");
                         ctx.channel.sendMessage(eb);
                     } else {

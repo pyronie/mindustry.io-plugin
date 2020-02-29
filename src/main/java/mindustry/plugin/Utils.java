@@ -1,5 +1,6 @@
 package mindustry.plugin;
 
+import arc.Core;
 import arc.Events;
 import arc.struct.Array;
 import mindustry.content.Blocks;
@@ -82,6 +83,9 @@ public class Utils {
         activeRequirements.bannedBlocks.add(Blocks.titaniumConveyor);
         activeRequirements.bannedBlocks.add(Blocks.junction);
         activeRequirements.bannedBlocks.add(Blocks.router);
+
+        statMessage = Core.settings.getString("statMessage");
+        welcomeMessage = Core.settings.getString("welcomeMessage");
     }
 
     public static class Pals {
