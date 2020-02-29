@@ -208,6 +208,7 @@ public class Utils {
         } catch (IllegalAccessException ex) {
             throw new RuntimeException("unreachable");
         }
+        maps.reload();
     }
 
 }
