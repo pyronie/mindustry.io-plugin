@@ -264,10 +264,7 @@ public class ioMain extends Plugin {
             if (uuid == null) return;
             Player p = findPlayer(uuid);
 
-            try {
-                if (!playerGroup.all().contains(player -> player != null && player.uuid.equals(uuid)))
-                    playerDataGroup.remove(uuid);
-            } catch (Exception ignored){}
+            if(tdata.playerRef.get() == null) playerDataGroup.remove(uuid);
 
             // update pets
             for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
