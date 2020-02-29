@@ -256,12 +256,14 @@ public class ioMain extends Plugin {
 
 
     public void loop() {
-        for (Entry<String, TempPlayerData> entry : playerDataGroup.entrySet()) {
+        for (Entry<String, TempPlayerData> entry : new HashMap<>(playerDataGroup).entrySet()) {
             TempPlayerData tdata = entry.getValue();
             if (tdata == null) return;
             String uuid = entry.getKey();
             if (uuid == null) return;
             Player p = findPlayer(uuid);
+
+            if(!playerGroup.all().contains(player -> player.uuid.equals(uuid))) playerDataGroup.remove(uuid);
 
             // update pets
             for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
