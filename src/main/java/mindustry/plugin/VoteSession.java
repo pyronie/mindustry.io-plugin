@@ -20,7 +20,7 @@ public class VoteSession{
     int votes;
 
     //voting round duration in seconds
-    float voteDuration = 0.5f * 60;
+    float voteDuration = 3f * 60;
 
     public VoteSession(VoteSession[] map, Map target){
         this.target = target;
