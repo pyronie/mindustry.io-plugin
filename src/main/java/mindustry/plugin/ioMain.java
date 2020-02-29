@@ -19,6 +19,7 @@ import mindustry.entities.type.BaseUnit;
 import mindustry.game.Team;
 import mindustry.graphics.Pal;
 import mindustry.net.Administration;
+import mindustry.server.ServerControl;
 import mindustry.world.Build;
 import mindustry.world.Tile;
 import org.javacord.api.DiscordApi;
@@ -263,7 +264,7 @@ public class ioMain extends Plugin {
             if (uuid == null) return;
             Player p = findPlayer(uuid);
 
-            if(!playerGroup.all().contains(player -> player != null && player.uuid.equals(uuid))) playerDataGroup.remove(uuid);
+            if(playerGroup.size() > 0) if(!playerGroup.all().contains(player -> player != null && player.uuid.equals(uuid))) playerDataGroup.remove(uuid);
 
             // update pets
             for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
