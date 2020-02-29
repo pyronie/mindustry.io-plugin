@@ -95,9 +95,11 @@ public class MapRules {
 
         for (java.util.Map.Entry<String, TempPlayerData> entry : ioMain.playerDataGroup.entrySet()) {
             TempPlayerData tdata = entry.getValue();
-            tdata.spawnedPowerGen = false;
-            tdata.spawnedLichPet = false;
-            tdata.draugPets.clear();
+            if(tdata != null) {
+                tdata.spawnedPowerGen = false;
+                tdata.spawnedLichPet = false;
+                tdata.draugPets.clear();
+            }
         }
 
 
