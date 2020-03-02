@@ -213,11 +213,6 @@ public class ioMain extends Plugin {
                 setData(player.uuid, new PlayerData(0));
             }
 
-            if(pd != null && !pd.ips.contains(player.con.address)) {
-                pd.ips.add(player.con.address);
-                setData(player.uuid, pd);
-            }
-
             if (welcomeMessage.length() > 0) {
                 Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
             }
