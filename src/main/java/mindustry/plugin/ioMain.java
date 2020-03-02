@@ -135,8 +135,6 @@ public class ioMain extends Plugin {
                 if(verification) {
                     if (pd != null && !pd.verified) {
                         Log.info("Unverified player joined: " + player.name);
-                        Call.onInfoMessage(player.con, verificationMessage);
-                    } else if (pd != null){ // if verified, but we wanna be extra cautious and check again :)
                         String url = "http://api.vpnblocker.net/v2/json/" + player.con.address + "/" + apiKey;
                         String pjson = ClientBuilder.newClient().target(url).request().accept(MediaType.APPLICATION_JSON).get(String.class);
 
@@ -144,8 +142,6 @@ public class ioMain extends Plugin {
                         if (json.has("host-ip")) {
                             if (json.getBoolean("host-ip")) { // verification failed
                                 Log.info("IP verification failed for: " + player.name);
-                                pd.verified = false;
-                                setData(player.uuid, pd);
                                 Call.onInfoMessage(player.con, verificationMessage);
                                 if (data.has("warnings_chat_channel_id")) {
                                     TextChannel tc = getTextChannel(data.getString("warnings_chat_channel_id"));
@@ -160,7 +156,12 @@ public class ioMain extends Plugin {
                                 }
                             } else {
                                 Log.info("IP verification success for: " + player.name);
+                                pd.verified = true;
+                                setData(player.uuid, pd);
                             }
+                        } else { // site doesn't work for some reason  ?
+                            pd.verified = true;
+                            setData(player.uuid, pd);
                         }
                     }
                 }
