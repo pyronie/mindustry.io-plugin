@@ -566,6 +566,7 @@ public class ServerCommands {
                         if(target.equals("all")) {
                             for (Player p : playerGroup.all()) {
                                 p.setTeam(desiredTeam);
+                                p.spawner = getCore(p.getTeam());
                             }
                             eb.setTitle("Command executed successfully.");
                             eb.setDescription("Changed everyone's team to " + desiredTeam.name);
@@ -576,6 +577,7 @@ public class ServerCommands {
                         for(Player p : playerGroup.all()){
                             if(p.getTeam().id== Byte.parseByte(target)){
                                 p.setTeam(desiredTeam);
+                                p.spawner = getCore(p.getTeam());
                             }
                         }
                         eb.setTitle("Command executed successfully.");
@@ -586,6 +588,7 @@ public class ServerCommands {
                         Player player = findPlayer(target);
                         if(player!=null){
                             player.setTeam(desiredTeam);
+                            player.spawner = getCore(player.getTeam());
                             eb.setTitle("Command executed successfully.");
                             eb.setDescription("Changed " + escapeCharacters(player.name) + "s team to " + desiredTeam.name);
                             ctx.channel.sendMessage(eb);
@@ -608,6 +611,7 @@ public class ServerCommands {
                         if(target.equals("all")) {
                             for (Player p : playerGroup.all()) {
                                 p.setTeam(Team.get(targetTeam));
+                                p.spawner = getCore(p.getTeam());
                             }
                             eb.setTitle("Command executed successfully.");
                             eb.setDescription("Changed everyone's team to " + targetTeam);
@@ -618,6 +622,7 @@ public class ServerCommands {
                         for(Player p : playerGroup.all()){
                             if(p.getTeam().id == Byte.parseByte(target)){
                                 p.setTeam(Team.get(targetTeam));
+                                p.spawner = getCore(p.getTeam());
                             }
                         }
                         eb.setTitle("Command executed successfully.");
