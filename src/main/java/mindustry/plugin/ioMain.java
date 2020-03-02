@@ -188,23 +188,23 @@ public class ioMain extends Plugin {
                         info.tag = "";
                         break;
                     case 1:
-                        Call.sendMessage("[sky]active player " + player.name + " joined the server!");
+                        Call.sendMessage("[sky]active player " + player.name + "[] joined the server!");
                         info.tag = rankNames.get(1).tag + " ";
                         break;
                     case 2:
-                        Call.sendMessage("[#fcba03]regular player " + player.name + " joined the server!");
+                        Call.sendMessage("[#fcba03]regular player " + player.name + "[] joined the server!");
                         info.tag = rankNames.get(2).tag + " ";
                         break;
                     case 3:
-                        Call.sendMessage("[scarlet]donator " + player.name + " joined the server!");
+                        Call.sendMessage("[scarlet]donator " + player.name + "[] joined the server!");
                         info.tag = rankNames.get(3).tag + " ";
                         break;
                     case 4:
-                        Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + " joined the server!");
+                        Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + "[] joined the server!");
                         info.tag = rankNames.get(4).tag + " ";
                         break;
                     case 5:
-                        Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + " joined the server!");
+                        Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + "[] joined the server!");
                         info.tag = rankNames.get(5).tag + " ";
                         break;
                 }
