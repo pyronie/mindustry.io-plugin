@@ -38,6 +38,7 @@ import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.MessageAttachment;
 
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.entity.permission.Role;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -477,90 +478,6 @@ public class ServerCommands {
                     msg.append("```");
 
                     ctx.channel.sendMessage(msg.toString());
-                }
-            });
-
-            handler.registerCommand(new RoleRestrictedCommand("uploadmap") {
-                {
-                    help = "<.msav attachment> Upload a new map (Include a .msav file with command message)";
-                    role = banRole;
-                }
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    Array<MessageAttachment> ml = new Array<>();
-                    for (MessageAttachment ma : ctx.event.getMessageAttachments()) {
-                        if (ma.getFileName().split("\\.", 2)[1].trim().equals("msav")) {
-                            ml.add(ma);
-                        }
-                    }
-                    if (ml.size != 1) {
-                        eb.setTitle("Map upload terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("You need to add one valid .msav file!");
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    } else if (Core.settings.getDataDirectory().child("maps").child(ml.get(0).getFileName()).exists()) {
-                        eb.setTitle("Map upload terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("There is already a map with this name on the server!");
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-                    // more custom filename checks possible
-
-                    CompletableFuture<byte[]> cf = ml.get(0).downloadAsByteArray();
-                    Fi fh = Core.settings.getDataDirectory().child("maps").child(ml.get(0).getFileName());
-
-                    try {
-                        byte[] data = cf.get();
-                        if (!SaveIO.isSaveValid(new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(data))))) {
-                            eb.setTitle("Map upload terminated.");
-                            eb.setColor(Pals.error);
-                            eb.setDescription("Map file corrupted or invalid.");
-                            ctx.channel.sendMessage(eb);
-                            return;
-                        }
-                        fh.writeBytes(cf.get(), false);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    maps.reload();
-                    eb.setTitle("Map upload completed.");
-                    eb.setDescription(ml.get(0).getFileName() + " was added succesfully into the playlist!");
-                    ctx.channel.sendMessage(eb);
-                    //Utils.LogAction("uploadmap", "Uploaded a new map", ctx.author, null);
-                }
-            });
-            handler.registerCommand(new RoleRestrictedCommand("removemap") {
-                {
-                    help = "<mapname/mapid> Remove a map from the playlist (use mapname/mapid retrieved from the %maps command)".replace("%", ioMain.prefix);
-                    role = banRole;
-                }
-                @Override
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    if (ctx.args.length < 2) {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("Not enough arguments, use `%removemap <mapname/mapid>`".replace("%", ioMain.prefix));
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-                    Map found = getMapBySelector(ctx.message.trim());
-                    if (found == null) {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("Map not found");
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-
-                    maps.removeMap(found);
-                    maps.reload();
-
-                    eb.setTitle("Command executed.");
-                    eb.setDescription(found.name() + " was successfully removed from the playlist.");
-                    ctx.channel.sendMessage(eb);
                 }
             });
             handler.registerCommand(new RoleRestrictedCommand("syncserver") {
@@ -1096,6 +1013,94 @@ public class ServerCommands {
                 }
             });*/
 
+
+
+        if(data.has("mapSubmissions_roleid")){
+            String reviewerRole = data.getString("mapSubmissions_roleid");
+            handler.registerCommand(new RoleRestrictedCommand("uploadmap") {
+                {
+                    help = "<.msav attachment> Upload a new map (Include a .msav file with command message)";
+                    role = reviewerRole;
+                }
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+                    Array<MessageAttachment> ml = new Array<>();
+                    for (MessageAttachment ma : ctx.event.getMessageAttachments()) {
+                        if (ma.getFileName().split("\\.", 2)[1].trim().equals("msav")) {
+                            ml.add(ma);
+                        }
+                    }
+                    if (ml.size != 1) {
+                        eb.setTitle("Map upload terminated.");
+                        eb.setColor(Pals.error);
+                        eb.setDescription("You need to add one valid .msav file!");
+                        ctx.channel.sendMessage(eb);
+                        return;
+                    } else if (Core.settings.getDataDirectory().child("maps").child(ml.get(0).getFileName()).exists()) {
+                        eb.setTitle("Map upload terminated.");
+                        eb.setColor(Pals.error);
+                        eb.setDescription("There is already a map with this name on the server!");
+                        ctx.channel.sendMessage(eb);
+                        return;
+                    }
+                    // more custom filename checks possible
+
+                    CompletableFuture<byte[]> cf = ml.get(0).downloadAsByteArray();
+                    Fi fh = Core.settings.getDataDirectory().child("maps").child(ml.get(0).getFileName());
+
+                    try {
+                        byte[] data = cf.get();
+                        if (!SaveIO.isSaveValid(new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(data))))) {
+                            eb.setTitle("Map upload terminated.");
+                            eb.setColor(Pals.error);
+                            eb.setDescription("Map file corrupted or invalid.");
+                            ctx.channel.sendMessage(eb);
+                            return;
+                        }
+                        fh.writeBytes(cf.get(), false);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    maps.reload();
+                    eb.setTitle("Map upload completed.");
+                    eb.setDescription(ml.get(0).getFileName() + " was added succesfully into the playlist!");
+                    ctx.channel.sendMessage(eb);
+                    //Utils.LogAction("uploadmap", "Uploaded a new map", ctx.author, null);
+                }
+            });
+            handler.registerCommand(new RoleRestrictedCommand("removemap") {
+                {
+                    help = "<mapname/mapid> Remove a map from the playlist (use mapname/mapid retrieved from the %maps command)".replace("%", ioMain.prefix);
+                    role = reviewerRole;
+                }
+                @Override
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+                    if (ctx.args.length < 2) {
+                        eb.setTitle("Command terminated.");
+                        eb.setColor(Pals.error);
+                        eb.setDescription("Not enough arguments, use `%removemap <mapname/mapid>`".replace("%", ioMain.prefix));
+                        ctx.channel.sendMessage(eb);
+                        return;
+                    }
+                    Map found = getMapBySelector(ctx.message.trim());
+                    if (found == null) {
+                        eb.setTitle("Command terminated.");
+                        eb.setColor(Pals.error);
+                        eb.setDescription("Map not found");
+                        ctx.channel.sendMessage(eb);
+                        return;
+                    }
+
+                    maps.removeMap(found);
+                    maps.reload();
+
+                    eb.setTitle("Command executed.");
+                    eb.setDescription(found.name() + " was successfully removed from the playlist.");
+                    ctx.channel.sendMessage(eb);
+                }
+            });
+        }
 
         if(data.has("mapSubmissions_id")){
             TextChannel tc = ioMain.getTextChannel(ioMain.data.getString("mapSubmissions_id"));
