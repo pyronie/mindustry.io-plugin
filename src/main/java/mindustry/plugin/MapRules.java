@@ -15,41 +15,23 @@ import mindustry.net.Administration;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
 
+import static mindustry.Vars.state;
 import static mindustry.Vars.world;
 import static mindustry.plugin.Utils.*;
 
 public class MapRules {
 
-    public static CoreBlock.CoreEntity getCore(Team team){
-        Tile[][] tiles = world.getTiles();
-        for (int x = 0; x < tiles.length; ++x) {
-            for(int y = 0; y < tiles[0].length; ++y) {
-                if (tiles[x][y] != null && tiles[x][y].entity != null) {
-                    TileEntity ent = tiles[x][y].ent();
-                    if (ent instanceof CoreBlock.CoreEntity) {
-                        if(ent.getTeam() == team){
-                            return (CoreBlock.CoreEntity) ent;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-
     public static void onMapLoad(){
         Map map = world.getMap();
 
         // spawn all players quick for the first time
-        for(Player p : Vars.playerGroup.all()){
-            if(p.dead){
-                CoreBlock.CoreEntity ce = getCore(p.getTeam());
-                if(ce == null) return;
-                p.beginRespawning(ce);
-                Timer.schedule(() -> p.onRespawn(ce.tile), Mathf.random(0.1f, 2f));
-            }
-        }
+        float orig = state.rules.respawnTime;
+        state.rules.respawnTime = 0.1f;
+        Call.onSetRules(state.rules);
+        Timer.schedule(() -> {
+            state.rules.respawnTime = orig;
+            Call.onSetRules(state.rules);
+        }, 5f);
 
         Vars.netServer.admins.addActionFilter(action -> {
             Player player = action.player;

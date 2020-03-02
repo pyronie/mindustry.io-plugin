@@ -5,11 +5,14 @@ import arc.Events;
 import arc.struct.Array;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
+import mindustry.entities.type.TileEntity;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.maps.Maps;
 import mindustry.world.Block;
+import mindustry.world.Tile;
+import mindustry.world.blocks.storage.CoreBlock;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;
@@ -214,6 +217,23 @@ public class Utils {
             throw new RuntimeException("unreachable");
         }
         maps.reload();
+    }
+
+    public static CoreBlock.CoreEntity getCore(Team team){
+        Tile[][] tiles = world.getTiles();
+        for (int x = 0; x < tiles.length; ++x) {
+            for(int y = 0; y < tiles[0].length; ++y) {
+                if (tiles[x][y] != null && tiles[x][y].entity != null) {
+                    TileEntity ent = tiles[x][y].ent();
+                    if (ent instanceof CoreBlock.CoreEntity) {
+                        if(ent.getTeam() == team){
+                            return (CoreBlock.CoreEntity) ent;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
 }
