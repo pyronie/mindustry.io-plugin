@@ -169,7 +169,7 @@ public class ioMain extends Plugin {
             verThread.start();
 
             TempPlayerData tempData = playerDataGroup.get(player.uuid);
-            if (tempData == null) {
+            if (playerDataGroup.containsKey(player.uuid)) {
                 tempData = new TempPlayerData(player);
                 playerDataGroup.put(player.uuid, tempData);
             } else {
@@ -258,39 +258,38 @@ public class ioMain extends Plugin {
             if (tdata == null) return;
             String uuid = entry.getKey();
             if (uuid == null) return;
-            Player p = findPlayer(uuid);
+            if(tdata.playerRef.get() == null){
+                playerDataGroup.remove(uuid);
+            }
 
-            if(tdata.playerRef.get() == null) playerDataGroup.remove(uuid);
+            Player p = tdata.playerRef.get();
 
-            // update pets
-            for (BaseUnit unit : tdata.draugPets) if (!unit.isAdded()) tdata.draugPets.remove(unit);
+            if (p != null) {
+                if(tdata.doRainbow) {
+                    // update rainbows
+                    String playerNameUnmodified = tdata.origName;
+                    int hue = tdata.hue;
+                    if (hue < 360) {
+                        hue = hue + 1;
+                    } else {
+                        hue = 0;
+                    }
 
-            if (p != null && tdata.doRainbow) {
-                // update rainbows
-                String playerNameUnmodified = tdata.origName;
-                int hue = tdata.hue;
-                if (hue < 360) {
-                    hue = hue + 1;
-                } else {
-                    hue = 0;
+                    String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
+                    String[] c = playerNameUnmodified.split(" ", 2);
+                    if (c.length > 1) p.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
+                    else p.name = "[" + hex + "]" + escapeColorCodes(c[0]);
+                    tdata.setHue(hue);
                 }
+                if(tdata.doTrail){
+                    String hex = Integer.toHexString(Color.getHSBColor(tdata.hue / 360f, 1f, 1f).getRGB()).substring(2);
 
-                String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
-                String[] c = playerNameUnmodified.split(" ", 2);
-                if (c.length > 1) p.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
-                else p.name = "[" + hex + "]" + escapeColorCodes(c[0]);
-                tdata.setHue(hue);
-            }
-
-            if (p != null && tdata.doTrail) {
-                String hex = Integer.toHexString(Color.getHSBColor(tdata.hue / 360f, 1f, 1f).getRGB()).substring(2);
-
-                arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
-                Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c); // this inverse rotation thing gave me a headache
-            }
-
-            if(p != null && tdata.bt != null && p.isShooting()){
-                Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
+                    arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
+                    Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c);
+                }
+                if(tdata.bt != null && p.isShooting()){
+                    Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
+                }
             }
         }
 
