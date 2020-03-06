@@ -145,16 +145,18 @@ public class Utils {
     }
 
     public static String formatMessage(Player player, String message){
-        message = message.replaceAll("%player%", escapeCharacters(player.name));
-        message = message.replaceAll("%map%", world.getMap().name());
-        message = message.replaceAll("%wave%", String.valueOf(state.wave));
-        PlayerData pd = getData(player.uuid);
-        if(pd != null) {
-            message = message.replaceAll("%playtime%", String.valueOf(pd.playTime));
-            message = message.replaceAll("%games%", String.valueOf(pd.gamesPlayed));
-            message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
-            message = message.replaceAll("%rank%", rankNames.get(pd.rank).tag + " " + escapeColorCodes(rankNames.get(pd.rank).name));
-        }
+        try {
+            message = message.replaceAll("%player%", escapeCharacters(player.name));
+            message = message.replaceAll("%map%", world.getMap().name());
+            message = message.replaceAll("%wave%", String.valueOf(state.wave));
+            PlayerData pd = getData(player.uuid);
+            if (pd != null) {
+                message = message.replaceAll("%playtime%", String.valueOf(pd.playTime));
+                message = message.replaceAll("%games%", String.valueOf(pd.gamesPlayed));
+                message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
+                message = message.replaceAll("%rank%", rankNames.get(pd.rank).tag + " " + escapeColorCodes(rankNames.get(pd.rank).name));
+            }
+        }catch(Exception ignore){};
         return message;
     }
 
