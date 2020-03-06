@@ -1,5 +1,6 @@
 package mindustry.plugin;
 
+import arc.math.Mathf;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
@@ -61,7 +62,11 @@ public class BotThread extends Thread {
                     setData(p.uuid, pd);
                     ioMain.playerDataGroup.put(p.uuid, tdata); // update tdata with the new stuff
                 }
-                api.updateActivity(playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players, prefix: " + ioMain.prefix);
+                if(Mathf.chance(0.02f)){
+                    api.updateActivity("( ͡° ͜ʖ ͡°)");
+                } else {
+                    api.updateActivity("with " + playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players");
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();
