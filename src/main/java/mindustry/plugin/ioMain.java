@@ -126,7 +126,7 @@ public class ioMain extends Plugin {
             }
         }, 0, 10);
 
-        Events.on(EventType.Trigger.class, () -> {
+        Events.on(EventType.Trigger.update, () -> {
             for (Entry<String, TempPlayerData> entry : new HashMap<>(playerDataGroup).entrySet()) {
                 TempPlayerData tdata = entry.getValue();
                 if (tdata == null) return;
