@@ -99,7 +99,7 @@ public class ioMain extends Plugin {
         } else {
             Log.warn("Prefix not found, using default '.' prefix.");
         }
-        api.updateActivity(playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "": "/" + netServer.admins.getPlayerLimit()) + " players, prefix: " + prefix);
+        api.updateActivity(playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "": "/") + netServer.admins.getPlayerLimit() + " players, prefix: " + prefix);
 
         // setup name
         if (data.has("server_name")) {
