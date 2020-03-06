@@ -126,6 +126,48 @@ public class ioMain extends Plugin {
             }
         }, 0, 10);
 
+        Events.on(EventType.Trigger.class, () -> {
+            for (Entry<String, TempPlayerData> entry : new HashMap<>(playerDataGroup).entrySet()) {
+                TempPlayerData tdata = entry.getValue();
+                if (tdata == null) return;
+                String uuid = entry.getKey();
+                if (uuid == null) return;
+                if(tdata.playerRef.get() == null){
+                    playerDataGroup.remove(uuid);
+                }
+
+                Player p = tdata.playerRef.get();
+
+                if (p != null) {
+                    if(tdata.doRainbow) {
+                        // update rainbows
+                        String playerNameUnmodified = tdata.origName;
+                        int hue = tdata.hue;
+                        if (hue < 360) {
+                            hue = hue + 1;
+                        } else {
+                            hue = 0;
+                        }
+
+                        String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
+                        String[] c = playerNameUnmodified.split(" ", 2);
+                        if (c.length > 1) p.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
+                        else p.name = "[" + hex + "]" + escapeColorCodes(c[0]);
+                        tdata.setHue(hue);
+                    }
+                    if(tdata.doTrail){
+                        String hex = Integer.toHexString(Color.getHSBColor(tdata.hue / 360f, 1f, 1f).getRGB()).substring(2);
+
+                        arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
+                        Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c);
+                    }
+                    if(tdata.bt != null && p.isShooting()){
+                        Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
+                    }
+                }
+            }
+        });
+
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
             Player player = event.player;
@@ -247,53 +289,6 @@ public class ioMain extends Plugin {
         Events.on(EventType.WorldLoadEvent.class, event -> {
             Timer.schedule(MapRules::run, 5); // idk
         });
-
-        Core.app.post(this::loop);
-    }
-
-
-    public void loop() {
-        for (Entry<String, TempPlayerData> entry : new HashMap<>(playerDataGroup).entrySet()) {
-            TempPlayerData tdata = entry.getValue();
-            if (tdata == null) return;
-            String uuid = entry.getKey();
-            if (uuid == null) return;
-            if(tdata.playerRef.get() == null){
-                playerDataGroup.remove(uuid);
-            }
-
-            Player p = tdata.playerRef.get();
-
-            if (p != null) {
-                if(tdata.doRainbow) {
-                    // update rainbows
-                    String playerNameUnmodified = tdata.origName;
-                    int hue = tdata.hue;
-                    if (hue < 360) {
-                        hue = hue + 1;
-                    } else {
-                        hue = 0;
-                    }
-
-                    String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
-                    String[] c = playerNameUnmodified.split(" ", 2);
-                    if (c.length > 1) p.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
-                    else p.name = "[" + hex + "]" + escapeColorCodes(c[0]);
-                    tdata.setHue(hue);
-                }
-                if(tdata.doTrail){
-                    String hex = Integer.toHexString(Color.getHSBColor(tdata.hue / 360f, 1f, 1f).getRGB()).substring(2);
-
-                    arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
-                    Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c);
-                }
-                if(tdata.bt != null && p.isShooting()){
-                    Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
-                }
-            }
-        }
-
-        Core.app.post(this::loop);
     }
 
     //register commands that run on the server
