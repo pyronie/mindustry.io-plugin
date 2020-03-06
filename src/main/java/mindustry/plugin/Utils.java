@@ -3,6 +3,7 @@ package mindustry.plugin;
 import arc.Core;
 import arc.Events;
 import arc.struct.Array;
+import arc.util.Strings;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.entities.type.TileEntity;
@@ -109,7 +110,7 @@ public class Utils {
     }
 
     public static String escapeColorCodes(String string){
-        return string.replaceAll("\\[(.*?)\\]", "");
+        return Strings.stripColors(string);
     }
 
     public static Map getMapBySelector(String query) {
