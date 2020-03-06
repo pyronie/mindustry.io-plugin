@@ -8,6 +8,8 @@ import org.json.JSONObject;
 
 import mindustry.plugin.discordcommands.DiscordCommands;
 
+import static mindustry.Vars.netServer;
+import static mindustry.Vars.playerGroup;
 import static mindustry.plugin.Utils.*;
 
 public class BotThread extends Thread {
@@ -59,7 +61,7 @@ public class BotThread extends Thread {
                     setData(p.uuid, pd);
                     ioMain.playerDataGroup.put(p.uuid, tdata); // update tdata with the new stuff
                 }
-
+                api.updateActivity(playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "": "/" + netServer.admins.getPlayerLimit()) + " players, prefix: " + ioMain.prefix);
 
             } catch (Exception e) {
                 e.printStackTrace();

@@ -99,7 +99,7 @@ public class ioMain extends Plugin {
         } else {
             Log.warn("Prefix not found, using default '.' prefix.");
         }
-        api.updateActivity("prefix: " + prefix);
+        api.updateActivity(playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "": "/" + netServer.admins.getPlayerLimit()) + " players, prefix: " + prefix);
 
         // setup name
         if (data.has("server_name")) {
@@ -110,7 +110,7 @@ public class ioMain extends Plugin {
 
         if(data.has("api_key")){
             apiKey = data.getString("api_key");
-            Log.info("apiKey set successfully");
+            Log.info("api_key set successfully");
         }
 
         // display on screen messages
