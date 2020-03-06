@@ -62,7 +62,7 @@ public class BotThread extends Thread {
                     setData(p.uuid, pd);
                     ioMain.playerDataGroup.put(p.uuid, tdata); // update tdata with the new stuff
                 }
-                if(Mathf.chance(0.02f)){
+                if(Mathf.chance(0.01f)){
                     api.updateActivity("( ͡° ͜ʖ ͡°)");
                 } else {
                     api.updateActivity("with " + playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players");
