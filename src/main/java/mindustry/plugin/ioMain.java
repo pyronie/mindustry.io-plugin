@@ -209,14 +209,13 @@ public class ioMain extends Plugin {
             });
             verThread.start();
 
-            TempPlayerData tempData = playerDataGroup.get(player.uuid);
-            if (playerDataGroup.containsKey(player.uuid)) {
-                tempData = new TempPlayerData(player);
+            if (!playerDataGroup.containsKey(player.uuid)) {
+                TempPlayerData tempData = new TempPlayerData(player);
                 playerDataGroup.put(player.uuid, tempData);
             } else {
+                TempPlayerData tempData = playerDataGroup.get(player.uuid);
                 tempData.playerRef = new WeakReference<>(player);
                 tempData.origName = player.name;
-                tempData.doRainbow = false;
             }
 
 
@@ -250,7 +249,6 @@ public class ioMain extends Plugin {
                         info.tag = rankNames.get(5).tag + " ";
                         break;
                 }
-                tempData.origName = player.name;
             } else { // not in database
                 setData(player.uuid, new PlayerData(0));
             }
