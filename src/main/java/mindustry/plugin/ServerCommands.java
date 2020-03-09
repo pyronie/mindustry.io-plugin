@@ -8,7 +8,6 @@ import mindustry.content.UnitTypes;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.Damage;
-import mindustry.game.Teams;
 import mindustry.graphics.Pal;
 import mindustry.net.Administration;
 import mindustry.plugin.discordcommands.Command;
@@ -26,10 +25,8 @@ import mindustry.game.EventType.GameOverEvent;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
-import mindustry.maps.Maps;
 import mindustry.io.SaveIO;
 
-import mindustry.server.ServerControl;
 import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
@@ -38,7 +35,6 @@ import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.MessageAttachment;
 
 import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.permission.Role;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -655,7 +651,7 @@ public class ServerCommands {
                         Player player = findPlayer(target);
                         if (player != null) {
                             player.name = name;
-                            TempPlayerData tdata = ioMain.playerDataGroup.get(player.uuid);
+                            PersistentPlayerData tdata = ioMain.playerDataGroup.get(player.uuid);
                             if (tdata != null) tdata.origName = name;
                             eb.setTitle("Command executed successfully");
                             eb.setDescription("Changed name to " + escapeCharacters(player.name));
@@ -836,32 +832,6 @@ public class ServerCommands {
                     }
                 }
             });
-            handler.registerCommand(new RoleRestrictedCommand("boom") {
-                {
-                    help = "<playerid|ip|name> <flammability> <explosiveness> <power> <radius> Explodes with given specifications at given players position";
-                    role = banRole;
-                } // Pal.darkFlame
-                public void run(Context ctx) {
-                    
-                    String target = ctx.args[1];
-                    int flammability = Integer.parseInt(ctx.args[2]);
-                    int explosiveness = Integer.parseInt(ctx.args[3]);
-                    int power = Integer.parseInt(ctx.args[4]);
-                    int radius = Integer.parseInt(ctx.args[5]);
-                    if(target.length() > 0  && flammability > 0 && flammability< 1000 && explosiveness > 0 && explosiveness< 1000 && power > 0 && power< 1000 && radius > 0 && radius< 1000) {
-                        
-
-                        EmbedBuilder eb = new EmbedBuilder();
-                        Player player = findPlayer(target);
-                        if(player!=null){
-                            Damage.dynamicExplosion(player.getX(),player.getY(),flammability,explosiveness,power,radius,Pal.darkFlame);
-                            eb.setTitle("Command executed successfully.");
-                            eb.setDescription("Exploded with: " + flammability + " Flammability,  " + explosiveness+" Explosiveness, "+power+" Power, and with a Radius of "+ radius + " near " + escapeCharacters(player.name) + ".");
-                            ctx.channel.sendMessage(eb);
-                        }
-                    }
-                }
-            });
 
             handler.registerCommand(new RoleRestrictedCommand("killunits") {
                 {
@@ -961,13 +931,12 @@ public class ServerCommands {
 
                         if(target.equals("all")){
                             for(Player p : playerGroup.all()){
-                                TempPlayerData tdata = ioMain.playerDataGroup.get(p.uuid);
                                 if(desiredBullet == null){
-                                    tdata.bt = null;
+                                    player.bt = null;
                                 } else{
-                                    tdata.bt = desiredBullet;
-                                    tdata.sclLifetime = targetL;
-                                    tdata.sclVelocity = targetV;
+                                    player.bt = desiredBullet;
+                                    player.sclLifetime = targetL;
+                                    player.sclVelocity = targetV;
                                 }
                             }
                             eb.setTitle("Command executed");
@@ -977,16 +946,15 @@ public class ServerCommands {
 
                         Player player = findPlayer(target);
                         if(player!=null){
-                            TempPlayerData tdata = ioMain.playerDataGroup.get(player.uuid);
                             if(desiredBullet == null){
-                                tdata.bt = null;
+                                player.bt = null;
                                 eb.setTitle("Command executed");
                                 eb.setDescription("Reverted " + escapeCharacters(player.name) + "'s weapon to default.");
                                 ctx.channel.sendMessage(eb);
                             } else{
-                                tdata.bt = desiredBullet;
-                                tdata.sclLifetime = targetL;
-                                tdata.sclVelocity = targetV;
+                                player.bt = desiredBullet;
+                                player.sclLifetime = targetL;
+                                player.sclVelocity = targetV;
                                 eb.setTitle("Command executed");
                                 eb.setDescription("Modded " + escapeCharacters(player.name) + "'s weapon to " + targetBullet + " with " + targetL + "x lifetime modifier and " + targetV + "x velocity modifier.");
                                 ctx.channel.sendMessage(eb);
@@ -1017,7 +985,6 @@ public class ServerCommands {
                     ctx.channel.sendMessage(eb);
                 }
             });*/
-
 
 
         if(data.has("mapSubmissions_roleid")){

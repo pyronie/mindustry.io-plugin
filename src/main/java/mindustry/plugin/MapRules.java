@@ -8,7 +8,6 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.entities.type.TileEntity;
-import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
 import mindustry.net.Administration;
@@ -22,17 +21,8 @@ import static mindustry.plugin.Utils.*;
 public class MapRules {
 
     public static void onMapLoad(){
-        Map map = world.getMap();
 
-        // spawn all players quick for the first time
-        float orig = state.rules.respawnTime;
-        state.rules.respawnTime = 0.1f;
-        Call.onSetRules(state.rules);
-        Timer.schedule(() -> {
-            state.rules.respawnTime = orig;
-            Call.onSetRules(state.rules);
-        }, 5f);
-
+        // action filter
         Vars.netServer.admins.addActionFilter(action -> {
             Player player = action.player;
             if (player == null) return true;
@@ -55,6 +45,18 @@ public class MapRules {
             return action.type != Administration.ActionType.rotate;
         });
 
+        Map map = world.getMap();
+
+        // spawn all players quick for the first time
+        float orig = state.rules.respawnTime;
+        state.rules.respawnTime = 0.25f;
+        Call.onSetRules(state.rules);
+        Timer.schedule(() -> {
+            state.rules.respawnTime = orig;
+            Call.onSetRules(state.rules);
+        }, 5f);
+
+
         // display map description on core tiles for the first minute
         Call.onInfoToast("Playing [accent]" + escapeColorCodes(map.name()) + "[] by[accent] " + map.author(), 20f); // credit map makers
 
@@ -75,8 +77,8 @@ public class MapRules {
     public static void run(){
         onMapLoad();
 
-        for (java.util.Map.Entry<String, TempPlayerData> entry : ioMain.playerDataGroup.entrySet()) {
-            TempPlayerData tdata = entry.getValue();
+        for (java.util.Map.Entry<String, PersistentPlayerData> entry : ioMain.playerDataGroup.entrySet()) {
+            PersistentPlayerData tdata = entry.getValue();
             if(tdata != null) {
                 tdata.spawnedPowerGen = false;
                 tdata.spawnedLichPet = false;

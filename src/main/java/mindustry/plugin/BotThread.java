@@ -9,6 +9,9 @@ import org.json.JSONObject;
 
 import mindustry.plugin.discordcommands.DiscordCommands;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 import static mindustry.plugin.Utils.*;
@@ -42,7 +45,7 @@ public class BotThread extends Thread {
                     if (pd == null) return;
 
                     // cooldowns
-                    TempPlayerData tdata = (ioMain.playerDataGroup.getOrDefault(p.uuid, null));
+                    PersistentPlayerData tdata = (ioMain.playerDataGroup.getOrDefault(p.uuid, null));
                     if (tdata != null){
                         if (tdata.burstCD > 0){
                             tdata.burstCD--;
@@ -67,7 +70,6 @@ public class BotThread extends Thread {
                 } else {
                     api.updateActivity("with " + playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players");
                 }
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
