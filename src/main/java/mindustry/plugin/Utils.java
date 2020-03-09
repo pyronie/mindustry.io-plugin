@@ -97,6 +97,7 @@ public class Utils {
         public static Color warning = (Color.getHSBColor(5, 85, 95));
         public static Color info = (Color.getHSBColor(45, 85, 95));
         public static Color error = (Color.getHSBColor(3, 78, 91));
+        public static Color success = (Color.getHSBColor(108, 80, 100));
     }
 
     public static class activeRequirements {

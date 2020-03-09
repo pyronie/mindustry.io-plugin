@@ -232,6 +232,12 @@ public class ComCommands {
                                         eb2.setDescription("Timed out. You have 15 seconds to use the /link command in game.");
                                         eb2.setColor(Pals.error);
                                         msg.edit(eb2);
+                                    } else{
+                                        EmbedBuilder eb2 = new EmbedBuilder();
+                                        eb2.setTitle(":white_check_mark: Link with " + escapeCharacters(p.name) + " successful!");
+                                        eb2.setDescription("Thank you for linking your account, you can now enjoy your custom tag.");
+                                        eb2.setColor(Pals.success);
+                                        msg.edit(eb2);
                                     }
                                     pd2.supposedDiscordLink = "";
                                     setData(uuid, pd2);
