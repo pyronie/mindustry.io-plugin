@@ -14,6 +14,7 @@ import mindustry.maps.Maps;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
+import org.javacord.api.entity.user.User;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;
@@ -28,8 +29,8 @@ import static mindustry.plugin.ioMain.*;
 public class Utils {
     public static int chatMessageMaxSize = 256;
     static String welcomeMessage = "";
-    static String noPermissionMessage = "[accent]You don't have permissions to execute this command!\nObtain the donator rank here: http://donate.mindustry.io";
     static String statMessage = "";
+    static String noPermissionMessage = "[accent]You don't have permissions to execute this command!\nObtain the donator rank here: http://donate.mindustry.io";
 
     // wheter ip verification is in place (detect vpns, disallow their build rights)
     static Boolean verification = true;
@@ -38,7 +39,7 @@ public class Utils {
             "[sky]%player%, you have been promoted to [sky]<active>[]!\n" +
             "[#4287f5]You reached a playtime of - %playtime% minutes! That's 10+ hours!\n" +
             "[#f54263]You played a total of %games% games!\n" +
-            "[#9342f5]You built a total of %buildings%!\n" +
+            "[#9342f5]You built a total of %buildings% buildings!\n" +
             "[sky]Thank you for participating and enjoy your time on [orange]<[white]io[orange]>[sky]!\n"+
             "[scarlet]Please rejoin for the change to take effect.";
 
@@ -156,6 +157,12 @@ public class Utils {
                 message = message.replaceAll("%games%", String.valueOf(pd.gamesPlayed));
                 message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
                 message = message.replaceAll("%rank%", rankNames.get(pd.rank).tag + " " + escapeColorCodes(rankNames.get(pd.rank).name));
+                if(pd.discordLink.length() > 0){
+                    User discordUser = (User) api.getUserById(pd.discordLink);
+                    if(discordUser != null) {
+                        message = message.replaceAll("%discord%", discordUser.getDiscriminatedName());
+                    }
+                }
             }
         }catch(Exception ignore){};
         return message;

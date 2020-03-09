@@ -1,6 +1,7 @@
 package mindustry.plugin;
 
 import arc.files.Fi;
+import arc.util.Timer;
 import mindustry.maps.Map;
 
 import mindustry.entities.type.Player;
@@ -13,11 +14,13 @@ import mindustry.world.modules.ItemModule;
 import mindustry.plugin.discordcommands.Command;
 import mindustry.plugin.discordcommands.Context;
 import mindustry.plugin.discordcommands.DiscordCommands;
+import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static mindustry.Vars.*;
 import static mindustry.plugin.Utils.*;
@@ -193,6 +196,59 @@ public class ComCommands {
                 }
             }
 
+        });
+
+        handler.registerCommand(new Command("link") {
+            {
+                help = "<player/id> Link your discord account with your in-game account (receive special benefits)";
+            }
+            public void run(Context ctx) {
+                if(ctx.event.isPrivateMessage()) return;
+
+                EmbedBuilder eb = new EmbedBuilder();
+                ctx.message = escapeCharacters(ctx.message);
+                Player p = findPlayer(ctx.message);
+                if(p != null){
+                    String uuid = p.uuid;
+                    PlayerData pd = getData(uuid);
+                    if(pd != null){
+                        if(pd.discordLink.length() > 0 && pd.supposedDiscordLink.length() > 0) {
+                            eb.setTitle("That player already has an active discord link!");
+                            eb.setDescription("If that's you, and you wish to change your discord link, use the /removelink command in-game.");
+                            eb.setColor(Pals.warning);
+                            ctx.channel.sendMessage(eb);
+                        } else{
+                            eb.setTitle(":loading: Attempting link with " + escapeCharacters(p.name));
+                            eb.setDescription("Use the /link command in-game to finish linking your account.");
+                            Message msg = (Message) ctx.channel.sendMessage(eb);
+                            pd.supposedDiscordLink = ctx.author.getIdAsString();
+                            setData(uuid, pd);
+                            Timer.schedule(() -> {
+                                PlayerData pd2 = getData(uuid);
+                                if(pd2 != null) {
+                                    if(pd2.discordLink.length() <= 0){
+                                        EmbedBuilder eb2 = new EmbedBuilder();
+                                        eb2.setTitle(":x: Link with " + escapeCharacters(p.name) + " failed.");
+                                        eb2.setDescription("Timed out. You have 15 seconds to use the /link command in game.");
+                                        eb2.setColor(Pals.error);
+                                        msg.edit(eb2);
+                                    }
+                                    pd2.supposedDiscordLink = "";
+                                    setData(uuid, pd2);
+                                }
+                            }, 15);
+                            player.sendMessage("[#7289da]\uE848[#99aab5] A discord link was prompted to your account by " + ctx.author.getDiscriminatedName());
+                            player.sendMessage("[#7289da]\uE848[#99aab5] If this is you, use the /link command to finish linking your account.");
+                            player.sendMessage("[scarlet]If this ISN'T you, please don't do anything.");
+                        }
+                    }
+                }else {
+                    eb.setTitle("Command terminated");
+                    eb.setDescription("Player " + ctx.message + " not found in " + ioMain.serverName + ".\nAre you using the correct prefix?");
+                    eb.setColor(Pals.error);
+                    ctx.channel.sendMessage(eb);
+                }
+            }
         });
     }
 }

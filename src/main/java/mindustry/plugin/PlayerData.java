@@ -8,6 +8,9 @@ public class PlayerData{
     public boolean verified = false;
     public boolean banned = false;
 
+    public String supposedDiscordLink = "";
+    public String discordLink = "";
+
     public PlayerData(Integer rank) {
         this.rank = rank;
     }

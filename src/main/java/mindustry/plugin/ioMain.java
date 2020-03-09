@@ -7,19 +7,15 @@ import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
 import arc.math.Mathf;
-import arc.struct.Array;
 import arc.util.*;
 import arc.util.Timer;
 import com.google.gson.Gson;
 import arc.util.Timer.Task;
 import mindustry.content.*;
-import mindustry.core.GameState;
 import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
-import mindustry.game.Team;
 import mindustry.graphics.Pal;
 import mindustry.net.Administration;
-import mindustry.server.ServerControl;
 import mindustry.world.Build;
 import mindustry.world.Tile;
 import org.javacord.api.DiscordApi;
@@ -27,6 +23,7 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.Channel;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.entity.user.User;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -56,7 +53,7 @@ public class ioMain extends Plugin {
     //public static HashMap<String, PlayerData> database  = new HashMap<>(); // uuid, rank
     //public static HashMap<String, Boolean> verifiedIPs = new HashMap<>(); // uuid, verified?
 
-    public static HashMap<String, TempPlayerData> playerDataGroup = new HashMap<>(); // uuid, data
+    public static HashMap<String, PersistentPlayerData> playerDataGroup = new HashMap<>(); // uuid, data
 
     private final String fileNotFoundErrorMessage = "File not found: config\\mods\\settings.json";
     private JSONObject alldata;
@@ -125,15 +122,42 @@ public class ioMain extends Plugin {
             }
         }, 0, 10);
 
+
+        // update every tick
         Events.on(EventType.Trigger.update, () -> {
-            for (Entry<String, TempPlayerData> entry : new HashMap<>(playerDataGroup).entrySet()) {
-                TempPlayerData tdata = entry.getValue();
+            playerGroup.all().forEach(player1 -> {
+                Player player = player1;
+                if(player.doRainbow) {
+                    // update rainbows
+                    String playerNameUnmodified = player.origName;
+                    int hue = player.hue;
+                    if (hue < 360) {
+                        hue = hue + 1;
+                    } else {
+                        hue = 0;
+                    }
+
+                    String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
+                    String[] c = playerNameUnmodified.split(" ", 2);
+                    if (c.length > 1) player.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
+                    else player.name = "[" + hex + "]" + escapeColorCodes(c[0]);
+                    player.hue = hue;
+                }
+                if(player.doTrail){
+                    String hex = Integer.toHexString(Color.getHSBColor(player.hue / 360f, 1f, 1f).getRGB()).substring(2);
+
+                    arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
+                    Call.onEffectReliable(Fx.shootLiquid, player.x, player.y, (180 + player.rotation)%360, c);
+                }
+                if(player.bt != null && player.isShooting()){
+                    Call.createBullet(player.bt, player.getTeam(), player.x, player.y, player.rotation, player.sclVelocity, player.sclLifetime);
+                }
+            });
+            /*for (Entry<String, TempPlayerData> entry : new HashMap<>(tempPlayerDataGroup).entrySet()) {
+                tdata = entry.getValue();
                 if (tdata == null) return;
                 String uuid = entry.getKey();
                 if (uuid == null) return;
-                if(tdata.playerRef.get() == null){
-                    playerDataGroup.remove(uuid);
-                }
 
                 Player p = tdata.playerRef.get();
 
@@ -165,12 +189,15 @@ public class ioMain extends Plugin {
                     }
                 }
             }
+             */
         });
 
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
             Player player = event.player;
-            if(bannedNames.contains(player.name)) player.con.kick("[scarlet]Error #103, please join http://discord.mindustry.io and tell an admin.");
+            player.origName = player.name;
+            if(bannedNames.contains(player.name)) player.con.kick("[scarlet]Download the game from legitimate sources to join.\n[accent]https://anuke.itch.io/mindustry");
+
             PlayerData pd = getData(player.uuid);
             Thread verThread = new Thread(() -> {
                 if(verification) {
@@ -210,43 +237,39 @@ public class ioMain extends Plugin {
             verThread.start();
 
             if (!playerDataGroup.containsKey(player.uuid)) {
-                TempPlayerData tempData = new TempPlayerData(player);
-                playerDataGroup.put(player.uuid, tempData);
-            } else {
-                TempPlayerData tempData = playerDataGroup.get(player.uuid);
-                tempData.playerRef = new WeakReference<>(player);
-                tempData.origName = player.name;
+                PersistentPlayerData data = new PersistentPlayerData();
+                playerDataGroup.put(player.uuid, data);
             }
-
 
             if(pd != null) {
                 if(pd.banned) player.con.kick("uuid: " + player.uuid + " you are banned.");
                 int rank = pd.rank;
-                Administration.PlayerInfo info = netServer.admins.getInfoOptional(player.uuid);
-                if(info == null) return;
                 switch (rank) { // apply new tag
                     case 0:
-                        info.tag = "";
+                        if(pd.discordLink.length() > 0){
+                            player.tag = "[#7289da]\uE848[] ";
+                        }
+                        player.tag = "";
                         break;
                     case 1:
                         Call.sendMessage("[sky]active player " + player.name + "[] joined the server!");
-                        info.tag = rankNames.get(1).tag + " ";
+                        player.tag = rankNames.get(1).tag + " ";
                         break;
                     case 2:
                         Call.sendMessage("[#fcba03]regular player " + player.name + "[] joined the server!");
-                        info.tag = rankNames.get(2).tag + " ";
+                        player.tag = rankNames.get(2).tag + " ";
                         break;
                     case 3:
                         Call.sendMessage("[scarlet]donator " + player.name + "[] joined the server!");
-                        info.tag = rankNames.get(3).tag + " ";
+                        player.tag = rankNames.get(3).tag + " ";
                         break;
                     case 4:
                         Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + "[] joined the server!");
-                        info.tag = rankNames.get(4).tag + " ";
+                        player.tag = rankNames.get(4).tag + " ";
                         break;
                     case 5:
                         Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + "[] joined the server!");
-                        info.tag = rankNames.get(5).tag + " ";
+                        player.tag = rankNames.get(5).tag + " ";
                         break;
                 }
             } else { // not in database
@@ -263,7 +286,7 @@ public class ioMain extends Plugin {
             if (event.player == null) return;
             if (event.breaking) return;
             PlayerData pd = getData(event.player.uuid);
-            TempPlayerData td = (playerDataGroup.getOrDefault(event.player.uuid, null));
+            PersistentPlayerData td = (playerDataGroup.getOrDefault(event.player.uuid, null));
             if (pd == null || td == null) return;
             if (event.tile.entity != null) {
                 if (!activeRequirements.bannedBlocks.contains(event.tile.block())) {
@@ -334,11 +357,8 @@ public class ioMain extends Plugin {
             handler.<Player>register("rainbow", "[regular+] Give your username a rainbow animation", (args, player) -> {
                 PlayerData pd = getData(player.uuid);
                 if (pd != null && pd.rank >= 2) {
-                    TempPlayerData tdata = playerDataGroup.get(player.uuid);
-                    if (tdata == null) return; // shouldn't happen, ever
-
                     player.sendMessage("[sky]Rainbow effect toggled.");
-                    tdata.doRainbow = !tdata.doRainbow;
+                    player.doRainbow = !player.doRainbow;
                 } else {
                     player.sendMessage(noPermissionMessage);
                 }
@@ -347,11 +367,8 @@ public class ioMain extends Plugin {
             handler.<Player>register("trail", "[regular+] Give your username an in-world trail animation.", (args, player) -> {
                 PlayerData pd = getData(player.uuid);
                 if (pd != null && pd.rank >= 2) {
-                    TempPlayerData tdata = playerDataGroup.get(player.uuid);
-                    if (tdata == null) return; // shouldn't happen, ever
-
                     player.sendMessage("[sky]Trail effect toggled.");
-                    tdata.doTrail = !tdata.doTrail;
+                    player.doTrail = !player.doTrail;
                 } else {
                     player.sendMessage(noPermissionMessage);
                 }
@@ -361,7 +378,7 @@ public class ioMain extends Plugin {
                 if(!state.rules.pvp || player.isAdmin) {
                     PlayerData pd = getData(player.uuid);
                     if (pd != null && pd.rank >= 1) {
-                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                        PersistentPlayerData tdata = playerDataGroup.get(player.uuid);
                         if (tdata == null) return;
                         if (tdata.draugPets.size < pd.rank || player.isAdmin) {
                             BaseUnit baseUnit = UnitTypes.draug.create(player.getTeam());
@@ -384,7 +401,7 @@ public class ioMain extends Plugin {
                 if(!state.rules.pvp || player.isAdmin) {
                     PlayerData pd = getData(player.uuid);
                     if (pd != null && pd.rank >= 3) {
-                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                        PersistentPlayerData tdata = playerDataGroup.get(player.uuid);
                         if (tdata == null) return;
                         if (!tdata.spawnedLichPet || player.isAdmin) {
                             tdata.spawnedLichPet = true;
@@ -409,7 +426,7 @@ public class ioMain extends Plugin {
                 if(!state.rules.pvp || player.isAdmin) {
                     PlayerData pd = getData(player.uuid);
                     if (pd != null && pd.rank >= 3) {
-                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                        PersistentPlayerData tdata = playerDataGroup.get(player.uuid);
                         if (tdata == null) return;
                         if (!tdata.spawnedPowerGen || player.isAdmin) {
                             tdata.spawnedPowerGen = true;
@@ -459,7 +476,7 @@ public class ioMain extends Plugin {
                 if(!state.rules.pvp || player.isAdmin) {
                     PlayerData pd = getData(player.uuid);
                     if (pd != null && pd.rank >= 3) {
-                        TempPlayerData tdata = playerDataGroup.get(player.uuid);
+                        PersistentPlayerData tdata = playerDataGroup.get(player.uuid);
                         if (tdata == null) return;
                         if (tdata.burstCD <= 0 || player.isAdmin) {
                             tdata.burstCD = 3;
@@ -615,6 +632,34 @@ public class ioMain extends Plugin {
                     Call.onLabel(args[1], Float.parseFloat(args[0]), targetTile.worldx(), targetTile.worldy());
                 } else {
                     player.sendMessage(noPermissionMessage);
+                }
+            });
+
+            handler.<Player>register("link", "Finish linking your account with discord, start prompt with `link` command on discord.", (args, player) -> {
+                String uuid = player.uuid;
+                PlayerData pd = getData(uuid);
+                if (pd!=null){
+                    if(pd.discordLink.length() > 0){
+                        User discordUser = (User) api.getUserById(pd.discordLink);
+                        if(discordUser != null) {
+                            player.sendMessage("[#7289da]\uE848[#99aab5] Your account is already linked with [accent]" + discordUser.getDiscriminatedName());
+                            player.sendMessage("[#7289da]\uE848[#99aab5] If you wish to remove it, use the /removelink command.");
+                        } else{
+                            player.sendMessage("[scarlet]An error has occurred with the discord API.");
+                        }
+                    } else{
+                        if(pd.supposedDiscordLink.length() > 0){
+                            User discordUser = (User) api.getUserById(pd.discordLink);
+                            if(discordUser != null) {
+                                pd.discordLink = pd.supposedDiscordLink;
+                                pd.supposedDiscordLink = "";
+                                setData(uuid, pd);
+                                player.sendMessage("[#7289da]\uE848[#99aab5] Successfully linked account with [accent]" + discordUser.getDiscriminatedName());
+                            } else{
+                                player.sendMessage("[scarlet]An error has occurred with the discord API.");
+                            }
+                        }
+                    }
                 }
             });
 
