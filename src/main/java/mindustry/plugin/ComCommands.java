@@ -218,9 +218,9 @@ public class ComCommands {
                             eb.setColor(Pals.warning);
                             ctx.channel.sendMessage(eb);
                         } else{
-                            eb.setTitle(":loading: Attempting link with " + escapeCharacters(p.name));
+                            eb.setTitle(":link: Attempting link with " + escapeCharacters(p.name));
                             eb.setDescription("Use the /link command in-game to finish linking your account.");
-                            Message msg = (Message) ctx.channel.sendMessage(eb);
+                            CompletableFuture<Message> msg = ctx.channel.sendMessage(eb);
                             pd.supposedDiscordLink = ctx.author.getIdAsString();
                             setData(uuid, pd);
                             Timer.schedule(() -> {
@@ -231,13 +231,17 @@ public class ComCommands {
                                         eb2.setTitle(":x: Link with " + escapeCharacters(p.name) + " failed.");
                                         eb2.setDescription("Timed out. You have 15 seconds to use the /link command in game.");
                                         eb2.setColor(Pals.error);
-                                        msg.edit(eb2);
+                                        msg.thenAccept(m -> {
+                                            m.edit(eb2);
+                                        });
                                     } else{
                                         EmbedBuilder eb2 = new EmbedBuilder();
                                         eb2.setTitle(":white_check_mark: Link with " + escapeCharacters(p.name) + " successful!");
                                         eb2.setDescription("Thank you for linking your account, you can now enjoy your custom tag.");
                                         eb2.setColor(Pals.success);
-                                        msg.edit(eb2);
+                                        msg.thenAccept(m -> {
+                                            m.edit(eb2);
+                                        });
                                     }
                                     pd2.supposedDiscordLink = "";
                                     setData(uuid, pd2);
