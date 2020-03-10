@@ -461,24 +461,37 @@ public class ServerCommands {
                 }
             });
 
-            handler.registerCommand(new RoleRestrictedCommand("playersinfo") {
+            handler.registerCommand(new RoleRestrictedCommand("lookup") {
                 {
-                    help = "Check the information about all players on the server.";
+                    help = "<player> Check all information about the specified player.";
                     role = banRole;
                 }
                 public void run(Context ctx) {
-                    StringBuilder msg = new StringBuilder("**Players online: " + playerGroup.size() + "**\n```\n");
-                    for (Player player : playerGroup.all()) {
-                        msg.append("· ").append(escapeCharacters(player.name));
-                        if(!player.isAdmin) {
-                            msg.append(" : ").append(player.con.address).append(" : ").append(player.uuid).append("\n");
-                        } else {
-                            msg.append("\n");
-                        }
-                    }
-                    msg.append("```");
+                    EmbedBuilder eb = new EmbedBuilder();
+                    String target = ctx.args[1];
 
-                    ctx.channel.sendMessage(msg.toString());
+                    Player player = findPlayer(target);
+                    if (player != null) {
+                        Administration.PlayerInfo info = netServer.admins.getInfo(player.uuid);
+                        eb.setTitle(escapeCharacters(player.name) + "'s lookup");
+                        eb.addField("Last used name", info.lastName);
+                        eb.addField("Last used ip", info.lastIP);
+                        eb.addField("Times kicked", String.valueOf(info.timesKicked));
+
+                        StringBuilder s = new StringBuilder();
+                        s.append("**All used names: **\n");
+                        for(String name : info.names){
+                            s.append(escapeCharacters(name)).append(" || ");
+                        }
+                        s.append("\n\n**All used IPs: **\n");
+                        for(String ip : info.ips){
+                            s.append(escapeCharacters(ip)).append(" || ");
+                        }
+                    } else{
+                        eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
+                    }
                 }
             });
             handler.registerCommand(new RoleRestrictedCommand("syncserver") {
