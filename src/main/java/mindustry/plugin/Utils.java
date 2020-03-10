@@ -168,9 +168,9 @@ public class Utils {
                     User discordUser = api.getUserById(pd.discordLink).get(2, TimeUnit.SECONDS);
                     if(discordUser != null) {
                         message = message.replaceAll("%discord%", discordUser.getDiscriminatedName());
-                    } else{
-                        message = message.replaceAll("%discord%", "unlinked");
                     }
+                } else{
+                    message = message.replaceAll("%discord%", "unlinked");
                 }
             }
         }catch(Exception ignore){};
