@@ -150,7 +150,7 @@ public class ioMain extends Plugin {
                     String hex = Integer.toHexString(Color.getHSBColor(player1.hue / 360f, 1f, 1f).getRGB()).substring(2);
 
                     arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
-                    Call.onEffectReliable(player.trailFx, player1.x, player1.y, (180 + player1.rotation)%360, c);
+                    Call.onEffectReliable(player1.trailFx, player1.x, player1.y, (180 + player1.rotation) % 360, c);
                 }
                 if(player1.bt != null && player1.isShooting()){
                     Call.createBullet(player1.bt, player1.getTeam(), player1.x, player1.y, player1.rotation, player1.sclVelocity, player1.sclLifetime);
@@ -176,7 +176,7 @@ public class ioMain extends Plugin {
 
             if(pd != null) {
                 if(pd.banned || pd.bannedUntil > Instant.now().getEpochSecond()){
-                    player.con.kick("you are banned");
+                    player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
                 }
                 int rank = pd.rank;
                 switch (rank) { // apply new tag
@@ -335,13 +335,22 @@ public class ioMain extends Plugin {
                 }
             });
 
-            handler.<Player>register("trailfx", "<effect>", "[regular+] Customize your trail effect. (full fx list on #donator [pinned messages])", (args, player) -> {
+            handler.<Player>register("trailfx", "<effect>", "[donator+] Customize your trail effect. (full fx list on #donator [pinned messages])", (args, player) -> {
                 PlayerData pd = getData(player.uuid);
                 String targetFx = args[0];
-                if (pd != null && pd.rank >= 2) {
+                if (pd != null && pd.rank >= 3) {
+                    if(targetFx.equals("dynamicExplosion") || targetFx.equals("dropItem") || targetFx.toLowerCase().contains("block") || targetFx.equals("shieldBreak") || targetFx.equals("incendTrail")){
+                        player.sendMessage("[scarlet]This effect is disabled.");
+                        return;
+                    }
                     try {
                         Field field = Fx.class.getDeclaredField(targetFx);
-                        player.trailFx = (Effects.Effect)field.get(null);
+                        Effects.Effect effect = (Effects.Effect)field.get(null);
+                        if (effect != null) {
+                            player.trailFx = effect;
+                        } else{
+                            player.sendMessage("[scarlet]No such effect found. View full list of effects on #donator channel in pinned messages.");
+                        }
                         player.sendMessage("[sky]Trail effect changed to " + targetFx + ".");
                     } catch (NoSuchFieldException | IllegalAccessException ignored) {
                         player.sendMessage("[scarlet]No such effect found. View full list of effects on #donator channel in pinned messages.");
