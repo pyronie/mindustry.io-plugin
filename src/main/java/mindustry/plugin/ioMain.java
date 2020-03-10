@@ -339,7 +339,7 @@ public class ioMain extends Plugin {
                 PlayerData pd = getData(player.uuid);
                 String targetFx = args[0];
                 if (pd != null && pd.rank >= 3) {
-                    if(targetFx.equals("dynamicExplosion") || targetFx.equals("dropItem") || targetFx.toLowerCase().contains("block") || targetFx.equals("shieldBreak") || targetFx.equals("incendTrail")){
+                    if(targetFx.equals("dynamicExplosion") || targetFx.equals("dropItem") || targetFx.toLowerCase().contains("block") || targetFx.equals("shieldBreak") || targetFx.equals("incendTrail") || targetFx.equals("missileTrail")){
                         player.sendMessage("[scarlet]This effect is disabled.");
                         return;
                     }
