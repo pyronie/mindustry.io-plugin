@@ -175,7 +175,12 @@ public class ioMain extends Plugin {
             }
 
             if(pd != null) {
-                if(pd.discordLink == null){
+                try {
+                    if (pd.discordLink == null) {
+                        pd.reprocess();
+                        setData(player.uuid, pd);
+                    }
+                } catch (Exception ignored){
                     pd.reprocess();
                     setData(player.uuid, pd);
                 }
