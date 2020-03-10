@@ -227,18 +227,19 @@ public class ComCommands {
                             eb.setColor(Pals.warning);
                             ctx.channel.sendMessage(eb);
                         } else{
-                            player.passPhrase = String.valueOf(Mathf.random(1000, 9999));
+                            p.passPhrase = String.valueOf(Mathf.random(1000, 9999));
                             eb.setTitle("<a:loading:686693525907177519> Attempting link with " + escapeCharacters(p.name));
-                            eb.addField("Link PIN", player.passPhrase);
-                            eb.setDescription("Now, use the **/link " + player.passPhrase + "** command in game.");
+                            eb.addField("Link PIN", p.passPhrase);
+                            eb.setDescription("Now, use the **/link " + p.passPhrase + "** command in game.");
                             CompletableFuture<Message> msg = ctx.channel.sendMessage(eb);
                             setData(uuid, pd);
                             Timer.schedule(() -> {
                                 PlayerData pd2 = getData(uuid);
                                 if(pd2 != null) {
                                     EmbedBuilder eb2 = new EmbedBuilder();
-                                    if(player.passPhrase.equals("OK")){
+                                    if(p.passPhrase.equals("OK")){
                                         pd2.discordLink = ctx.author.getIdAsString();
+                                        pd2.verified = true;
                                         setData(p.uuid, pd2);
                                         eb2.setTitle(":white_check_mark: Link with " + escapeCharacters(p.name) + " successful!");
                                         eb2.setDescription("Thank you for linking your account.");
@@ -262,7 +263,7 @@ public class ComCommands {
                                     }
                                     setData(uuid, pd2);
                                 }
-                                player.passPhrase = "";
+                                p.passPhrase = "";
                             }, 15);
                             p.sendMessage("[#7289da]\uE848[#99aab5] A discord link was prompted to your account by " + ctx.author.getDiscriminatedName());
                             p.sendMessage("[#7289da]\uE848[#99aab5] If this is you, use the /link command with the provided PIN on discord.");
