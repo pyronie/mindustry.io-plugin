@@ -53,7 +53,7 @@ public class Utils {
             "\n" +
             "[sky]Please join our discord:\n" +
             "http://discord.mindustry.io\n" +
-            "[#7a7a7a]request manual verification in #verification-requests";
+            "[#7a7a7a]verify your account in #verifications";
 
     static HashMap<Integer, Rank> rankNames = new HashMap<>();
     static HashMap<String, Integer> rankRoles = new HashMap<>();
