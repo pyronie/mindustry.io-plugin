@@ -126,11 +126,10 @@ public class ioMain extends Plugin {
         // update every tick
         Events.on(EventType.Trigger.update, () -> {
             playerGroup.all().forEach(player1 -> {
-                Player player = player1;
-                if(player.doRainbow) {
+                if(player1.doRainbow) {
                     // update rainbows
-                    String playerNameUnmodified = player.origName;
-                    int hue = player.hue;
+                    String playerNameUnmodified = player1.origName;
+                    int hue = player1.hue;
                     if (hue < 360) {
                         hue = hue + 1;
                     } else {
@@ -139,102 +138,32 @@ public class ioMain extends Plugin {
 
                     String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
                     String[] c = playerNameUnmodified.split(" ", 2);
-                    if (c.length > 1) player.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
-                    else player.name = "[" + hex + "]" + escapeColorCodes(c[0]);
-                    player.hue = hue;
+                    if (c.length > 1) player1.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
+                    else player1.name = "[" + hex + "]" + escapeColorCodes(c[0]);
+                    player1.hue = hue;
                 }
-                if(player.doTrail){
-                    String hex = Integer.toHexString(Color.getHSBColor(player.hue / 360f, 1f, 1f).getRGB()).substring(2);
+                if(player1.doTrail){
+                    String hex = Integer.toHexString(Color.getHSBColor(player1.hue / 360f, 1f, 1f).getRGB()).substring(2);
 
                     arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
-                    Call.onEffectReliable(Fx.shootLiquid, player.x, player.y, (180 + player.rotation)%360, c);
+                    Call.onEffectReliable(Fx.shootLiquid, player1.x, player1.y, (180 + player1.rotation)%360, c);
                 }
-                if(player.bt != null && player.isShooting()){
-                    Call.createBullet(player.bt, player.getTeam(), player.x, player.y, player.rotation, player.sclVelocity, player.sclLifetime);
+                if(player1.bt != null && player1.isShooting()){
+                    Call.createBullet(player1.bt, player1.getTeam(), player1.x, player1.y, player1.rotation, player1.sclVelocity, player1.sclLifetime);
                 }
             });
-            /*for (Entry<String, TempPlayerData> entry : new HashMap<>(tempPlayerDataGroup).entrySet()) {
-                tdata = entry.getValue();
-                if (tdata == null) return;
-                String uuid = entry.getKey();
-                if (uuid == null) return;
-
-                Player p = tdata.playerRef.get();
-
-                if (p != null) {
-                    if(tdata.doRainbow) {
-                        // update rainbows
-                        String playerNameUnmodified = tdata.origName;
-                        int hue = tdata.hue;
-                        if (hue < 360) {
-                            hue = hue + 1;
-                        } else {
-                            hue = 0;
-                        }
-
-                        String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
-                        String[] c = playerNameUnmodified.split(" ", 2);
-                        if (c.length > 1) p.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
-                        else p.name = "[" + hex + "]" + escapeColorCodes(c[0]);
-                        tdata.setHue(hue);
-                    }
-                    if(tdata.doTrail){
-                        String hex = Integer.toHexString(Color.getHSBColor(tdata.hue / 360f, 1f, 1f).getRGB()).substring(2);
-
-                        arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
-                        Call.onEffectReliable(Fx.shootLiquid, p.x, p.y, (180 + p.rotation)%360, c);
-                    }
-                    if(tdata.bt != null && p.isShooting()){
-                        Call.createBullet(tdata.bt, p.getTeam(), p.x, p.y, p.rotation, tdata.sclVelocity, tdata.sclLifetime);
-                    }
-                }
-            }
-             */
         });
 
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
             Player player = event.player;
             player.origName = player.name;
-            if(bannedNames.contains(player.name)) player.con.kick("[scarlet]Download the game from legitimate sources to join.\n[accent]https://anuke.itch.io/mindustry");
+            if(bannedNames.contains(player.name)) {
+                player.con.kick("[scarlet]Download the game from legitimate sources to join.\n[accent]https://anuke.itch.io/mindustry");
+                return;
+            }
 
             PlayerData pd = getData(player.uuid);
-            Thread verThread = new Thread(() -> {
-                if(verification) {
-                    if (pd != null && !pd.verified) {
-                        Log.info("Unverified player joined: " + player.name);
-                        String url = "http://api.vpnblocker.net/v2/json/" + player.con.address + "/" + apiKey;
-                        String pjson = ClientBuilder.newClient().target(url).request().accept(MediaType.APPLICATION_JSON).get(String.class);
-
-                        JSONObject json = new JSONObject(new JSONTokener(pjson));
-                        if (json.has("host-ip")) {
-                            if (json.getBoolean("host-ip")) { // verification failed
-                                Log.info("IP verification failed for: " + player.name);
-                                Call.onInfoMessage(player.con, verificationMessage);
-                                if (data.has("warnings_chat_channel_id")) {
-                                    TextChannel tc = getTextChannel(data.getString("warnings_chat_channel_id"));
-                                    if (tc != null) {
-                                        EmbedBuilder eb = new EmbedBuilder().setTitle("IP verification failure for: " + escapeCharacters(player.name));
-                                        eb.addField("IP", player.con.address);
-                                        eb.addField("UUID", player.uuid);
-                                        eb.setDescription("Verify this player by using the `" + prefix + "verify " + player.uuid + "` command.");
-                                        eb.setColor(Pals.info);
-                                        tc.sendMessage(eb);
-                                    }
-                                }
-                            } else {
-                                Log.info("IP verification success for: " + player.name);
-                                pd.verified = true;
-                                setData(player.uuid, pd);
-                            }
-                        } else { // site doesn't work for some reason  ?
-                            pd.verified = true;
-                            setData(player.uuid, pd);
-                        }
-                    }
-                }
-            });
-            verThread.start();
 
             if (!playerDataGroup.containsKey(player.uuid)) {
                 PersistentPlayerData data = new PersistentPlayerData();
@@ -242,14 +171,17 @@ public class ioMain extends Plugin {
             }
 
             if(pd != null) {
-                if(pd.banned) player.con.kick("uuid: " + player.uuid + " you are banned.");
+                if(pd.banned){
+                    player.con.kick("you are banned");
+                }
                 int rank = pd.rank;
                 switch (rank) { // apply new tag
                     case 0:
                         if(pd.discordLink.length() > 0){
                             player.tag = "[#7289da]\uE848[] ";
+                        } else {
+                            player.tag = "";
                         }
-                        player.tag = "";
                         break;
                     case 1:
                         Call.sendMessage("[sky]active player " + player.name + "[] joined the server!");
@@ -279,6 +211,31 @@ public class ioMain extends Plugin {
             if (welcomeMessage.length() > 0) {
                 Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
             }
+
+            Timer.schedule(() -> {
+                if(verification) {
+                    if (pd != null && !pd.verified) {
+                        Log.info("Unverified player joined: " + player.name);
+                        String url = "http://api.vpnblocker.net/v2/json/" + player.con.address + "/" + apiKey;
+                        String pjson = ClientBuilder.newClient().target(url).request().accept(MediaType.APPLICATION_JSON).get(String.class);
+
+                        JSONObject json = new JSONObject(new JSONTokener(pjson));
+                        if (json.has("host-ip")) {
+                            if (json.getBoolean("host-ip")) { // verification failed
+                                Log.info("IP verification failed for: " + player.name);
+                                Call.onInfoMessage(player.con, verificationMessage);
+                            } else {
+                                Log.info("IP verification success for: " + player.name);
+                                pd.verified = true;
+                                setData(player.uuid, pd);
+                            }
+                        } else { // site doesn't work for some reason  ?
+                            pd.verified = true;
+                            setData(player.uuid, pd);
+                        }
+                    }
+                }
+            }, 1);
         });
 
         // player built building
@@ -366,6 +323,17 @@ public class ioMain extends Plugin {
 
             handler.<Player>register("trail", "[regular+] Give your username an in-world trail animation.", (args, player) -> {
                 PlayerData pd = getData(player.uuid);
+                if (pd != null && pd.rank >= 2) {
+                    player.sendMessage("[sky]Trail effect toggled.");
+                    player.doTrail = !player.doTrail;
+                } else {
+                    player.sendMessage(noPermissionMessage);
+                }
+            });
+
+            handler.<Player>register("trailfx", "<effect>", "[regular+] Customize your trail effect. (full fx list on #donator [pinned messages])", (args, player) -> {
+                PlayerData pd = getData(player.uuid);
+                String targetFx = args[0];
                 if (pd != null && pd.rank >= 2) {
                     player.sendMessage("[sky]Trail effect toggled.");
                     player.doTrail = !player.doTrail;
@@ -652,6 +620,8 @@ public class ioMain extends Plugin {
                         if(player.passPhrase.equals(pin)){
                             player.passPhrase = "OK";
                             player.sendMessage("[#7289da]\uE848[#99aab5] Discord link successful, thank you for linking your account!");
+                        } else{
+                            player.sendMessage("[#7289da]\uE848[#99aab5] Incorrect PIN.");
                         }
                     }
                 }
