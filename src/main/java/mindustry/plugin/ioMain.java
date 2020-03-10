@@ -2,6 +2,8 @@ package mindustry.plugin;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
@@ -12,10 +14,12 @@ import arc.util.Timer;
 import com.google.gson.Gson;
 import arc.util.Timer.Task;
 import mindustry.content.*;
+import mindustry.entities.Effects;
 import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
 import mindustry.graphics.Pal;
 import mindustry.net.Administration;
+import mindustry.type.UnitType;
 import mindustry.world.Build;
 import mindustry.world.Tile;
 import org.javacord.api.DiscordApi;
@@ -146,7 +150,7 @@ public class ioMain extends Plugin {
                     String hex = Integer.toHexString(Color.getHSBColor(player1.hue / 360f, 1f, 1f).getRGB()).substring(2);
 
                     arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
-                    Call.onEffectReliable(Fx.shootLiquid, player1.x, player1.y, (180 + player1.rotation)%360, c);
+                    Call.onEffectReliable(player.trailFx, player1.x, player1.y, (180 + player1.rotation)%360, c);
                 }
                 if(player1.bt != null && player1.isShooting()){
                     Call.createBullet(player1.bt, player1.getTeam(), player1.x, player1.y, player1.rotation, player1.sclVelocity, player1.sclLifetime);
@@ -171,7 +175,7 @@ public class ioMain extends Plugin {
             }
 
             if(pd != null) {
-                if(pd.banned){
+                if(pd.banned || pd.bannedUntil > Instant.now().getEpochSecond()){
                     player.con.kick("you are banned");
                 }
                 int rank = pd.rank;
@@ -335,8 +339,13 @@ public class ioMain extends Plugin {
                 PlayerData pd = getData(player.uuid);
                 String targetFx = args[0];
                 if (pd != null && pd.rank >= 2) {
-                    player.sendMessage("[sky]Trail effect toggled.");
-                    player.doTrail = !player.doTrail;
+                    try {
+                        Field field = Fx.class.getDeclaredField(targetFx);
+                        player.trailFx = (Effects.Effect)field.get(null);
+                        player.sendMessage("[sky]Trail effect changed to " + targetFx + ".");
+                    } catch (NoSuchFieldException | IllegalAccessException ignored) {
+                        player.sendMessage("[scarlet]No such effect found. View full list of effects on #donator channel in pinned messages.");
+                    }
                 } else {
                     player.sendMessage(noPermissionMessage);
                 }
