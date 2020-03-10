@@ -337,7 +337,7 @@ public class ServerCommands {
                     if (player != null) {
                         String uuid = player.uuid;
                         PlayerData pd = getData(uuid);
-                        long until = now + Integer.parseInt(targetDuration) / 60;
+                        long until = now + Integer.parseInt(targetDuration) * 60;
                         if(pd != null) {
                             pd.bannedUntil = until;
                             pd.banReason = reason;
