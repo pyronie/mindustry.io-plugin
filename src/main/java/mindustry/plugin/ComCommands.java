@@ -1,6 +1,7 @@
 package mindustry.plugin;
 
 import arc.files.Fi;
+import arc.math.Mathf;
 import arc.util.Timer;
 import mindustry.maps.Map;
 
@@ -14,6 +15,7 @@ import mindustry.world.modules.ItemModule;
 import mindustry.plugin.discordcommands.Command;
 import mindustry.plugin.discordcommands.Context;
 import mindustry.plugin.discordcommands.DiscordCommands;
+import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
@@ -24,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static mindustry.Vars.*;
 import static mindustry.plugin.Utils.*;
+import static mindustry.plugin.ioMain.getTextChannel;
 
 public class ComCommands {
     public void registerCommands(DiscordCommands handler) {
@@ -198,58 +201,71 @@ public class ComCommands {
 
         });
 
+        TextChannel warningsChannel = null;
+        if (ioMain.data.has("warnings_chat_channel_id")) {
+            warningsChannel = getTextChannel(ioMain.data.getString("warnings_chat_channel_id"));
+        }
+
+        TextChannel finalWarningsChannel = warningsChannel;
         handler.registerCommand(new Command("link") {
             {
                 help = "<player/id> Link your discord account with your in-game account (receive special benefits)";
             }
             public void run(Context ctx) {
                 if(ctx.event.isPrivateMessage()) return;
-
                 EmbedBuilder eb = new EmbedBuilder();
                 ctx.message = escapeCharacters(ctx.message);
                 Player p = findPlayer(ctx.message);
                 if(p != null){
                     String uuid = p.uuid;
                     PlayerData pd = getData(uuid);
+
                     if(pd != null){
-                        if(pd.discordLink.length() > 0 && pd.supposedDiscordLink.length() > 0) {
+                        if(pd.discordLink.length() > 0) {
                             eb.setTitle("That player already has an active discord link!");
                             eb.setDescription("If that's you, and you wish to change your discord link, use the /removelink command in-game.");
                             eb.setColor(Pals.warning);
                             ctx.channel.sendMessage(eb);
                         } else{
-                            eb.setTitle(":link: Attempting link with " + escapeCharacters(p.name));
-                            eb.setDescription("Use the /link command in-game to finish linking your account.");
+                            player.passPhrase = String.valueOf(Mathf.random(1000, 9999));
+                            eb.setTitle("<a:loading:686693525907177519> Attempting link with " + escapeCharacters(p.name));
+                            eb.addField("Link PIN", player.passPhrase);
+                            eb.setDescription("Now, use the **/link " + player.passPhrase + "** command in game.");
                             CompletableFuture<Message> msg = ctx.channel.sendMessage(eb);
-                            pd.supposedDiscordLink = ctx.author.getIdAsString();
                             setData(uuid, pd);
                             Timer.schedule(() -> {
                                 PlayerData pd2 = getData(uuid);
                                 if(pd2 != null) {
-                                    if(pd2.discordLink.length() <= 0){
-                                        EmbedBuilder eb2 = new EmbedBuilder();
+                                    EmbedBuilder eb2 = new EmbedBuilder();
+                                    if(player.passPhrase.equals("OK")){
+                                        pd2.discordLink = ctx.author.getIdAsString();
+                                        setData(p.uuid, pd2);
+                                        eb2.setTitle(":white_check_mark: Link with " + escapeCharacters(p.name) + " successful!");
+                                        eb2.setDescription("Thank you for linking your account.");
+                                        eb2.setColor(Pals.success);
+                                        msg.thenAccept(m -> {
+                                            m.edit(eb2);
+                                        });
+                                        if(finalWarningsChannel != null){
+                                            EmbedBuilder eb3 = new EmbedBuilder();
+                                            eb3.setTitle(ctx.author.getDiscriminatedName() + " <-> " + escapeCharacters(p.name) + " link successful.");
+                                            eb3.addField("UUID", p.uuid);
+                                            finalWarningsChannel.sendMessage(eb3);
+                                        }
+                                    } else{
                                         eb2.setTitle(":x: Link with " + escapeCharacters(p.name) + " failed.");
                                         eb2.setDescription("Timed out. You have 15 seconds to use the /link command in game.");
                                         eb2.setColor(Pals.error);
                                         msg.thenAccept(m -> {
                                             m.edit(eb2);
                                         });
-                                    } else{
-                                        EmbedBuilder eb2 = new EmbedBuilder();
-                                        eb2.setTitle(":white_check_mark: Link with " + escapeCharacters(p.name) + " successful!");
-                                        eb2.setDescription("Thank you for linking your account, you can now enjoy your custom tag.");
-                                        eb2.setColor(Pals.success);
-                                        msg.thenAccept(m -> {
-                                            m.edit(eb2);
-                                        });
                                     }
-                                    pd2.supposedDiscordLink = "";
                                     setData(uuid, pd2);
                                 }
+                                player.passPhrase = "";
                             }, 15);
-                            player.sendMessage("[#7289da]\uE848[#99aab5] A discord link was prompted to your account by " + ctx.author.getDiscriminatedName());
-                            player.sendMessage("[#7289da]\uE848[#99aab5] If this is you, use the /link command to finish linking your account.");
-                            player.sendMessage("[scarlet]If this ISN'T you, please don't do anything.");
+                            p.sendMessage("[#7289da]\uE848[#99aab5] A discord link was prompted to your account by " + ctx.author.getDiscriminatedName());
+                            p.sendMessage("[#7289da]\uE848[#99aab5] If this is you, use the /link command with the provided PIN on discord.");
                         }
                     }
                 }else {

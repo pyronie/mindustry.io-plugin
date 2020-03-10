@@ -37,7 +37,7 @@ public class MapRules {
             if (player.isAdmin) return true;
 
             if (!pd.verified) {
-                Call.setHudTextReliable(player.con, "[scarlet]Your IP was flagged as a VPN, please join http://discord.mindustry.io and request manual verification.");
+                Call.setHudTextReliable(player.con, "[scarlet]Your IP was flagged as a VPN, please join http://discord.mindustry.io and link your discord account to get verified.");
                 player.sendMessage("[#7a7a7a]Cannot build while flagged.");
                 return false;
             }

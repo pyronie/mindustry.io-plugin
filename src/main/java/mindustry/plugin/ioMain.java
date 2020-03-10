@@ -49,7 +49,7 @@ public class ioMain extends Plugin {
     public static DiscordApi api = null;
     public static String prefix = ".";
     public static String serverName = "<untitled>";
-    
+
     //public static HashMap<String, PlayerData> database  = new HashMap<>(); // uuid, rank
     //public static HashMap<String, Boolean> verifiedIPs = new HashMap<>(); // uuid, verified?
 
@@ -635,34 +635,40 @@ public class ioMain extends Plugin {
                 }
             });
 
-            handler.<Player>register("link", "Finish linking your account with discord, start prompt with `link` command on discord.", (args, player) -> {
+            handler.<Player>register("link", "<pin>", "Finish linking your account with discord, start prompt with `link` command on http://discord.mindustry.io", (args, player) -> {
+                String pin = args[0];
                 String uuid = player.uuid;
                 PlayerData pd = getData(uuid);
+                if(player.passPhrase.equals("")){
+                    player.sendMessage("[#7289da]\uE848[#99aab5] You first need to initiate a link on the #bot channel in our discord, http://discord.mindustry.io");
+                    return;
+                }
+                if(pin.length() != 4){
+                    player.sendMessage("[scarlet]Incorrect PIN.");
+                    return;
+                }
                 if (pd!=null){
-                    if(pd.discordLink.length() > 0){
-                        User discordUser = (User) api.getUserById(pd.discordLink);
-                        if(discordUser != null) {
-                            player.sendMessage("[#7289da]\uE848[#99aab5] Your account is already linked with [accent]" + discordUser.getDiscriminatedName());
-                            player.sendMessage("[#7289da]\uE848[#99aab5] If you wish to remove it, use the /removelink command.");
-                        } else{
-                            player.sendMessage("[scarlet]An error has occurred with the discord API.");
-                        }
-                    } else{
-                        if(pd.supposedDiscordLink.length() > 0){
-                            User discordUser = (User) api.getUserById(pd.discordLink);
-                            if(discordUser != null) {
-                                pd.discordLink = pd.supposedDiscordLink;
-                                pd.supposedDiscordLink = "";
-                                setData(uuid, pd);
-                                player.sendMessage("[#7289da]\uE848[#99aab5] Successfully linked account with [accent]" + discordUser.getDiscriminatedName());
-                            } else{
-                                player.sendMessage("[scarlet]An error has occurred with the discord API.");
-                            }
+                    if(player.passPhrase.length() > 0){
+                        if(player.passPhrase.equals(pin)){
+                            player.passPhrase = "OK";
+                            player.sendMessage("[#7289da]\uE848[#99aab5] Discord link successful, thank you for linking your account!");
                         }
                     }
                 }
             });
 
+            handler.<Player>register("removelink", "Remove your active discord link.", (args, player) -> {
+                String uuid = player.uuid;
+                PlayerData pd = getData(uuid);
+                if(pd == null) return;
+                if(pd.discordLink.length() > 0){
+                    pd.discordLink = "";
+                    player.sendMessage("[#7289da]\uE848[#99aab5] Discord link with [accent]" + formatMessage(player, "%discord%") + "[] removed successfully.");
+                    setData(uuid, pd);
+                } else{
+                    player.sendMessage("[#7289da]\uE848[#99aab5] You don't have an active discord link to remove. Setup a discord link using the `link` command in http://discord.mindustry.io");
+                }
+            });
         }
 
     }

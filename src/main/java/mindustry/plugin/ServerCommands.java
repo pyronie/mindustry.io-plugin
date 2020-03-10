@@ -334,7 +334,7 @@ public class ServerCommands {
                             }
                             netServer.admins.banPlayer(p.uuid);
                             eb.setTitle("Command executed.");
-                            eb.setDescription("Banned " + p.name + "(#" + p.id + ") `" + p.con.address + "` successfully!");
+                            eb.setDescription("Banned " + p.name + "(#" + p.id + ") `" + p.con.address + "` : `" + p.uuid + "`successfully!");
                             ctx.channel.sendMessage(eb);
                             p.con.kick("You've been banned by: " + ctx.author.getName() + ". Appeal at http://discord.mindustry.io");
                             Call.sendMessage("[scarlet]" + escapeCharacters(p.name) + " has been banned permanently.");
@@ -444,7 +444,7 @@ public class ServerCommands {
                     Player p = findPlayer(target);
                     if (p != null) {
                         eb.setTitle("Command executed.");
-                        eb.setDescription("Kicked " + p.name + "(#" + p.id + ") `" + p.con.address + "` successfully.");
+                        eb.setDescription("Kicked " + p.name + "(#" + p.id + ") `" + p.con.address + "` : `" + p.uuid + "`successfully!");
                         Call.sendMessage("[scarlet]" + escapeCharacters(p.name) + " has been kicked.");
                         p.con.kick("You've been kicked by: " + ctx.author.getName());
                     } else {
