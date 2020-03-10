@@ -21,7 +21,11 @@ import redis.clients.jedis.exceptions.JedisException;
 
 import java.awt.*;
 import java.lang.reflect.Field;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -249,6 +253,13 @@ public class Utils {
             }
         }
         return null;
+    }
+
+    public static String epochToString(long epoch){
+        Date date = new Date(epoch * 1000L);
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        format.setTimeZone(TimeZone.getTimeZone("Etc/UTC"));
+        return format.format(date) + " UTC";
     }
 
 }

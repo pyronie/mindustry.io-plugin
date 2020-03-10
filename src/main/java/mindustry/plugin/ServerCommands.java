@@ -39,6 +39,11 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 import java.util.zip.InflaterInputStream;
@@ -298,11 +303,52 @@ public class ServerCommands {
                         PlayerData pd = getData(uuid);
                         if(pd != null) {
                             pd.banned = true;
+                            pd.banReason = reason;
                             setData(uuid, pd);
                         }
                         eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
                         eb.addField("UUID", uuid);
                         eb.addInlineField("Reason", reason);
+                        ctx.channel.sendMessage(eb);
+
+                        player.con.kick(reason);
+                    } else{
+                        eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
+                    }
+                }
+            });
+
+            handler.registerCommand(new RoleRestrictedCommand("expel"){
+                {
+                    help = "<player> <duration (minutes)> [reason..] Ban the provided player for a specific duration with a specific reason.";
+                    role = banRole;
+                }
+
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+                    String target = ctx.args[1];
+                    String targetDuration = ctx.args[2];
+                    String reason = ctx.message.substring(target.length() + targetDuration.length() + 2);
+                    long now = Instant.now().getEpochSecond();
+
+                    Player player = findPlayer(target);
+                    if (player != null) {
+                        String uuid = player.uuid;
+                        PlayerData pd = getData(uuid);
+                        long until = now + Integer.parseInt(targetDuration) / 60;
+                        if(pd != null) {
+                            pd.bannedUntil = until;
+                            pd.banReason = reason;
+                            setData(uuid, pd);
+                        }
+
+                        eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
+                        eb.addField("UUID", uuid);
+                        eb.addField("For", targetDuration + " minutes.");
+                        eb.addField("Until", epochToString(until));
+                        eb.addInlineField("Reason", reason + "\n" + "Until: " + epochToString(until));
                         ctx.channel.sendMessage(eb);
 
                         player.con.kick(reason);

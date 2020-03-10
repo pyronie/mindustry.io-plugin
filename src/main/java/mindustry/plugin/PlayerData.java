@@ -7,6 +7,8 @@ public class PlayerData{
     public int gamesPlayed = 0;
     public boolean verified = false;
     public boolean banned = false;
+    public long bannedUntil = 0;
+    public String banReason = "";
 
     public String discordLink = "";
 
