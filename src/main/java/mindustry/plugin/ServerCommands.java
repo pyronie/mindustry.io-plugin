@@ -263,39 +263,6 @@ public class ServerCommands {
                 }
             });
 
-            /*handler.registerCommand(new RoleRestrictedCommand("sethudtext") {
-                {
-                    help = "<playerid|ip|name> <message> Sets the HUD text";
-                    role = banRole;
-                }
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    String target = ctx.args[1].toLowerCase();
-
-                    if(target.equals("all")) {
-                        for (Player p : playerGroup.all()) {
-                            Call.setHudText(p.con, ctx.message.split(" ", 2)[1]);
-                        }
-                        eb.setTitle("Command executed");
-                        eb.setDescription("Alert was sent to all players.");
-                        ctx.channel.sendMessage(eb);
-                    } else{
-                        Player p = findPlayer(target);
-                        if (p != null) {
-                            Call.setHudText(p.con, ctx.message.split(" ", 2)[1]);
-                            eb.setTitle("Command executed");
-                            eb.setDescription("Alert was sent to " + escapeCharacters(p.name));
-                            ctx.channel.sendMessage(eb);
-                        } else {
-                            eb.setTitle("Command terminated");
-                            eb.setColor(Pals.error);
-                            eb.setDescription("Player could not be found or is offline.");
-                            ctx.channel.sendMessage(eb);
-                        }
-                    }
-                }
-            });*/
-
             handler.registerCommand(new RoleRestrictedCommand("gameover") {
                 {
                     help = "Force a game over.";
@@ -314,40 +281,62 @@ public class ServerCommands {
                 }
             });
 
-            handler.registerCommand(new RoleRestrictedCommand("ban") {
+            handler.registerCommand(new RoleRestrictedCommand("ban"){
                 {
-                    help = "<ip/id> Ban a player by the provided ip or id.";
+                    help = "<player> [reason..] Ban the provided player with a specific reason.";
                     role = banRole;
                 }
- 
+
                 public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder()
-                            .setTimestampToNow();
+                    EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1];
-                    if (target.length() > 0) {
-                        Player p = findPlayer(target);
-                        if (p != null) {
-                            PlayerData pd = getData(p.uuid);
-                            if (pd != null){
-                                pd.banned = true;
-                                setData(p.uuid, pd);
-                            }
-                            netServer.admins.banPlayer(p.uuid);
-                            eb.setTitle("Command executed.");
-                            eb.setDescription("Banned " + p.name + "(#" + p.id + ") `" + p.con.address + "` : `" + p.uuid + "`successfully!");
-                            ctx.channel.sendMessage(eb);
-                            p.con.kick("You've been banned by: " + ctx.author.getName() + ". Appeal at http://discord.mindustry.io");
-                            Call.sendMessage("[scarlet]" + escapeCharacters(p.name) + " has been banned permanently.");
-                        } else {
-                            eb.setTitle("Command terminated");
-                            eb.setColor(Pals.error);
-                            eb.setDescription("Player not online. Use %blacklist <ip> to ban an offline player.".replace("%", ioMain.prefix));
-                            ctx.channel.sendMessage(eb);
+                    String reason = ctx.message.substring(target.length() + 1);
+
+                    Player player = findPlayer(target);
+                    if (player != null) {
+                        String uuid = player.uuid;
+                        PlayerData pd = getData(uuid);
+                        if(pd != null) {
+                            pd.banned = true;
+                            setData(uuid, pd);
                         }
-                    } else {
-                        eb.setTitle("Command terminated");
+                        eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
+                        eb.addField("UUID", uuid);
+                        eb.addInlineField("Reason", reason);
+                        ctx.channel.sendMessage(eb);
+
+                        player.con.kick(reason);
+                    } else{
+                        eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
                         eb.setColor(Pals.error);
-                        eb.setDescription("Not enough arguments / usage: `%ban <id/ip>`".replace("%", ioMain.prefix));
+                        ctx.channel.sendMessage(eb);
+                    }
+                }
+            });
+
+            handler.registerCommand(new RoleRestrictedCommand("kick"){
+                {
+                    help = "<player> [reason..] Kick the provided player with a specific reason.";
+                    role = banRole;
+                }
+
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+                    String target = ctx.args[1];
+                    String reason = ctx.message.substring(target.length() + 1);
+
+                    Player player = findPlayer(target);
+                    if (player != null) {
+                        String uuid = player.uuid;
+                        eb.setTitle("Kicked `" + escapeCharacters(player.name) + "`.");
+                        eb.addField("UUID", uuid);
+                        eb.addInlineField("Reason", reason);
+                        ctx.channel.sendMessage(eb);
+
+                        player.con.kick(reason);
+                    } else{
+                        eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
+                        eb.setColor(Pals.error);
                         ctx.channel.sendMessage(eb);
                     }
                 }
@@ -377,40 +366,36 @@ public class ServerCommands {
                 }
             });
 
-            handler.registerCommand(new RoleRestrictedCommand("unban") {
-                EmbedBuilder eb = new EmbedBuilder();
+            handler.registerCommand(new RoleRestrictedCommand("unban"){
                 {
-                    help = "<ip/uuid> Unban a player by the provided ip or uuid.";
+                    help = "<uuid> Unban the player by the provided uuid.";
                     role = banRole;
                 }
-                public void run(Context ctx) {
-                    String target;
-                    if(ctx.args.length==2){ target = ctx.args[1]; } else {ctx.reply("Invalid arguments provided, use the following format: %unban <ip>".replace("%", ioMain.prefix)); return;}
 
-                    if (netServer.admins.unbanPlayerIP(target)) {
-                        eb.setTitle("Command executed");
-                        eb.setDescription("Unbanned `" + target + "` successfully");
-                    } else {
-                        PlayerData pd = getData(target);
-                        if (pd != null){
-                            pd.banned = false;
-                            setData(target, pd);
-                            eb.setTitle("Command executed");
-                            eb.setDescription(target + " was unbanned successfully.");
-                        } else {
-                            eb.setTitle("Command terminated");
-                            eb.setColor(Pals.error);
-                            eb.setDescription("No such ban exists.");
-                        }
+                public void run(Context ctx) {
+                    EmbedBuilder eb = new EmbedBuilder();
+                    String target = ctx.args[1];
+                    PlayerData pd = getData(target);
+
+                    if (pd != null) {
+                        pd.banned = false;
+                        pd.bannedUntil = 0;
+                        Administration.PlayerInfo info = netServer.admins.getInfo(target);
+                        eb.setTitle("Unbanned `" + escapeCharacters(info.lastName) + "`.");
+                        ctx.channel.sendMessage(eb);
+                        setData(target, pd);
+                    } else{
+                        eb.setTitle("UUID `" + escapeCharacters(target) + "` not found in the database.");
+                        eb.setColor(Pals.error);
+                        ctx.channel.sendMessage(eb);
                     }
-                    ctx.channel.sendMessage(eb);
                 }
             });
 
             handler.registerCommand(new RoleRestrictedCommand("unvotekick") {
                 EmbedBuilder eb = new EmbedBuilder();
                 {
-                    help = "<id> Unvotekickban the specified player";
+                    help = "<uuid> Unvotekickban the specified player";
                     role = banRole;
                 }
                 public void run(Context ctx) {
@@ -421,36 +406,10 @@ public class ServerCommands {
                         info.lastKicked = 0;
                         eb.setTitle("Command executed.");
                         eb.setDescription("Unvotekickbanned `" + target + "` succeessfully.");
-                        ctx.channel.sendMessage(eb);
                     } else {
                         eb.setTitle("Command terminated.");
                         eb.setColor(Pals.error);
                         eb.setDescription("That ID isn't votekickbanned!");
-                        ctx.channel.sendMessage(eb);
-                    }
-                }
-            });
-
-            handler.registerCommand(new RoleRestrictedCommand("kick") {
-                EmbedBuilder eb = new EmbedBuilder()
-                        .setTimestampToNow();
-                {
-                    help = "<ip/id> Kick a player by the provided ip or id.";
-                    role = banRole;
-                }
-                public void run(Context ctx) {
-                    String target = ctx.args[1];
-
-                    Player p = findPlayer(target);
-                    if (p != null) {
-                        eb.setTitle("Command executed.");
-                        eb.setDescription("Kicked " + p.name + "(#" + p.id + ") `" + p.con.address + "` : `" + p.uuid + "`successfully!");
-                        Call.sendMessage("[scarlet]" + escapeCharacters(p.name) + " has been kicked.");
-                        p.con.kick("You've been kicked by: " + ctx.author.getName());
-                    } else {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("Player not online / not found.");
                     }
                     ctx.channel.sendMessage(eb);
                 }
@@ -665,7 +624,7 @@ public class ServerCommands {
 
             handler.registerCommand(new RoleRestrictedCommand("verify"){
                 {
-                    help = "<uuid> Verify the provided UUID and allow them to join the server.";
+                    help = "<uuid> Verify the provided UUID and allow them to build.";
                     role = banRole;
                 }
 
