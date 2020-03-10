@@ -62,7 +62,6 @@ public class BotThread extends Thread {
                         Call.onInfoMessage(p.con, Utils.formatMessage(p, promotionMessage));
                         if (pd.rank < 1) pd.rank = 1;
                     }
-                    pd.reprocess();
                     setData(p.uuid, pd);
                     ioMain.playerDataGroup.put(p.uuid, tdata); // update tdata with the new stuff
                 }

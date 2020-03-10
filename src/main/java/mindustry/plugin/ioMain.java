@@ -175,6 +175,10 @@ public class ioMain extends Plugin {
             }
 
             if(pd != null) {
+                if(pd.discordLink == null){
+                    pd.reprocess();
+                    setData(player.uuid, pd);
+                }
                 if(pd.banned || pd.bannedUntil > Instant.now().getEpochSecond()){
                     player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
                 }
