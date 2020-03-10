@@ -22,6 +22,8 @@ import redis.clients.jedis.exceptions.JedisException;
 import java.awt.*;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static mindustry.Vars.*;
 import static mindustry.plugin.ioMain.*;
@@ -159,7 +161,7 @@ public class Utils {
                 message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
                 message = message.replaceAll("%rank%", rankNames.get(pd.rank).tag + " " + escapeColorCodes(rankNames.get(pd.rank).name));
                 if(pd.discordLink.length() > 0){
-                    User discordUser = (User) api.getUserById(pd.discordLink);
+                    User discordUser = api.getUserById(pd.discordLink).get(2, TimeUnit.SECONDS);
                     if(discordUser != null) {
                         message = message.replaceAll("%discord%", discordUser.getDiscriminatedName());
                     } else{
