@@ -474,6 +474,7 @@ public class ServerCommands {
                     if (player != null) {
                         Administration.PlayerInfo info = netServer.admins.getInfo(player.uuid);
                         eb.setTitle(escapeCharacters(player.name) + "'s lookup");
+                        eb.addField("UUID", player.uuid);
                         eb.addField("Last used name", info.lastName);
                         eb.addField("Last used ip", info.lastIP);
                         eb.addField("Times kicked", String.valueOf(info.timesKicked));
@@ -481,12 +482,14 @@ public class ServerCommands {
                         StringBuilder s = new StringBuilder();
                         s.append("**All used names: **\n");
                         for(String name : info.names){
-                            s.append(escapeCharacters(name)).append(" || ");
+                            s.append(escapeCharacters(name)).append(" / ");
                         }
                         s.append("\n\n**All used IPs: **\n");
                         for(String ip : info.ips){
-                            s.append(escapeCharacters(ip)).append(" || ");
+                            s.append(escapeCharacters(ip)).append(" / ");
                         }
+                        eb.setDescription(s.toString());
+                        ctx.channel.sendMessage(eb);
                     } else{
                         eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
                         eb.setColor(Pals.error);
