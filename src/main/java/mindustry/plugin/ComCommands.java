@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import static mindustry.Vars.*;
 import static mindustry.plugin.Utils.*;
 import static mindustry.plugin.ioMain.getTextChannel;
+import static mindustry.plugin.ioMain.prefix;
 
 public class ComCommands {
     public void registerCommands(DiscordCommands handler) {
@@ -139,13 +140,19 @@ public class ComCommands {
                         .setTitle("Public commands:");
                 EmbedBuilder embed2 = new EmbedBuilder()
                         .setTitle("Restricted commands:");
+                StringBuilder desc1 = new StringBuilder();
+                StringBuilder desc2 = new StringBuilder();
                 for(Command command : handler.getAllCommands()) {
                     if(command instanceof RoleRestrictedCommand) {
-                        embed2.addInlineField("**" + command.name + "**", command.help);
+                        //embed2.addInlineField("**" + command.name + "**", command.help);
+                        desc1.append("**").append(prefix).append(command.name).append("**  :  ").append(command.help).append("\n");
                     } else {
-                        embed.addInlineField("**" + command.name + "**", command.help);
+                        //embed.addInlineField("**" + command.name + "**", command.help);
+                        desc2.append("**").append(prefix).append(command.name).append("**  :  ").append(command.help).append("\n");
                     }
                 }
+                embed.setDescription(desc2.toString());
+                embed2.setDescription(desc1.toString());
                 ctx.channel.sendMessage(embed2);
                 ctx.channel.sendMessage(embed);
             }

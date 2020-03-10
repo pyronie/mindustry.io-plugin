@@ -340,7 +340,7 @@ public class ServerCommands {
                         long until = now + Integer.parseInt(targetDuration) * 60;
                         if(pd != null) {
                             pd.bannedUntil = until;
-                            pd.banReason = reason;
+                            pd.banReason = reason + "\n" + "[accent]Until: " + epochToString(until);
                             setData(uuid, pd);
                         }
 
@@ -348,7 +348,7 @@ public class ServerCommands {
                         eb.addField("UUID", uuid);
                         eb.addField("For", targetDuration + " minutes.");
                         eb.addField("Until", epochToString(until));
-                        eb.addInlineField("Reason", reason + "\n" + "Until: " + epochToString(until));
+                        eb.addInlineField("Reason", reason);
                         ctx.channel.sendMessage(eb);
 
                         player.con.kick(reason);
