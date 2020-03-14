@@ -5,7 +5,9 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.*;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
 import arc.math.Mathf;
@@ -27,6 +29,7 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.Channel;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.user.User;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -650,6 +653,48 @@ public class ioMain extends Plugin {
                         } else{
                             player.sendMessage("[#7289da]\uE848[#99aab5] Incorrect PIN.");
                         }
+                    }
+                }
+            });
+
+            //TODO: test this
+            handler.<Player>register("syncrank","Sync your in-game rank with your discord roles. Link on discord with the `link` command on http://discord.mindustry.io", (args, player) -> {
+                String uuid = player.uuid;
+                PlayerData pd = getData(uuid);
+                if (pd!=null){
+                    if(pd.discordLink.length() > 0){
+                        CompletableFuture<User> user = api.getUserById(pd.discordLink);
+                        user.thenAccept(user1 -> {
+                            // first, sync discord -> in-game roles to ranks
+                            List<Role> authorRoles = user1.getRoles(api.getServerById("623884757268299786").get()); // javacord gay
+                            List<String> roles = new ArrayList<>();
+                            for(Role r : authorRoles){
+                                if(r!=null) {
+                                    roles.add(r.getIdAsString());
+                                }
+                            }
+
+                            for(String role : roles){
+                                if(rankRoles.containsKey(role)){
+                                    if(rankRoles.get(role) > pd.rank) {pd.rank = rankRoles.get(role); }
+                                }
+                            }
+                            setData(player.uuid, pd);
+
+                            // now, do in-game rank -> discord
+                            PlayerData pd2 = getData(player.uuid);
+                            if(pd2 != null){
+                                String role = getKeyByValue(rankRoles, pd.rank);
+                                Optional<Role> rolePromise = api.getRoleById(role);
+                                rolePromise.ifPresent(role1 -> {
+                                    user1.addRole(role1, "syncrole auto integration");
+                                });
+                            }
+                            player.sendMessage("[#7289da]\uE848[#99aab5] Rank sync completed.");
+                        });
+                    } else{
+                        player.sendMessage("[#7289da]\uE848[#99aab5] Your account is not linked with discord.");
+                        player.sendMessage("[#7289da]\uE848[#99aab5] Visit http://discord.mindustry.io and link using the bot with the `link` command.");
                     }
                 }
             });

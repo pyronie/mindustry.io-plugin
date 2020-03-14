@@ -262,4 +262,12 @@ public class Utils {
         return format.format(date) + " UTC";
     }
 
+    public static String getKeyByValue(HashMap<String, Integer> map, Integer value) {
+        for (java.util.Map.Entry<String, Integer> entry : map.entrySet()) {
+            if (value.equals(entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
 }
