@@ -952,12 +952,16 @@ public class ServerCommands {
 
                         if(target.equals("all")){
                             for(Player p : playerGroup.all()){
-                                if(desiredBullet == null){
-                                    player.bt = null;
-                                } else{
-                                    player.bt = desiredBullet;
-                                    player.sclLifetime = targetL;
-                                    player.sclVelocity = targetV;
+                                if(player!=null) { // what???    ...    how does this happen
+                                    try {
+                                        if (desiredBullet == null) {
+                                            player.bt = null;
+                                        } else {
+                                            player.bt = desiredBullet;
+                                            player.sclLifetime = targetL;
+                                            player.sclVelocity = targetV;
+                                        }
+                                    } catch(Exception ignored){}
                                 }
                             }
                             eb.setTitle("Command executed");
