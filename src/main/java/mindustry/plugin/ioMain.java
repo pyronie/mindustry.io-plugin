@@ -656,48 +656,7 @@ public class ioMain extends Plugin {
                     }
                 }
             });
-
-            //TODO: test this
-            handler.<Player>register("syncrank","Sync your in-game rank with your discord roles. Link on discord with the `link` command on http://discord.mindustry.io", (args, player) -> {
-                String uuid = player.uuid;
-                PlayerData pd = getData(uuid);
-                if (pd!=null){
-                    if(pd.discordLink.length() > 0){
-                        CompletableFuture<User> user = api.getUserById(pd.discordLink);
-                        user.thenAccept(user1 -> {
-                            // first, sync discord -> in-game roles to ranks
-                            List<Role> authorRoles = user1.getRoles(api.getServerById("623884757268299786").get()); // javacord gay
-                            List<String> roles = new ArrayList<>();
-                            for(Role r : authorRoles){
-                                if(r!=null) {
-                                    roles.add(r.getIdAsString());
-                                }
-                            }
-
-                            for(String role : roles){
-                                if(rankRoles.containsKey(role)){
-                                    if(rankRoles.get(role) > pd.rank) {pd.rank = rankRoles.get(role); }
-                                }
-                            }
-                            setData(player.uuid, pd);
-
-                            // now, do in-game rank -> discord
-                            PlayerData pd2 = getData(player.uuid);
-                            if(pd2 != null){
-                                String role = getKeyByValue(rankRoles, pd.rank);
-                                Optional<Role> rolePromise = api.getRoleById(role);
-                                rolePromise.ifPresent(role1 -> {
-                                    user1.addRole(role1, "syncrole auto integration");
-                                });
-                            }
-                            player.sendMessage("[#7289da]\uE848[#99aab5] Rank sync completed.");
-                        });
-                    } else{
-                        player.sendMessage("[#7289da]\uE848[#99aab5] Your account is not linked with discord.");
-                        player.sendMessage("[#7289da]\uE848[#99aab5] Visit http://discord.mindustry.io and link using the bot with the `link` command.");
-                    }
-                }
-            });
+            
 
             handler.<Player>register("removelink", "Remove your active discord link.", (args, player) -> {
                 String uuid = player.uuid;
