@@ -10,6 +10,7 @@ import mindustry.entities.type.BaseUnit;
 import mindustry.entities.Damage;
 import mindustry.graphics.Pal;
 import mindustry.net.Administration;
+import mindustry.net.Packets;
 import mindustry.plugin.discordcommands.Command;
 import mindustry.plugin.discordcommands.Context;
 import mindustry.plugin.discordcommands.DiscordCommands;
@@ -312,7 +313,7 @@ public class ServerCommands {
                         eb.addInlineField("Reason", reason);
                         ctx.channel.sendMessage(eb);
 
-                        player.con.kick(reason);
+                        player.con.kick(Packets.KickReason.banned);
                     } else{
                         eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
                         eb.setColor(Pals.error);
@@ -352,7 +353,7 @@ public class ServerCommands {
                         eb.addInlineField("Reason", reason);
                         ctx.channel.sendMessage(eb);
 
-                        player.con.kick(reason);
+                        player.con.kick(Packets.KickReason.banned);
                     } else{
                         eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
                         eb.setColor(Pals.error);
@@ -380,7 +381,7 @@ public class ServerCommands {
                         eb.addInlineField("Reason", reason);
                         ctx.channel.sendMessage(eb);
 
-                        player.con.kick(reason);
+                        player.con.kick(Packets.KickReason.kick);
                     } else{
                         eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
                         eb.setColor(Pals.error);
