@@ -1,5 +1,6 @@
 package mindustry.plugin;
 
+import arc.math.Mathf;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Bullets;
@@ -7,8 +8,6 @@ import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
-import mindustry.entities.Damage;
-import mindustry.graphics.Pal;
 import mindustry.net.Administration;
 import mindustry.net.Packets;
 import mindustry.plugin.discordcommands.Command;
@@ -41,11 +40,8 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.lang.reflect.Field;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Date;
-import java.util.TimeZone;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 import java.util.zip.InflaterInputStream;
@@ -302,14 +298,16 @@ public class ServerCommands {
                     Player player = findPlayer(target);
                     if (player != null) {
                         String uuid = player.uuid;
+                        String banId = uuid.substring(0, 4);
                         PlayerData pd = getData(uuid);
                         if(pd != null) {
                             pd.banned = true;
-                            pd.banReason = reason;
+                            pd.banReason = reason + "\n[accent]Ban ID:[] " + banId;
                             setData(uuid, pd);
                         }
                         eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
                         eb.addField("UUID", uuid);
+                        eb.addField("Ban ID", banId);
                         eb.addInlineField("Reason", reason);
                         ctx.channel.sendMessage(eb);
 
@@ -338,16 +336,18 @@ public class ServerCommands {
                     Player player = findPlayer(target);
                     if (player != null) {
                         String uuid = player.uuid;
+                        String banId = uuid.substring(0, 4);
                         PlayerData pd = getData(uuid);
                         long until = now + Integer.parseInt(targetDuration) * 60;
                         if(pd != null) {
                             pd.bannedUntil = until;
-                            pd.banReason = reason + "\n" + "[accent]Until: " + epochToString(until);
+                            pd.banReason = reason + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + banId;
                             setData(uuid, pd);
                         }
 
                         eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
                         eb.addField("UUID", uuid);
+                        eb.addField("Ban ID", banId);
                         eb.addField("For", targetDuration + " minutes.");
                         eb.addField("Until", epochToString(until));
                         eb.addInlineField("Reason", reason);
