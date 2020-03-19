@@ -228,7 +228,7 @@ public class ioMain extends Plugin {
                 Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
             }
 
-            Timer.schedule(() -> {
+            CompletableFuture.runAsync(() -> {
                 if(verification) {
                     if (pd != null && !pd.verified) {
                         Log.info("Unverified player joined: " + player.name);
@@ -251,7 +251,7 @@ public class ioMain extends Plugin {
                         }
                     }
                 }
-            }, 1);
+            });
         });
 
         // player built building
