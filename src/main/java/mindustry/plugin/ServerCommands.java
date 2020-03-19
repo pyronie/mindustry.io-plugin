@@ -35,6 +35,7 @@ import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.MessageAttachment;
 
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.entity.user.User;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -390,7 +391,7 @@ public class ServerCommands {
 
             handler.registerCommand(new RoleRestrictedCommand("blacklist") {
                 {
-                    help = "<ip> Ban a player by the provided ip.";
+                    help = "<uuid> Ban a player by the provided uuid.";
                     role = banRole;
                 }
 
@@ -398,17 +399,17 @@ public class ServerCommands {
                     EmbedBuilder eb = new EmbedBuilder()
                             .setTimestampToNow();
                     String target = ctx.args[1];
-                    if (target.length() > 0) {
-                        netServer.admins.banPlayerIP(target);
+                    PlayerData pd = getData(target);
+
+                    if (pd != null) {
                         eb.setTitle("Blacklisted successfully.");
-                        eb.setDescription("`" + target + "` was banned.");
-                        ctx.channel.sendMessage(eb);
+                        eb.setDescription("`" + escapeCharacters(target) + "` was banned.");
                     } else {
                         eb.setTitle("Command terminated");
                         eb.setColor(Pals.error);
-                        eb.setDescription("Not enough arguments / usage: `%blacklist <ip>`".replace("%", ioMain.prefix));
-                        ctx.channel.sendMessage(eb);
+                        eb.setDescription("UUID `" + escapeCharacters(target) + "` was not found in the database.");
                     }
+                    ctx.channel.sendMessage(eb);
                 }
             });
 
@@ -470,29 +471,42 @@ public class ServerCommands {
                     EmbedBuilder eb = new EmbedBuilder();
                     String target = ctx.args[1];
 
+                    Administration.PlayerInfo info = null;
                     Player player = findPlayer(target);
                     if (player != null) {
-                        Administration.PlayerInfo info = netServer.admins.getInfo(player.uuid);
-                        eb.setTitle(escapeCharacters(player.name) + "'s lookup");
-                        eb.addField("UUID", player.uuid);
-                        eb.addField("Last used name", info.lastName);
+                        info = netServer.admins.getInfo(player.uuid);
+                    } else{
+                        info = netServer.admins.getInfoOptional(target);
+                    }
+
+                    if(info != null) {
+                        eb.setTitle(escapeCharacters(info.lastName) + "'s lookup");
+                        eb.addField("UUID", info.id);
                         eb.addField("Last used ip", info.lastIP);
                         eb.addField("Times kicked", String.valueOf(info.timesKicked));
 
+                        PlayerData pd = getData(info.id);
+                        if(pd != null){
+                            eb.addField("Rank", rankNames.get(pd.rank).name);
+                            eb.addField("Playtime", pd.playTime + " minutes");
+                            eb.addField("Games", String.valueOf(pd.gamesPlayed));
+                            eb.addField("Buildings built", String.valueOf(pd.buildingsBuilt));
+
+                            CompletableFuture<User> user = ioMain.api.getUserById(pd.discordLink);
+                            user.thenAccept(user1 -> {
+                                eb.addField("Discord Link", user1.getDiscriminatedName());
+                            });
+                        }
                         StringBuilder s = new StringBuilder();
                         s.append("**All used names: **\n");
-                        for(String name : info.names){
+                        for (String name : info.names) {
                             s.append(escapeCharacters(name)).append(" / ");
                         }
                         s.append("\n\n**All used IPs: **\n");
-                        for(String ip : info.ips){
+                        for (String ip : info.ips) {
                             s.append(escapeCharacters(ip)).append(" / ");
                         }
                         eb.setDescription(s.toString());
-                        ctx.channel.sendMessage(eb);
-                    } else{
-                        eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
-                        eb.setColor(Pals.error);
                         ctx.channel.sendMessage(eb);
                     }
                 }
