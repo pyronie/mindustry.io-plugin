@@ -57,9 +57,6 @@ public class ioMain extends Plugin {
     public static String prefix = ".";
     public static String serverName = "<untitled>";
 
-    //public static HashMap<String, PlayerData> database  = new HashMap<>(); // uuid, rank
-    //public static HashMap<String, Boolean> verifiedIPs = new HashMap<>(); // uuid, verified?
-
     public static HashMap<String, PersistentPlayerData> playerDataGroup = new HashMap<>(); // uuid, data
 
     private final String fileNotFoundErrorMessage = "File not found: config\\mods\\settings.json";
@@ -158,11 +155,33 @@ public class ioMain extends Plugin {
                 if(player1.bt != null && player1.isShooting()){
                     Call.createBullet(player1.bt, player1.getTeam(), player1.x, player1.y, player1.rotation, player1.sclVelocity, player1.sclLifetime);
                 }
+                if(player1.tapTile != null && player1.inspector){
+                    Call.onEffectReliable(Fx.placeBlock, player1.tapTile.x, player1.tapTile.y, 0, Pal.accent);
+                }
             });
         });
 
         Events.on(EventType.TapEvent.class, tapEvent -> {
-            player.tapTile = tapEvent.tile;
+            if(tapEvent.tile != null) {
+                Tile t = tapEvent.tile;
+                player.tapTile = t;
+                if (player.inspector) {
+                    player.sendMessage("[accent]tile [](" + t.x + ", " + t.y + ")[accent] block:[] " + (t.block() == null ? "[#545454]none" : t.block().name));
+                    Tile.tileInfo info = t.info;
+                    if(info.placedBy != null){
+                        String pBy = (player.isAdmin ? info.placedByUUID : info.placedBy);
+                        player.sendMessage("[accent]last placed by:[] " + escapeColorCodes(pBy));
+                    }
+                    if(info.destroyedBy != null){
+                        String dBy = (player.isAdmin ? info.destroyedByUUID : info.destroyedBy);
+                        player.sendMessage("[accent]last deconstructed by:[] " + escapeColorCodes(dBy));
+                    }
+                    if(info.configuredBy != null){
+                        String cBy = (player.isAdmin ? info.configuredByUUID : info.configuredBy);
+                        player.sendMessage("[accent]last configured by:[] " + escapeColorCodes(cBy));
+                    }
+                }
+            }
         });
 
         // player joined
@@ -325,6 +344,11 @@ public class ioMain extends Plugin {
     @Override
     public void registerClientCommands(CommandHandler handler){
         if (api != null) {
+            handler.<Player>register("inspector", "Toggle on tile inspector. (Grief detection)", (args, player) -> {
+                player.inspector = !player.inspector;
+                player.sendMessage("[accent]Tile inspector toggled.");
+            });
+
             handler.<Player>register("d", "<text...>", "Sends a message to moderators. Use when no moderators are online and there's a griefer.", (args, player) -> {
 
                 if (!data.has("warnings_chat_channel_id")) {
@@ -464,7 +488,7 @@ public class ioMain extends Plugin {
                                 Call.onInfoToast(player.con, "[scarlet]Cannot place a power generator here.",5f);
                                 return;
                             }
-                            
+
                             tdata.spawnedPowerGen = true;
                             targetTile.setNet(Blocks.rtgGenerator, player.getTeam(), 0);
                             Call.onLabel("[accent]" + escapeCharacters(escapeColorCodes(player.name)) + "'s[] generator", 60f, targetTile.worldx(), targetTile.worldy());
