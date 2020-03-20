@@ -44,12 +44,9 @@ public class BotThread extends Thread {
                     PlayerData pd = getData(p.uuid);
                     if (pd == null) return;
 
-                    // cooldowns
+                    // update buildings built
                     PersistentPlayerData tdata = (ioMain.playerDataGroup.getOrDefault(p.uuid, null));
                     if (tdata != null){
-                        if (tdata.burstCD > 0){
-                            tdata.burstCD--;
-                        }
                         if (tdata.bbIncrementor > 0){
                             pd.buildingsBuilt = pd.buildingsBuilt + tdata.bbIncrementor;
                             tdata.bbIncrementor = 0;

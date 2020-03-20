@@ -14,8 +14,6 @@ public class PersistentPlayerData implements Serializable {
     public boolean spawnedLichPet;
     public boolean spawnedPowerGen;
 
-    public int burstCD = 0;
-
     public PersistentPlayerData() {}
 
 }
