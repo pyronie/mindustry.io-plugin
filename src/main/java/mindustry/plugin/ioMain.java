@@ -161,6 +161,10 @@ public class ioMain extends Plugin {
             });
         });
 
+        Events.on(EventType.TapEvent.class, tapEvent -> {
+            player.tapTile = tapEvent.tile;
+        });
+
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
             Player player = event.player;
@@ -265,6 +269,30 @@ public class ioMain extends Plugin {
                 if (!activeRequirements.bannedBlocks.contains(event.tile.block())) {
                     td.bbIncrementor++;
                 }
+            }
+        });
+
+        Events.on(EventType.BuildSelectEvent.class, event -> {
+            if(event.builder instanceof Player){
+                if(event.tile != null){
+                    Player player = (Player) event.builder;
+                    if(!event.breaking){
+                        event.tile.info.placedBy = player.name;
+                        event.tile.info.placedByUUID = player.uuid;
+                    } else{
+                        event.tile.info.destroyedBy = player.name;
+                        event.tile.info.destroyedByUUID = player.uuid;
+                    }
+                }
+            }
+        });
+
+        Events.on(EventType.TapConfigEvent.class, event -> {
+            if(event.tile != null & event.player != null){
+                Tile.tileInfo info = event.tile.info;
+                Player player = event.player;
+                info.configuredBy = player.name;
+                info.configuredByUUID = player.uuid;
             }
         });
 
@@ -427,8 +455,6 @@ public class ioMain extends Plugin {
                         PersistentPlayerData tdata = playerDataGroup.get(player.uuid);
                         if (tdata == null) return;
                         if (!tdata.spawnedPowerGen || player.isAdmin) {
-                            tdata.spawnedPowerGen = true;
-
                             float x = player.getX();
                             float y = player.getY();
 
@@ -438,7 +464,8 @@ public class ioMain extends Plugin {
                                 Call.onInfoToast(player.con, "[scarlet]Cannot place a power generator here.",5f);
                                 return;
                             }
-
+                            
+                            tdata.spawnedPowerGen = true;
                             targetTile.setNet(Blocks.rtgGenerator, player.getTeam(), 0);
                             Call.onLabel("[accent]" + escapeCharacters(escapeColorCodes(player.name)) + "'s[] generator", 60f, targetTile.worldx(), targetTile.worldy());
                             Call.onEffectReliable(Fx.explosion, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
@@ -461,39 +488,6 @@ public class ioMain extends Plugin {
                             };
                         } else {
                             player.sendMessage("[#ff82d1]You already spawned a power generator in this game!");
-                        }
-                    } else {
-                        player.sendMessage(noPermissionMessage);
-                    }
-                } else {
-                    player.sendMessage("[scarlet]This command is disabled on pvp.");
-                }
-            });
-
-            handler.<Player>register("waterburst", "[donator+] Extinguish all ongoing fires (3 minute cooldown)", (args, player) -> {
-                if(!state.rules.pvp || player.isAdmin) {
-                    PlayerData pd = getData(player.uuid);
-                    if (pd != null && pd.rank >= 3) {
-                        PersistentPlayerData tdata = playerDataGroup.get(player.uuid);
-                        if (tdata == null) return;
-                        if (tdata.burstCD <= 0 || player.isAdmin) {
-                            tdata.burstCD = 3;
-                            float x = player.getX();
-                            float y = player.getY();
-
-                            Tile targetTile = world.tileWorld(x, y);
-                            Call.onEffectReliable(Fx.healWave, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
-
-                            IntStream.range(0, 90).forEach(i -> {
-                                Call.onEffectReliable(Fx.shootLiquid, targetTile.worldx(), targetTile.worldy(), i * 4, arc.graphics.Color.valueOf("65bdf7"));
-                            });
-
-                            for(Entity fire : fireGroup){
-                                Call.onRemoveFire(fire.getID());
-                            }
-                            Call.sendMessage(player.name + "[#3279a8] extinguished all fires!");
-                        } else {
-                            player.sendMessage("[#3279a8]This command is on a cooldown. " + tdata.burstCD + "m remaining.");
                         }
                     } else {
                         player.sendMessage(noPermissionMessage);
