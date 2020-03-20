@@ -64,7 +64,7 @@ public class MapRules {
         Tile[][] tiles = world.getTiles();
         for (int x = 0; x < tiles.length; ++x) {
             for(int y = 0; y < tiles[0].length; ++y) {
-                if (tiles[x][y] != null && tiles[x][y].entity != null) {
+                if (tiles[x][y] != null) {
                     TileEntity ent = tiles[x][y].ent();
                     if (ent instanceof CoreBlock.CoreEntity) {
                         Call.onLabel(map.description(), 20f, ent.x, ent.y);

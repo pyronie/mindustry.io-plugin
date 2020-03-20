@@ -64,6 +64,8 @@ public class ioMain extends Plugin {
     public static JSONObject data; //token, channel_id, role_id
     public static String apiKey = "";
 
+    protected Interval timer = new Interval(1);
+
     //register event handlers and create variables in the constructor
     public ioMain() {
         Utils.init();
@@ -126,7 +128,6 @@ public class ioMain extends Plugin {
             }
         }, 0, 10);
 
-
         // update every tick
         Events.on(EventType.Trigger.update, () -> {
             playerGroup.all().forEach(player1 -> {
@@ -155,28 +156,30 @@ public class ioMain extends Plugin {
                 if(player1.bt != null && player1.isShooting()){
                     Call.createBullet(player1.bt, player1.getTeam(), player1.x, player1.y, player1.rotation, player1.sclVelocity, player1.sclLifetime);
                 }
-                if(player1.tapTile != null && player1.inspector){
-                    Call.onEffectReliable(Fx.placeBlock, player1.tapTile.x, player1.tapTile.y, 0, Pal.accent);
-                }
             });
         });
 
         Events.on(EventType.TapEvent.class, tapEvent -> {
             if(tapEvent.tile != null) {
+                Player player = tapEvent.player;
                 Tile t = tapEvent.tile;
                 player.tapTile = t;
                 if (player.inspector) {
-                    player.sendMessage("[accent]tile [](" + t.x + ", " + t.y + ")[accent] block:[] " + (t.block() == null ? "[#545454]none" : t.block().name));
+                    Call.onEffectReliable(player.con, Fx.placeBlock, t.worldx(), t.worldy(), 0.75f, Pal.accent);
+                    player.sendMessage("[orange]--[] [accent]tile [](" + t.x + ", " + t.y + ")[accent] block:[] " + ((t.block() == null || t.block() == Blocks.air) ? "[#545454]none" : t.block().name) + " [orange]--[]");
                     Tile.tileInfo info = t.info;
-                    if(info.placedBy != null){
+                    if (info.placedBy != null) {
                         String pBy = (player.isAdmin ? info.placedByUUID : info.placedBy);
                         player.sendMessage("[accent]last placed by:[] " + escapeColorCodes(pBy));
                     }
-                    if(info.destroyedBy != null){
+                    if (info.destroyedBy != null) {
                         String dBy = (player.isAdmin ? info.destroyedByUUID : info.destroyedBy);
-                        player.sendMessage("[accent]last deconstructed by:[] " + escapeColorCodes(dBy));
+                        player.sendMessage("[accent]last [scarlet]deconstructed[] by:[] " + escapeColorCodes(dBy));
                     }
-                    if(info.configuredBy != null){
+                    if (t.block() == Blocks.air && info.wasHere != null){
+                        player.sendMessage("[accent]block that was here:[] " + info.wasHere);
+                    }
+                    if (info.configuredBy != null) {
                         String cBy = (player.isAdmin ? info.configuredByUUID : info.configuredBy);
                         player.sendMessage("[accent]last configured by:[] " + escapeColorCodes(cBy));
                     }
@@ -298,6 +301,7 @@ public class ioMain extends Plugin {
                     if(!event.breaking){
                         event.tile.info.placedBy = player.name;
                         event.tile.info.placedByUUID = player.uuid;
+                        event.tile.info.wasHere = (event.tile.block() != null ? event.tile.block().name : "[#545454]none");
                     } else{
                         event.tile.info.destroyedBy = player.name;
                         event.tile.info.destroyedByUUID = player.uuid;
@@ -646,6 +650,16 @@ public class ioMain extends Plugin {
 
                     Tile targetTile = world.tileWorld(x, y);
                     Call.onLabel(args[1], Float.parseFloat(args[0]), targetTile.worldx(), targetTile.worldy());
+                } else {
+                    player.sendMessage(noPermissionMessage);
+                }
+            });
+
+            handler.<Player>register("gm", "<multiplier>", "[admin only] Set your max health multiplier.", (args, player) -> {
+                if (player.isAdmin) {
+                    player.healthMultiplier = Float.parseFloat(args[0]);
+                    player.sendMessage("[accent]Health multiplier set to " + Float.parseFloat(args[0]));
+                    player.heal();
                 } else {
                     player.sendMessage(noPermissionMessage);
                 }
