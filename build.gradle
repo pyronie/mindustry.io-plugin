@@ -11,15 +11,15 @@ repositories{
 }
 
 ext{
-    mindustryVersion = 'v104'
+    mindustryVersion = 'healthMP'
     arcVersion = 'v104'
 }
 
 dependencies{
 
     compileOnly "com.github.Anuken.Arc:arc-core:$arcVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:server:$mindustryVersion"
+    compileOnly "com.github.fuzzbuck.Mindustry:core:$mindustryVersion"
+    compileOnly "com.github.fuzzbuck.Mindustry:server:$mindustryVersion"
 
     compile "org.glassfish.jersey.core:jersey-client:2.25.1"
     compile "redis.clients:jedis:3.2.0"

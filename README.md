@@ -1,10 +1,8 @@
 ### Information
 
-This plugin checks if a player joining is banned from the .io mindustry server network, and prevents them from joining your server if they are.
+The plugin's general purpose is to prevent griefers and make moderation easier. If you wish to help developing the plugin, feel free!
 
-### API:
-http://mindustry.io:8080/stats
+### Credits
 
-### Commands:
-* /iobans - Toggle io global ban checking on and off.
-* /kick-reason <text...> - Change the default kick reason if the player is detected to be banned.
+The original discordplugin was made by J-VdS, you can visit his repository here:
+https://github.com/J-VdS/DiscordPlugin
