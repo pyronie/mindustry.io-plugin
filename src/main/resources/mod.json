@@ -1,7 +1,6 @@
 {
   "name": "io-global-bans",
   "author": "fuzzbuck",
-  "main": "iobans",
   "description": "Allows interaction with discord & vice versa, makes moderation easier.",
   "version": 1.6
 }
