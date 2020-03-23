@@ -11,21 +11,19 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.maps.Maps;
+import mindustry.plugin.datas.MapData;
+import mindustry.plugin.datas.PlayerData;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
 import org.javacord.api.entity.user.User;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Transaction;
-import redis.clients.jedis.exceptions.JedisException;
 
 import java.awt.*;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +32,7 @@ import static mindustry.plugin.ioMain.*;
 
 public class Utils {
     public static int chatMessageMaxSize = 256;
+    static String mapSaveKey = "bXn94MAP";
     static String welcomeMessage = "";
     static String statMessage = "";
     static String noPermissionMessage = "[accent]You don't have permissions to execute this command!\nObtain the donator rank here: http://donate.mindustry.io";
@@ -177,6 +176,8 @@ public class Utils {
         return message;
     }
 
+
+    // playerdata
     public static PlayerData getData(String uuid) {
         try(Jedis jedis = ioMain.pool.getResource()) {
             String json = jedis.get(uuid);
@@ -192,12 +193,43 @@ public class Utils {
     }
 
     public static void setData(String uuid, PlayerData pd) {
+        CompletableFuture.runAsync(() -> {
+            try (Jedis jedis = ioMain.pool.getResource()) {
+                try {
+                    String json = gson.toJson(pd);
+                    jedis.set(uuid, json);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+
+    // mapdata
+    public static void setMapData(String mapName, MapData md) {
+        CompletableFuture.runAsync(() -> {
+            try (Jedis jedis = ioMain.pool.getResource()) {
+                try {
+                    String json = gson.toJson(md);
+                    jedis.set(mapName, json); // encode map name in base64
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public static MapData getMapData(String mapName) {
         try(Jedis jedis = ioMain.pool.getResource()) {
+            String json = jedis.get(mapName);
+            if(json == null) return null;
+
             try {
-                String json = gson.toJson(pd);
-                jedis.set(uuid, json);
+                return gson.fromJson(json, MapData.class);
             } catch(Exception e){
                 e.printStackTrace();
+                return null;
             }
         }
     }

@@ -1,14 +1,10 @@
 package mindustry.plugin;
 
 import java.awt.*;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.*;
-import java.util.List;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.IntStream;
 
 import arc.math.Mathf;
 import arc.util.*;
@@ -17,20 +13,18 @@ import com.google.gson.Gson;
 import arc.util.Timer.Task;
 import mindustry.content.*;
 import mindustry.entities.Effects;
-import mindustry.entities.traits.Entity;
 import mindustry.entities.type.BaseUnit;
 import mindustry.graphics.Pal;
-import mindustry.net.Administration;
-import mindustry.type.UnitType;
+import mindustry.maps.Map;
+import mindustry.plugin.datas.MapData;
+import mindustry.plugin.datas.PersistentPlayerData;
+import mindustry.plugin.datas.PlayerData;
 import mindustry.world.Build;
 import mindustry.world.Tile;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.Channel;
 import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.permission.Role;
-import org.javacord.api.entity.user.User;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -130,32 +124,34 @@ public class ioMain extends Plugin {
 
         // update every tick
         Events.on(EventType.Trigger.update, () -> {
-            playerGroup.all().forEach(player1 -> {
-                if(player1.doRainbow) {
-                    // update rainbows
-                    String playerNameUnmodified = player1.origName;
-                    int hue = player1.hue;
-                    if (hue < 360) {
-                        hue = hue + 1;
-                    } else {
-                        hue = 0;
+            CompletableFuture.runAsync(() -> {
+                playerGroup.all().forEach(player1 -> {
+                    if (player1.doRainbow) {
+                        // update rainbows
+                        String playerNameUnmodified = player1.origName;
+                        int hue = player1.hue;
+                        if (hue < 360) {
+                            hue = hue + 1;
+                        } else {
+                            hue = 0;
+                        }
+
+                        String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
+                        String[] c = playerNameUnmodified.split(" ", 2);
+                        if (c.length > 1) player1.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
+                        else player1.name = "[" + hex + "]" + escapeColorCodes(c[0]);
+                        player1.hue = hue;
                     }
+                    if (player1.doTrail) {
+                        String hex = Integer.toHexString(Color.getHSBColor(player1.hue / 360f, 1f, 1f).getRGB()).substring(2);
 
-                    String hex = "#" + Integer.toHexString(Color.getHSBColor(hue / 360f, 1f, 1f).getRGB()).substring(2);
-                    String[] c = playerNameUnmodified.split(" ", 2);
-                    if (c.length > 1) player1.name = c[0] + " [" + hex + "]" + escapeColorCodes(c[1]);
-                    else player1.name = "[" + hex + "]" + escapeColorCodes(c[0]);
-                    player1.hue = hue;
-                }
-                if(player1.doTrail){
-                    String hex = Integer.toHexString(Color.getHSBColor(player1.hue / 360f, 1f, 1f).getRGB()).substring(2);
-
-                    arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
-                    Call.onEffectReliable(player1.trailFx, player1.x, player1.y, (180 + player1.rotation) % 360, c);
-                }
-                if(player1.bt != null && player1.isShooting()){
-                    Call.createBullet(player1.bt, player1.getTeam(), player1.x, player1.y, player1.rotation, player1.sclVelocity, player1.sclLifetime);
-                }
+                        arc.graphics.Color c = arc.graphics.Color.valueOf(hex);
+                        Call.onEffectReliable(player1.trailFx, player1.x, player1.y, (180 + player1.rotation) % 360, c);
+                    }
+                    if (player1.bt != null && player1.isShooting()) {
+                        Call.createBullet(player1.bt, player1.getTeam(), player1.x, player1.y, player1.rotation, player1.sclVelocity, player1.sclLifetime);
+                    }
+                });
             });
         });
 
@@ -189,73 +185,73 @@ public class ioMain extends Plugin {
 
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
-            Player player = event.player;
-            player.origName = player.name;
-            if(bannedNames.contains(player.name)) {
-                player.con.kick("[scarlet]Download the game from legitimate sources to join.\n[accent]https://anuke.itch.io/mindustry");
-                return;
-            }
+            CompletableFuture.runAsync(() -> {
+                Player player = event.player;
+                player.origName = player.name;
+                if (bannedNames.contains(player.name)) {
+                    player.con.kick("[scarlet]Download the game from legitimate sources to join.\n[accent]https://anuke.itch.io/mindustry");
+                    return;
+                }
 
-            PlayerData pd = getData(player.uuid);
+                PlayerData pd = getData(player.uuid);
 
-            if (!playerDataGroup.containsKey(player.uuid)) {
-                PersistentPlayerData data = new PersistentPlayerData();
-                playerDataGroup.put(player.uuid, data);
-            }
+                if (!playerDataGroup.containsKey(player.uuid)) {
+                    PersistentPlayerData data = new PersistentPlayerData();
+                    playerDataGroup.put(player.uuid, data);
+                }
 
-            if(pd != null) {
-                try {
-                    if (pd.discordLink == null) {
+                if (pd != null) {
+                    try {
+                        if (pd.discordLink == null) {
+                            pd.reprocess();
+                            setData(player.uuid, pd);
+                        }
+                    } catch (Exception ignored) {
                         pd.reprocess();
                         setData(player.uuid, pd);
                     }
-                } catch (Exception ignored){
-                    pd.reprocess();
-                    setData(player.uuid, pd);
+                    if (pd.banned || pd.bannedUntil > Instant.now().getEpochSecond()) {
+                        player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
+                    }
+                    int rank = pd.rank;
+                    switch (rank) { // apply new tag
+                        case 0:
+                            if (pd.discordLink.length() > 0) {
+                                player.tag = "[#7289da]\uE848[] ";
+                            } else {
+                                player.tag = "";
+                            }
+                            break;
+                        case 1:
+                            Call.sendMessage("[sky]active player " + player.name + "[] joined the server!");
+                            player.tag = rankNames.get(1).tag + " ";
+                            break;
+                        case 2:
+                            Call.sendMessage("[#fcba03]regular player " + player.name + "[] joined the server!");
+                            player.tag = rankNames.get(2).tag + " ";
+                            break;
+                        case 3:
+                            Call.sendMessage("[scarlet]donator " + player.name + "[] joined the server!");
+                            player.tag = rankNames.get(3).tag + " ";
+                            break;
+                        case 4:
+                            Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + "[] joined the server!");
+                            player.tag = rankNames.get(4).tag + " ";
+                            break;
+                        case 5:
+                            Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + "[] joined the server!");
+                            player.tag = rankNames.get(5).tag + " ";
+                            break;
+                    }
+                } else { // not in database
+                    setData(player.uuid, new PlayerData(0));
                 }
-                if(pd.banned || pd.bannedUntil > Instant.now().getEpochSecond()){
-                    player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
-                }
-                int rank = pd.rank;
-                switch (rank) { // apply new tag
-                    case 0:
-                        if(pd.discordLink.length() > 0){
-                            player.tag = "[#7289da]\uE848[] ";
-                        } else {
-                            player.tag = "";
-                        }
-                        break;
-                    case 1:
-                        Call.sendMessage("[sky]active player " + player.name + "[] joined the server!");
-                        player.tag = rankNames.get(1).tag + " ";
-                        break;
-                    case 2:
-                        Call.sendMessage("[#fcba03]regular player " + player.name + "[] joined the server!");
-                        player.tag = rankNames.get(2).tag + " ";
-                        break;
-                    case 3:
-                        Call.sendMessage("[scarlet]donator " + player.name + "[] joined the server!");
-                        player.tag = rankNames.get(3).tag + " ";
-                        break;
-                    case 4:
-                        Call.sendMessage("[orange]<[][white]io moderator[][orange]>[] " + player.name + "[] joined the server!");
-                        player.tag = rankNames.get(4).tag + " ";
-                        break;
-                    case 5:
-                        Call.sendMessage("[orange]<[][white]io admin[][orange]>[] " + player.name + "[] joined the server!");
-                        player.tag = rankNames.get(5).tag + " ";
-                        break;
-                }
-            } else { // not in database
-                setData(player.uuid, new PlayerData(0));
-            }
 
-            if (welcomeMessage.length() > 0) {
-                Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
-            }
+                if (welcomeMessage.length() > 0) {
+                    Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
+                }
 
-            CompletableFuture.runAsync(() -> {
-                if(verification) {
+                if (verification) {
                     if (pd != null && !pd.verified) {
                         Log.info("Unverified player joined: " + player.name);
                         String url = "http://api.vpnblocker.net/v2/json/" + player.con.address + "/" + apiKey;
@@ -319,15 +315,27 @@ public class ioMain extends Plugin {
             }
         });
 
-        Events.on(EventType.GameOverEvent.class, event -> {
-            for (Player p : playerGroup.all()) {
-                PlayerData pd = getData(p.uuid);
-                if (pd != null) {
-                    pd.gamesPlayed++;
-                    setData(p.uuid, pd);
-                    Call.onInfoToast(p.con, "[accent]+1 games played", 10);
+        Events.on(EventType.GameOverEvent.class, () -> {
+            CompletableFuture.runAsync(() -> {
+                for (Player p : playerGroup.all()) { // update playerdata
+                    PlayerData pd = getData(p.uuid);
+                    if (pd != null) {
+                        pd.gamesPlayed++;
+                        setData(p.uuid, pd);
+                        Call.onInfoToast(p.con, "[accent]+1 games played", 10);
+                    }
                 }
-            }
+                Map map = world.getMap();
+                String bMap = mapSaveKey + Base64.getEncoder().encodeToString(map.name().getBytes());
+                MapData md = getMapData(bMap);
+                if(md != null){
+                    md.timesPlayed++;
+                    if(md.maxWave < state.wave) md.maxWave = state.wave;
+                    setMapData(bMap, md);
+                } else{
+                    setMapData(bMap, new MapData(map.name(), map.description(), map.name()));
+                }
+            });
         });
 
         Events.on(EventType.WorldLoadEvent.class, event -> {

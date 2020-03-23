@@ -1,4 +1,4 @@
-package mindustry.plugin;
+package mindustry.plugin.datas;
 import arc.struct.Array;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.type.BaseUnit;
