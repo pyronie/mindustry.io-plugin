@@ -699,16 +699,18 @@ public class ioMain extends Plugin {
             
 
             handler.<Player>register("removelink", "Remove your active discord link.", (args, player) -> {
-                String uuid = player.uuid;
-                PlayerData pd = getData(uuid);
-                if(pd == null) return;
-                if(pd.discordLink.length() > 0){
-                    pd.discordLink = "";
-                    player.sendMessage("[#7289da]\uE848[#99aab5] Discord link with [accent]" + formatMessage(player, "%discord%") + "[] removed successfully.");
-                    setData(uuid, pd);
-                } else{
-                    player.sendMessage("[#7289da]\uE848[#99aab5] You don't have an active discord link to remove. Setup a discord link using the `link` command in http://discord.mindustry.io");
-                }
+                CompletableFuture.runAsync(() -> {
+                    String uuid = player.uuid;
+                    PlayerData pd = getData(uuid);
+                    if (pd == null) return;
+                    if (pd.discordLink.length() > 0) {
+                        pd.discordLink = "";
+                        player.sendMessage("[#7289da]\uE848[#99aab5] Discord link with [accent]" + formatMessage(player, "%discord%") + "[] removed successfully.");
+                        setData(uuid, pd);
+                    } else {
+                        player.sendMessage("[#7289da]\uE848[#99aab5] You don't have an active discord link to remove. Setup a discord link using the `link` command in http://discord.mindustry.io");
+                    }
+                });
             });
         }
 

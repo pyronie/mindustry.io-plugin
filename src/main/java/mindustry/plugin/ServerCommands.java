@@ -117,31 +117,33 @@ public class ServerCommands {
                 }
 
                 public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    String target = ctx.args[1];
-                    int targetRank = Integer.parseInt(ctx.args[2]);
-                    if(target.length() > 0 && targetRank > -1 && targetRank < 6) {
-                        Player player = findPlayer(target);
-                        if(player == null){
-                            eb.setTitle("Command terminated");
-                            eb.setDescription("Player not found.");
-                            eb.setColor(Pals.error);
-                            ctx.channel.sendMessage(eb);
-                            return;
-                        }
+                    CompletableFuture.runAsync(() -> {
+                        EmbedBuilder eb = new EmbedBuilder();
+                        String target = ctx.args[1];
+                        int targetRank = Integer.parseInt(ctx.args[2]);
+                        if (target.length() > 0 && targetRank > -1 && targetRank < 6) {
+                            Player player = findPlayer(target);
+                            if (player == null) {
+                                eb.setTitle("Command terminated");
+                                eb.setDescription("Player not found.");
+                                eb.setColor(Pals.error);
+                                ctx.channel.sendMessage(eb);
+                                return;
+                            }
 
-                        PlayerData pd = getData(player.uuid);
-                        if(pd != null) {
-                            pd.rank = targetRank;
-                            setData(player.uuid, pd);
-                            eb.setTitle("Command executed successfully");
-                            eb.setDescription("Promoted " + escapeCharacters(player.name) + " to " + targetRank);
-                            ctx.channel.sendMessage(eb);
-                            player.con.kick("Your rank was modified, please rejoin.", 0);
-                        }
+                            PlayerData pd = getData(player.uuid);
+                            if (pd != null) {
+                                pd.rank = targetRank;
+                                setData(player.uuid, pd);
+                                eb.setTitle("Command executed successfully");
+                                eb.setDescription("Promoted " + escapeCharacters(player.name) + " to " + targetRank);
+                                ctx.channel.sendMessage(eb);
+                                player.con.kick("Your rank was modified, please rejoin.", 0);
+                            }
 
-                        if(targetRank==5) netServer.admins.adminPlayer(player.uuid, player.usid);
-                    }
+                            if (targetRank == 5) netServer.admins.adminPlayer(player.uuid, player.usid);
+                        }
+                    });
                 }
 
             });
@@ -291,32 +293,34 @@ public class ServerCommands {
                 }
 
                 public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    String target = ctx.args[1];
-                    String reason = ctx.message.substring(target.length() + 1);
+                    CompletableFuture.runAsync(() -> {
+                        EmbedBuilder eb = new EmbedBuilder();
+                        String target = ctx.args[1];
+                        String reason = ctx.message.substring(target.length() + 1);
 
-                    Player player = findPlayer(target);
-                    if (player != null) {
-                        String uuid = player.uuid;
-                        String banId = uuid.substring(0, 4);
-                        PlayerData pd = getData(uuid);
-                        if(pd != null) {
-                            pd.banned = true;
-                            pd.banReason = reason + "\n[accent]Ban ID:[] " + banId;
-                            setData(uuid, pd);
+                        Player player = findPlayer(target);
+                        if (player != null) {
+                            String uuid = player.uuid;
+                            String banId = uuid.substring(0, 4);
+                            PlayerData pd = getData(uuid);
+                            if (pd != null) {
+                                pd.banned = true;
+                                pd.banReason = reason + "\n[accent]Ban ID:[] " + banId;
+                                setData(uuid, pd);
+                            }
+                            eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
+                            eb.addField("UUID", uuid);
+                            eb.addField("Ban ID", banId);
+                            eb.addInlineField("Reason", reason);
+                            ctx.channel.sendMessage(eb);
+
+                            player.con.kick(Packets.KickReason.banned);
+                        } else {
+                            eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
+                            eb.setColor(Pals.error);
+                            ctx.channel.sendMessage(eb);
                         }
-                        eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
-                        eb.addField("UUID", uuid);
-                        eb.addField("Ban ID", banId);
-                        eb.addInlineField("Reason", reason);
-                        ctx.channel.sendMessage(eb);
-
-                        player.con.kick(Packets.KickReason.banned);
-                    } else{
-                        eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
-                        eb.setColor(Pals.error);
-                        ctx.channel.sendMessage(eb);
-                    }
+                    });
                 }
             });
 
@@ -327,38 +331,40 @@ public class ServerCommands {
                 }
 
                 public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    String target = ctx.args[1];
-                    String targetDuration = ctx.args[2];
-                    String reason = ctx.message.substring(target.length() + targetDuration.length() + 2);
-                    long now = Instant.now().getEpochSecond();
+                    CompletableFuture.runAsync(() -> {
+                        EmbedBuilder eb = new EmbedBuilder();
+                        String target = ctx.args[1];
+                        String targetDuration = ctx.args[2];
+                        String reason = ctx.message.substring(target.length() + targetDuration.length() + 2);
+                        long now = Instant.now().getEpochSecond();
 
-                    Player player = findPlayer(target);
-                    if (player != null) {
-                        String uuid = player.uuid;
-                        String banId = uuid.substring(0, 4);
-                        PlayerData pd = getData(uuid);
-                        long until = now + Integer.parseInt(targetDuration) * 60;
-                        if(pd != null) {
-                            pd.bannedUntil = until;
-                            pd.banReason = reason + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + banId;
-                            setData(uuid, pd);
+                        Player player = findPlayer(target);
+                        if (player != null) {
+                            String uuid = player.uuid;
+                            String banId = uuid.substring(0, 4);
+                            PlayerData pd = getData(uuid);
+                            long until = now + Integer.parseInt(targetDuration) * 60;
+                            if (pd != null) {
+                                pd.bannedUntil = until;
+                                pd.banReason = reason + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + banId;
+                                setData(uuid, pd);
+                            }
+
+                            eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
+                            eb.addField("UUID", uuid);
+                            eb.addField("Ban ID", banId);
+                            eb.addField("For", targetDuration + " minutes.");
+                            eb.addField("Until", epochToString(until));
+                            eb.addInlineField("Reason", reason);
+                            ctx.channel.sendMessage(eb);
+
+                            player.con.kick(Packets.KickReason.banned);
+                        } else {
+                            eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
+                            eb.setColor(Pals.error);
+                            ctx.channel.sendMessage(eb);
                         }
-
-                        eb.setTitle("Banned `" + escapeCharacters(player.name) + "` permanently.");
-                        eb.addField("UUID", uuid);
-                        eb.addField("Ban ID", banId);
-                        eb.addField("For", targetDuration + " minutes.");
-                        eb.addField("Until", epochToString(until));
-                        eb.addInlineField("Reason", reason);
-                        ctx.channel.sendMessage(eb);
-
-                        player.con.kick(Packets.KickReason.banned);
-                    } else{
-                        eb.setTitle("Player `" + escapeCharacters(target) + "` not found.");
-                        eb.setColor(Pals.error);
-                        ctx.channel.sendMessage(eb);
-                    }
+                    });
                 }
             });
 
@@ -421,22 +427,24 @@ public class ServerCommands {
                 }
 
                 public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    String target = ctx.args[1];
-                    PlayerData pd = getData(target);
+                    CompletableFuture.runAsync(() -> {
+                        EmbedBuilder eb = new EmbedBuilder();
+                        String target = ctx.args[1];
+                        PlayerData pd = getData(target);
 
-                    if (pd != null) {
-                        pd.banned = false;
-                        pd.bannedUntil = 0;
-                        Administration.PlayerInfo info = netServer.admins.getInfo(target);
-                        eb.setTitle("Unbanned `" + escapeCharacters(info.lastName) + "`.");
-                        ctx.channel.sendMessage(eb);
-                        setData(target, pd);
-                    } else{
-                        eb.setTitle("UUID `" + escapeCharacters(target) + "` not found in the database.");
-                        eb.setColor(Pals.error);
-                        ctx.channel.sendMessage(eb);
-                    }
+                        if (pd != null) {
+                            pd.banned = false;
+                            pd.bannedUntil = 0;
+                            Administration.PlayerInfo info = netServer.admins.getInfo(target);
+                            eb.setTitle("Unbanned `" + escapeCharacters(info.lastName) + "`.");
+                            ctx.channel.sendMessage(eb);
+                            setData(target, pd);
+                        } else {
+                            eb.setTitle("UUID `" + escapeCharacters(target) + "` not found in the database.");
+                            eb.setColor(Pals.error);
+                            ctx.channel.sendMessage(eb);
+                        }
+                    });
                 }
             });
 
@@ -706,19 +714,22 @@ public class ServerCommands {
                 }
 
                 public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    String target = ctx.args[1];
-                    PlayerData pd = getData(target);
-                    if(pd != null) {
-                        pd.verified = true;
-                        setData(target, pd);
-                        eb.setTitle("Command executed successfully");
-                        eb.setDescription("Verified " + escapeCharacters(target) + ".");
-                    } else {
-                        eb.setTitle("Command terminated");
-                        eb.setDescription("Couldn't find " + escapeCharacters(target) + " in the database.");
-                        eb.setColor(Pals.error);
-                    } ctx.channel.sendMessage(eb);
+                    CompletableFuture.runAsync(() -> {
+                        EmbedBuilder eb = new EmbedBuilder();
+                        String target = ctx.args[1];
+                        PlayerData pd = getData(target);
+                        if (pd != null) {
+                            pd.verified = true;
+                            setData(target, pd);
+                            eb.setTitle("Command executed successfully");
+                            eb.setDescription("Verified " + escapeCharacters(target) + ".");
+                        } else {
+                            eb.setTitle("Command terminated");
+                            eb.setDescription("Couldn't find " + escapeCharacters(target) + " in the database.");
+                            eb.setColor(Pals.error);
+                        }
+                        ctx.channel.sendMessage(eb);
+                    });
                 }
 
             });
