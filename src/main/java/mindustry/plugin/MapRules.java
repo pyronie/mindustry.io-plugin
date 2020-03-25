@@ -64,32 +64,5 @@ public class MapRules {
                 tdata.draugPets.clear();
             }
         }
-
-
-        Map map = world.getMap();
-        switch(map.name()){
-            case "Minefield":
-                Log.info("[MapRules]: Minefield action trigerred.");
-                Call.sendMessage("[accent]Preparing minefield map, please wait.");
-
-                for(int x = 0; x < world.width(); x++){
-                    for(int y = 0; y < world.height(); y++){
-                        Tile tile = world.tile(x, y);
-                        if(tile.block() == Blocks.shockMine){
-                            Time.run(Mathf.random(60f * 60f * 10), () -> { // clear out all mines after 10 minutes.
-                                if(tile.block() == Blocks.shockMine && map.name().equals("Minefield")){ // check if mine still exists & map is still minefield lol
-                                    tile.entity.kill();
-                                }
-                            });
-                        }
-                    }
-                }
-                Call.sendMessage("[accent]Map script loaded. Good luck!");
-                break;
-            case "test": // feel free to add your own scripts for your custom maps!
-                Log.info("Test map loaded.");
-                break;
-
-        }
     }
 }
