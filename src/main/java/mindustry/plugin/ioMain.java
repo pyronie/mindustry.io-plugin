@@ -58,6 +58,7 @@ public class ioMain extends Plugin {
     private JSONObject alldata;
     public static JSONObject data; //token, channel_id, role_id
     public static String apiKey = "";
+    public static int minRank = 0;
 
     protected Interval timer = new Interval(1);
 
@@ -108,6 +109,13 @@ public class ioMain extends Plugin {
         if(data.has("api_key")){
             apiKey = data.getString("api_key");
             Log.info("api_key set successfully");
+        }
+
+        if(data.has("min_rank")){
+            minRank = data.getInt("min_rank");
+            Log.info("min_rank set successfully to " + minRank);
+        } else{
+            Log.info("no min_rank found, setting to default: 0");
         }
 
         // display on screen messages
@@ -215,6 +223,9 @@ public class ioMain extends Plugin {
                         player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
                     }
                     int rank = pd.rank;
+                    if(rank < minRank){
+                        player.con.kick("[accent]This server is rank locked.[]\nYour rank: [accent]" + rankNames.get(rank).name + "[]\nRequired rank: [accent]" + rankNames.get(minRank).name);
+                    }
                     switch (rank) { // apply new tag
                         case 0:
                             if (pd.discordLink.length() > 0) {
