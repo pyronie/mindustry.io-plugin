@@ -88,6 +88,7 @@ public class Utils {
         bannedNames.add("CODEX");
         bannedNames.add("VALVE");
         bannedNames.add("tuttop");
+        bannedNames.add("IgruhaOrg");
 
         activeRequirements.bannedBlocks.add(Blocks.conveyor);
         activeRequirements.bannedBlocks.add(Blocks.titaniumConveyor);
