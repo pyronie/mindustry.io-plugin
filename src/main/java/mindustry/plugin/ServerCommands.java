@@ -977,39 +977,35 @@ public class ServerCommands {
                         } catch (NoSuchFieldException | IllegalAccessException ignored) {}
 
                         if(target.equals("all")){
+                            eb.setTitle("Command executed");
                             for(Player p : playerGroup.all()){
-                                if(player!=null) { // what???    ...    how does this happen
-                                    try {
-                                        if (desiredBullet == null) {
-                                            player.bt = null;
-                                        } else {
-                                            player.bt = desiredBullet;
-                                            player.sclLifetime = targetL;
-                                            player.sclVelocity = targetV;
-                                        }
-                                    } catch(Exception ignored){}
+                                if (desiredBullet == null) {
+                                    p.bt = null;
+                                    eb.setDescription("Reverted everyone's weapon to default.");
+                                } else {
+                                    p.bt = desiredBullet;
+                                    p.sclLifetime = targetL;
+                                    p.sclVelocity = targetV;
+                                    eb.setDescription("Modded everyone's weapon to " + targetBullet + " with " + targetL + "x lifetime modifier and " + targetV + "x velocity modifier.");
                                 }
                             }
-                            eb.setTitle("Command executed");
-                            eb.setDescription("Changed everyone's weapon mod. sorry. i dont know how to explain the rest");
                             ctx.channel.sendMessage(eb);
                         }
 
                         Player player = findPlayer(target);
                         if(player!=null){
+                            eb.setTitle("Command executed");
                             if(desiredBullet == null){
                                 player.bt = null;
-                                eb.setTitle("Command executed");
                                 eb.setDescription("Reverted " + escapeCharacters(player.name) + "'s weapon to default.");
-                                ctx.channel.sendMessage(eb);
                             } else{
                                 player.bt = desiredBullet;
                                 player.sclLifetime = targetL;
                                 player.sclVelocity = targetV;
-                                eb.setTitle("Command executed");
+
                                 eb.setDescription("Modded " + escapeCharacters(player.name) + "'s weapon to " + targetBullet + " with " + targetL + "x lifetime modifier and " + targetV + "x velocity modifier.");
-                                ctx.channel.sendMessage(eb);
                             }
+                            ctx.channel.sendMessage(eb);
                         }
                     } else{
                         eb.setTitle("Command terminated");
