@@ -24,29 +24,6 @@ public class MapRules {
 
     public static void onMapLoad(){
 
-        // action filter
-        Vars.netServer.admins.addActionFilter(action -> {
-            Player player = action.player;
-            if (player == null) return true;
-
-            String uuid = player.uuid;
-            if (uuid == null) return true;
-
-            PlayerData pd = getData(uuid);
-            if (pd == null) return true;
-
-            // disable checks for admins
-            if (player.isAdmin) return true;
-
-            if (!pd.verified) {
-                Call.setHudTextReliable(player.con, "[scarlet]Your IP was flagged as a VPN, please join http://discord.mindustry.io and link your discord account to get verified.");
-                player.sendMessage("[#7a7a7a]Cannot build while flagged.");
-                return false;
-            }
-
-            return action.type != Administration.ActionType.rotate;
-        });
-
         Map map = world.getMap();
 
         // spawn all players quick for the first time

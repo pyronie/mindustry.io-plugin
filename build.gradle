@@ -11,7 +11,7 @@ repositories{
 }
 
 ext{
-    mindustryVersion = 'healthMP'
+    mindustryVersion = 'canInteract'
     arcVersion = 'v104'
 }
 

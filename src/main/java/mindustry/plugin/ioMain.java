@@ -16,6 +16,7 @@ import mindustry.entities.Effects;
 import mindustry.entities.type.BaseUnit;
 import mindustry.graphics.Pal;
 import mindustry.maps.Map;
+import mindustry.net.Administration;
 import mindustry.plugin.datas.MapData;
 import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
@@ -253,6 +254,7 @@ public class ioMain extends Plugin {
 
                 if (verification) {
                     if (pd != null && !pd.verified) {
+                        player.canInteract = false;
                         Log.info("Unverified player joined: " + player.name);
                         String url = "http://api.vpnblocker.net/v2/json/" + player.con.address + "/" + apiKey;
                         String pjson = ClientBuilder.newClient().target(url).request().accept(MediaType.APPLICATION_JSON).get(String.class);
@@ -262,13 +264,16 @@ public class ioMain extends Plugin {
                             if (json.getBoolean("host-ip")) { // verification failed
                                 Log.info("IP verification failed for: " + player.name);
                                 Call.onInfoMessage(player.con, verificationMessage);
+                                player.canInteract = false;
                             } else {
                                 Log.info("IP verification success for: " + player.name);
                                 pd.verified = true;
+                                player.canInteract = true;
                                 setData(player.uuid, pd);
                             }
                         } else { // site doesn't work for some reason  ?
                             pd.verified = true;
+                            player.canInteract = true;
                             setData(player.uuid, pd);
                         }
                     }
@@ -340,6 +345,17 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.WorldLoadEvent.class, event -> {
             Timer.schedule(MapRules::run, 5); // idk
+        });
+
+        // action filter
+        Vars.netServer.admins.addActionFilter(action -> {
+            Player player = action.player;
+            if (player == null) return true;
+
+            if (player.isAdmin) return true;
+            if (!player.canInteract) return false;
+
+            return action.type != Administration.ActionType.rotate;
         });
     }
 
@@ -690,6 +706,7 @@ public class ioMain extends Plugin {
                         if(player.passPhrase.equals(pin)){
                             player.passPhrase = "OK";
                             player.sendMessage("[#7289da]\uE848[#99aab5] Discord link successful, thank you for linking your account!");
+                            player.canInteract = true;
                         } else{
                             player.sendMessage("[#7289da]\uE848[#99aab5] Incorrect PIN.");
                         }
