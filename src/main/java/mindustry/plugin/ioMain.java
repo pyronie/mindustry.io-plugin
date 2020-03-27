@@ -47,6 +47,7 @@ import static mindustry.plugin.Utils.*;
 public class ioMain extends Plugin {
     public static JedisPool pool;
     static Gson gson = new Gson();
+    public static ContentHandler contentHandler;
 
     public static BotThread bt;
     public static DiscordApi api = null;
@@ -134,6 +135,11 @@ public class ioMain extends Plugin {
                 currentInc = currentInc + increment;
             }
         }, 0, 10);
+
+        Events.on(EventType.ServerLoadEvent.class, event -> {
+            contentHandler = new ContentHandler();
+            Log.info("content loaded");
+        });
 
         // update every tick
         Events.on(EventType.Trigger.update, () -> {

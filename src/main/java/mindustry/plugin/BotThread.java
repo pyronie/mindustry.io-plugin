@@ -33,7 +33,7 @@ public class BotThread extends Thread {
         this.api.addMessageCreateListener(commandHandler);
         //new ComCommands().registerCommands(commandHandler);
         new ComCommands().registerCommands(iohandler);
-        new ServerCommands(data).registerCommands(commandHandler);
+        //new ServerCommands(data).registerCommands(commandHandler);
         //new MessageCreatedListeners(data).registerListeners(commandHandler);
     }
 

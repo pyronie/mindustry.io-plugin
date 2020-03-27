@@ -11,6 +11,7 @@ import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.game.Teams.TeamData;
 import mindustry.gen.Call;
+import mindustry.mod.ContentParser;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discordcommands.RoleRestrictedCommand;
 import mindustry.world.blocks.storage.CoreBlock.CoreEntity;
@@ -23,126 +24,83 @@ import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageAuthor;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static mindustry.Vars.*;
 import static mindustry.plugin.Utils.*;
+import static mindustry.plugin.ioMain.*;
 import static mindustry.plugin.ioMain.getTextChannel;
 
 public class ComCommands {
     public void registerCommands(CommandHandler handler) {
         handler.<Context>register("chat", "<message...>", "Send a message to in-game chat.", (args, ctx) -> {
-            Log.info("test received! author: " + ctx.author.getDiscriminatedName());
             if(args[0].length() < chatMessageMaxSize){
                 Call.sendMessage("[sky]" + ctx.author.getDiscriminatedName() + " @discord >[] " + args[0]);
-                ctx.channel.sendMessage("Your message was sent successfully.");
+                ctx.sendEmbed(true, ":mailbox_with_mail: **message sent!**", "``" + escapeCharacters(args[0]) + "``");
             } else{
-                ctx.channel.sendMessage("Message too big.");
+                ctx.sendEmbed(false, ":exclamation: **message too big!**", "maximum size: **" + chatMessageMaxSize + " characters**");
             }
         });
-        /*handler.registerCommand(new Command("chat") {
-            {
-                help = "<message> Sends a message to in-game chat.";
-            }
-            public void run(Context ctx) {
-                if(ctx.event.isPrivateMessage()) return;
 
-                EmbedBuilder eb = new EmbedBuilder();
-                ctx.message = escapeCharacters(ctx.message);
-                if (ctx.message.length() < chatMessageMaxSize) {
-                    Call.sendMessage("[sky]" + ctx.author.getName() + " @discord >[] " + ctx.message);
-                    eb.setTitle("Command executed");
-                    eb.setDescription("Your message was sent successfully..");
-                    ctx.channel.sendMessage(eb);
-                } else{
-                    ctx.reply("Message too big.");
-                }
-            }
-        });
-        handler.registerCommand(new Command("downloadmap") {
-            {
-                help = "<mapname/mapid> Preview and download a server map in a .msav file format.";
-            }
-            public void run(Context ctx) {
-                if (ctx.args.length < 2) {
-                    ctx.reply("Not enough arguments, use `%map <mapname/mapid>`".replace("%", ioMain.prefix));
-                    return;
-                }
-
-                Map found = getMapBySelector(ctx.message.trim());
-                if (found == null) {
-                    ctx.reply("Map not found!");
-                    return;
-                }
-
-                Fi mapFile = found.file;
-
-                EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle(escapeCharacters(found.name()))
-                        .setDescription(escapeCharacters(found.description()))
-                        .setAuthor(escapeCharacters(found.author()));
-                // TODO: .setImage(mapPreviewImage)
-                ctx.channel.sendMessage(embed, mapFile.file());
-            }
-        });
-        handler.registerCommand(new Command("players") {
-            {
-                help = "Check who is online and their ids.";
-            }
-            public void run(Context ctx) {
-                StringBuilder msg = new StringBuilder("**Players online: " + playerGroup.size() + "**\n```\n");
-                for (Player player : playerGroup.all()) {
-                    msg.append("· ").append(escapeCharacters(player.name)).append(" : ").append(player.id).append("\n");
-                }
-                msg.append("```");
-                ctx.channel.sendMessage(msg.toString());
-            }
-        });
-        handler.registerCommand(new Command("info") {
-            {
-                help = "Get basic server information.";
-            }
-            public void run(Context ctx) {
+        handler.<Context>register("map","<map...>", "Preview/download a map from the playlist.", (args, ctx) -> {
+            Map map = getMapBySelector(args[0].trim());
+            if (map != null){
                 try {
-                    EmbedBuilder eb = new EmbedBuilder()
-                            .setTitle(ioMain.serverName)
-                            .addField("Players", String.valueOf(playerGroup.size()))
-                            .addField("Map", world.getMap().name())
-                            .addField("Wave", String.valueOf(state.wave))
-                            .addField("Next wave in", Math.round(state.wavetime / 60) + " seconds.");
+                    ContentHandler.Map visualMap = contentHandler.parseMap(map.file.read());
+                    Fi mapFile = map.file;
+                    File imageFile = new File("iocontent/image_" + mapFile.name().replaceAll(".msav", ".png"));
+                    ImageIO.write(visualMap.image, "png", imageFile);
 
-                    ctx.channel.sendMessage(eb);
-                } catch (Exception e) {
-                    System.out.println(e.getMessage());
+                    EmbedBuilder eb = new EmbedBuilder().setColor(Pals.success).setTitle(":map: **" + escapeCharacters(map.name()) + "**").setDescription(escapeCharacters(map.description())).setAuthor(escapeCharacters(map.author()));
+                    eb.setImage(imageFile);
+                    ctx.channel.sendMessage(eb, mapFile.file());
+                } catch (IOException e) {
+                    ctx.sendEmbed(false, ":eyes: **internal server error**");
                     e.printStackTrace();
-                    ctx.reply("An error has occurred.");
                 }
-            }
-        });
-        handler.registerCommand(new Command("resinfo") {
-            {
-                help = "Check the amount of resources in the core.";
-            }
-            public void run(Context ctx) {
-                if (!state.rules.waves) {
-                    ctx.reply("Only available in survival mode!");
-                    return;
-                }
-                // the normal player team is "sharded"
-                TeamData data = state.teams.get(Team.sharded);
-                //-- Items are shared between cores
-                CoreEntity core = data.cores.first();
-                ItemModule items = core.items;
-                EmbedBuilder eb = new EmbedBuilder()
-                        .setTitle("Resources in the core:");
-                items.forEach((item, amount) -> eb.addInlineField(item.name, String.valueOf(amount)));
-                ctx.channel.sendMessage(eb);
+            }else{
+                ctx.sendEmbed(false, ":mag: map **" + escapeCharacters(args[0]) + "** not found");
             }
         });
 
+        handler.<Context>register("players","Get all online in-game players.", (args, ctx) -> {
+            //todo: fix this
+
+            EmbedBuilder eb = new EmbedBuilder().setColor(Pals.success).setTitle(":satellite: **players online: **" + playerGroup.all().size);
+            for (int rank : rankNames.keySet()) {
+                String rankName = rankNames.get(rank).name;
+                StringBuilder players = new StringBuilder();
+                playerGroup.forEach(player -> {
+                    try {
+                        PlayerData pd = getData(player.uuid);
+                        if (pd != null && pd.rank == rank) {
+                            players.append(escapeCharacters(player.name)).append("\n");
+                        }
+                    } catch(JedisConnectionException ignored){}
+                });
+                eb.addField(rankName, players.toString());
+            }
+            ctx.channel.sendMessage(eb);
+        });
+
+        handler.<Context>register("status", "View the status of this server.", (args, ctx) -> {
+            HashMap<String, String> fields = new HashMap<>();
+            fields.put("players", String.valueOf(playerGroup.all().size));
+            fields.put("map", escapeCharacters(world.getMap().name()));
+            fields.put("wave", String.valueOf(state.wave));
+
+            ctx.sendEmbed(true, ":desktop: **" + serverName + "**", fields);
+        });
+
+        /*
         handler.registerCommand(new Command("help") {
             {
                 help = "Display all available commands and their usage.";

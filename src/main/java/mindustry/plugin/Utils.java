@@ -72,7 +72,7 @@ public class Utils {
     }
 
     public static void init(){
-        rankNames.put(0, new Rank("[#7d7d7d]<none>[]", "none"));
+        rankNames.put(0, new Rank("[#7d7d7d]<none>[]", "guest"));
         rankNames.put(1, new Rank("[accent]<[white]\uE810[accent]>[]", "active"));
         rankNames.put(2, new Rank("[accent]<[white]\uE809[accent]>[]", "regular"));
         rankNames.put(3, new Rank("[accent]<[white]\uE84E[accent]>[]", "donator"));
@@ -100,10 +100,8 @@ public class Utils {
     }
 
     public static class Pals {
-        public static Color warning = (Color.getHSBColor(5, 85, 95));
-        public static Color info = (Color.getHSBColor(45, 85, 95));
-        public static Color error = (Color.getHSBColor(3, 78, 91));
-        public static Color success = (Color.getHSBColor(108, 80, 100));
+        public static Color error = new Color(255, 60, 60);
+        public static Color success = new Color(60, 255, 100);
     }
 
     public static class activeRequirements {

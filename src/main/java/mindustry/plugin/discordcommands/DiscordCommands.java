@@ -43,10 +43,10 @@ public class DiscordCommands implements MessageCreateListener {
      * @param event Source event associated with the message
      */
     public void onMessageCreate(MessageCreateEvent event) {
-
+        Context ctx = new Context(event);
         Log.info(event.getMessageContent());
         //check if it's a command
-        CommandHandler.CommandResponse response = bt.iohandler.handleMessage(event.getMessageContent(), new Context(event));
+        CommandHandler.CommandResponse response = bt.iohandler.handleMessage(event.getMessageContent(), ctx);
 
         if (response.type != CommandHandler.ResponseType.noCommand) {
             //a command was sent, now get the output
@@ -54,15 +54,15 @@ public class DiscordCommands implements MessageCreateListener {
                 String text;
 
                 //send usage
-                if(response.type == CommandHandler.ResponseType.manyArguments){
-                    text = "[scarlet]Too many arguments. Usage:[lightgray] " + response.command.text + "[gray] " + response.command.paramText;
-                }else if(response.type == CommandHandler.ResponseType.fewArguments){
-                    text = "[scarlet]Too few arguments. Usage:[lightgray] " + response.command.text + "[gray] " + response.command.paramText;
-                }else{ //unknown command
-                    text = "[scarlet]Unknown command. Check [lightgray]/help[scarlet].";
-                }
+                String description = "**usage:** " + prefix + response.command.text + " " + response.command.paramText;
 
-                Log.info(text);
+                if(response.type == CommandHandler.ResponseType.manyArguments){
+                    ctx.sendEmbed(false,":interrobang: **too many arguments**", description);
+                }else if(response.type == CommandHandler.ResponseType.fewArguments){
+                    ctx.sendEmbed(false,":interrobang: **too few arguments**", description);
+                }else{ //unknown command
+                    ctx.sendEmbed(false,":interrobang: **unknown command**", "**check** " + prefix + "help");
+                }
             }
         }
 

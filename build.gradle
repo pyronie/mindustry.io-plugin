@@ -6,20 +6,24 @@ version '0.1'
 sourceCompatibility = 1.8
 
 repositories{
+    mavenLocal()
     mavenCentral()
     maven{ url 'https://jitpack.io' }
+    maven{ url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven{ url "https://oss.sonatype.org/content/repositories/releases/" }
+    jcenter()
 }
 
 ext{
-    mindustryVersion = 'getMapScreenshot'
+    mindustryVersion = 'canInteract'
     arcVersion = 'v104'
 }
 
 dependencies{
 
-    compileOnly "com.github.Anuken.Arc:arc-core:$arcVersion"
-    compileOnly "com.github.fuzzbuck.Mindustry:core:$mindustryVersion"
-    compileOnly "com.github.fuzzbuck.Mindustry:server:$mindustryVersion"
+    compile "com.github.Anuken.Arc:arc-core:$arcVersion"
+    compile "com.github.fuzzbuck.Mindustry:core:$mindustryVersion"
+    compile "com.github.fuzzbuck.Mindustry:server:$mindustryVersion"
 
     compile "org.glassfish.jersey.core:jersey-client:2.25.1"
     compile "redis.clients:jedis:3.2.0"

@@ -50,6 +50,7 @@ import static mindustry.Vars.*;
 import static mindustry.plugin.Utils.*;
 
 public class ServerCommands {
+    /**
 
     private JSONObject data;
 
@@ -1021,7 +1022,7 @@ public class ServerCommands {
 
         }
 
-            /*handler.registerCommand(new Command("sendm"){ // use sendm to send embed messages when needed locally, disable for now
+            handler.registerCommand(new Command("sendm"){ // use sendm to send embed messages when needed locally, disable for now
                 public void run(Context ctx){
                     EmbedBuilder eb = new EmbedBuilder()
                             .setColor(Utils.Pals.info)
@@ -1034,7 +1035,7 @@ public class ServerCommands {
                             .addField("\uD83E\uDD14 io is pay2win???", "Nope. All perks vips & mvp's gain are aesthetic items **or** items that indirectly help the team. Powerful commands that could give you an advantage are __disabled on pvp.__", true);
                     ctx.channel.sendMessage(eb);
                 }
-            });*/
+            });
 
 
         if(data.has("mapSubmissions_roleid")){
@@ -1179,4 +1180,5 @@ public class ServerCommands {
             });
         }
     }
+    */
 }
