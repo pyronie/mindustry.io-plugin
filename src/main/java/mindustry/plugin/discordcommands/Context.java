@@ -1,30 +1,35 @@
 package mindustry.plugin.discordcommands;
 
 import mindustry.plugin.Utils;
-import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.MessageAuthor;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.event.message.MessageCreateEvent;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.util.HashMap;
 
 /** Represents the context in which a command was called */
 public class Context {
     /** Source event */
-    public MessageCreateEvent event;
+    public MessageReceivedEvent event;
     public TextChannel channel;
-    public MessageAuthor author;
+    public User author;
 
-    public Context(MessageCreateEvent event) {
+    public Context(MessageReceivedEvent event) {
         this.event = event;
-        this.channel = event.getChannel();
-        this.author = event.getMessageAuthor();
+        this.channel = event.getTextChannel();
+        this.author = event.getAuthor();
+    }
+
+    public void sendEmbed(EmbedBuilder eb){
+        channel.sendMessage(eb.build()).queue();
     }
 
     public void sendEmbed(String title){
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(title);
-        channel.sendMessage(eb);
+        channel.sendMessage(eb.build()).queue();
     }
 
     public void sendEmbed(boolean success, String title){
@@ -35,14 +40,14 @@ public class Context {
         } else{
             eb.setColor(Utils.Pals.error);
         }
-        channel.sendMessage(eb);
+        channel.sendMessage(eb.build()).queue();
     }
 
     public void sendEmbed(String title, String description){
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(title);
         eb.setDescription(description);
-        channel.sendMessage(eb);
+        channel.sendMessage(eb.build()).queue();;
     }
 
     public void sendEmbed(boolean success, String title, String description){
@@ -54,10 +59,10 @@ public class Context {
         } else{
             eb.setColor(Utils.Pals.error);
         }
-        channel.sendMessage(eb);
+        channel.sendMessage(eb.build()).queue();;
     }
 
-    public void sendEmbed(boolean success, String title, HashMap<String, String> fields){
+    public void sendEmbed(boolean success, String title, HashMap<String, String> fields, boolean inline){
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(title);
         if(success){
@@ -67,9 +72,9 @@ public class Context {
         }
         for(String name : fields.keySet()){
             String desc = fields.get(name);
-            eb.addField(name, desc);
+            eb.addField(name, desc, inline);
         }
-        channel.sendMessage(eb);
+        channel.sendMessage(eb.build()).queue();;
     }
 
     public void sendEmbed(String title, String description, HashMap<String, String> fields){
@@ -78,8 +83,8 @@ public class Context {
         eb.setDescription(description);
         for(String name : fields.keySet()){
             String desc = fields.get(name);
-            eb.addField(name, desc);
+            eb.addField(name, desc, false);
         }
-        channel.sendMessage(eb);
+        channel.sendMessage(eb.build()).queue();;
     }
 }

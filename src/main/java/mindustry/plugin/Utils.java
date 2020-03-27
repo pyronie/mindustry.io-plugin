@@ -16,7 +16,7 @@ import mindustry.plugin.datas.PlayerData;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
-import org.javacord.api.entity.user.User;
+import net.dv8tion.jda.api.entities.User;
 import redis.clients.jedis.Jedis;
 
 import java.awt.*;
@@ -32,6 +32,7 @@ import static mindustry.plugin.ioMain.*;
 
 public class Utils {
     public static int chatMessageMaxSize = 256;
+    static String assets = "iocontent/";
     static String mapSaveKey = "bXn94MAP";
     static String welcomeMessage = "";
     static String statMessage = "";
@@ -163,9 +164,9 @@ public class Utils {
                 message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
                 message = message.replaceAll("%rank%", rankNames.get(pd.rank).tag + " " + escapeColorCodes(rankNames.get(pd.rank).name));
                 if(pd.discordLink.length() > 0){
-                    User discordUser = api.getUserById(pd.discordLink).get(2, TimeUnit.SECONDS);
+                    User discordUser = api.getUserById(pd.discordLink);
                     if(discordUser != null) {
-                        message = message.replaceAll("%discord%", discordUser.getDiscriminatedName());
+                        message = message.replaceAll("%discord%", discordUser.getAsTag());
                     }
                 } else{
                     message = message.replaceAll("%discord%", "unlinked");

@@ -22,10 +22,11 @@ import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.world.Build;
 import mindustry.world.Tile;
-import org.javacord.api.DiscordApi;
-import org.javacord.api.DiscordApiBuilder;
-import org.javacord.api.entity.channel.Channel;
-import org.javacord.api.entity.channel.TextChannel;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.TextChannel;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -50,19 +51,24 @@ public class ioMain extends Plugin {
     public static ContentHandler contentHandler;
 
     public static BotThread bt;
-    public static DiscordApi api = null;
+    public static JDA api = null;
     public static String prefix = ".";
     public static String serverName = "<untitled>";
 
+    public static Guild server;
+
+    public static TextChannel mapSubmissions;
+    public static TextChannel warnings;
+
+    public static Role mapreviewer;
+    public static Role moderator;
+    public static Role administrator;
+
     public static HashMap<String, PersistentPlayerData> playerDataGroup = new HashMap<>(); // uuid, data
 
-    private final String fileNotFoundErrorMessage = "File not found: config\\mods\\settings.json";
-    private JSONObject alldata;
-    public static JSONObject data; //token, channel_id, role_id
+    public static JSONObject data;
     public static String apiKey = "";
     public static int minRank = 0;
-
-    protected Interval timer = new Interval(1);
 
     //register event handlers and create variables in the constructor
     public ioMain() {
@@ -70,16 +76,16 @@ public class ioMain extends Plugin {
 
         try {
             String pureJson = Core.settings.getDataDirectory().child("mods/settings.json").readString();
-            data = alldata = new JSONObject(new JSONTokener(pureJson));
+            data = new JSONObject(new JSONTokener(pureJson));
         } catch (Exception e) {
             Log.err("Couldn't read settings.json file.");
         }
         try {
-            api = new DiscordApiBuilder().setToken(alldata.getString("token")).login().join();
+            api = new JDABuilder(data.getString("token")).build();
         }catch (Exception e){
             Log.err("Couldn't log into discord.");
         }
-        bt = new BotThread(api, Thread.currentThread(), alldata);
+        bt = new BotThread(api, Thread.currentThread(), data);
         bt.setDaemon(false);
         bt.start();
 
@@ -122,6 +128,23 @@ public class ioMain extends Plugin {
         } else{
             Log.info("no min_rank found, setting to default: 0");
         }
+
+
+        // setup server
+        if(data.has("server_id")) {
+            server = api.getGuildById(data.getString("server_id"));
+        }
+
+        // setup channels
+        if(data.has("mapSubmissions_id")) {
+            mapSubmissions = ioMain.getTextChannel(ioMain.data.getString("mapSubmissions_id"));
+        }
+
+        // setup roles
+        if (data.has("mapSubmissions_roleid")) mapreviewer = api.getRoleById(data.getString("mapSubmissions_roleid"));
+        if (data.has("moderator_roleid")) moderator = api.getRoleById(data.getString("moderator_roleid"));
+        if (data.has("administrator_roleid")) administrator = api.getRoleById(data.getString("administrator_roleid"));
+
 
         // display on screen messages
         float duration = 10f;
@@ -758,17 +781,7 @@ public class ioMain extends Plugin {
     }
 
     public static TextChannel getTextChannel(String id){
-        Optional<Channel> dc = api.getChannelById(id);
-        if (!dc.isPresent()) {
-            Log.err("[ERR!] discordplugin: channel not found! " + id);
-            return null;
-        }
-        Optional<TextChannel> dtc = dc.get().asTextChannel();
-        if (!dtc.isPresent()){
-            Log.err("[ERR!] discordplugin: textchannel not found! " + id);
-            return null;
-        }
-        return dtc.get();
+        return api.getTextChannelById(id);
     }
 
 }

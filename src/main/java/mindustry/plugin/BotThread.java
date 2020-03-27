@@ -2,13 +2,13 @@ package mindustry.plugin;
 
 import arc.math.Mathf;
 import arc.util.CommandHandler;
-import arc.util.Log;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
-import org.javacord.api.DiscordApi;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Activity;
 import org.json.JSONObject;
 
 import mindustry.plugin.discordcommands.DiscordCommands;
@@ -18,19 +18,19 @@ import static mindustry.Vars.playerGroup;
 import static mindustry.plugin.Utils.*;
 
 public class BotThread extends Thread {
-    public DiscordApi api;
+    public JDA api;
     private Thread mt;
     private JSONObject data;
     public DiscordCommands commandHandler = new DiscordCommands();
     public CommandHandler iohandler = new CommandHandler("");
 
-    public BotThread(DiscordApi api, Thread mt, JSONObject data) {
+    public BotThread(JDA api, Thread mt, JSONObject data) {
         this.api = api; //new DiscordApiBuilder().setToken(data.get(0)).login().join();
         this.mt = mt;
         this.data = data;
 
         // register commands
-        this.api.addMessageCreateListener(commandHandler);
+        this.api.addEventListener(commandHandler);
         //new ComCommands().registerCommands(commandHandler);
         new ComCommands().registerCommands(iohandler);
         //new ServerCommands(data).registerCommands(commandHandler);
@@ -66,15 +66,15 @@ public class BotThread extends Thread {
                     ioMain.playerDataGroup.put(p.uuid, tdata); // update tdata with the new stuff
                 }
                 if(Mathf.chance(0.01f)){
-                    api.updateActivity("( ͡° ͜ʖ ͡°)");
+                    api.getPresence().setActivity(Activity.playing("( ͡° ͜ʖ ͡°)"));
                 } else {
-                    api.updateActivity("with " + playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players");
+                    api.getPresence().setActivity(Activity.playing("with " + playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players"));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        api.disconnect();
+        api.shutdown();
     }
 }

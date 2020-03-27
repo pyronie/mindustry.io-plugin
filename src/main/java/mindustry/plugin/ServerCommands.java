@@ -11,10 +11,8 @@ import mindustry.net.Administration;
 import mindustry.net.Packets;
 import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
-import mindustry.plugin.discordcommands.Command;
 import mindustry.plugin.discordcommands.Context;
 import mindustry.plugin.discordcommands.DiscordCommands;
-import mindustry.plugin.discordcommands.RoleRestrictedCommand;
 import arc.Core;
 import arc.Events;
 import arc.files.Fi;
@@ -32,11 +30,6 @@ import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
-import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.MessageAttachment;
-
-import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.user.User;
 import org.json.JSONObject;
 
 import java.io.*;
