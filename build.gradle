@@ -11,7 +11,7 @@ repositories{
 }
 
 ext{
-    mindustryVersion = 'canInteract'
+    mindustryVersion = 'getMapScreenshot'
     arcVersion = 'v104'
 }
 

@@ -358,15 +358,17 @@ public class ioMain extends Plugin {
             Timer.schedule(MapRules::run, 5); // idk
         });
 
-        // action filter
-        Vars.netServer.admins.addActionFilter(action -> {
-            Player player = action.player;
-            if (player == null) return true;
+        Events.on(EventType.ServerLoadEvent.class, event -> {
+            // action filter
+            Vars.netServer.admins.addActionFilter(action -> {
+                Player player = action.player;
+                if (player == null) return true;
 
-            if (player.isAdmin) return true;
-            if (!player.canInteract) return false;
+                if (player.isAdmin) return true;
+                if (!player.canInteract) return false;
 
-            return action.type != Administration.ActionType.rotate;
+                return action.type != Administration.ActionType.rotate;
+            });
         });
     }
 
@@ -383,6 +385,7 @@ public class ioMain extends Plugin {
     @Override
     public void registerClientCommands(CommandHandler handler){
         if (api != null) {
+
             handler.<Player>register("inspector", "Toggle on tile inspector. (Grief detection)", (args, player) -> {
                 player.inspector = !player.inspector;
                 player.sendMessage("[accent]Tile inspector toggled.");

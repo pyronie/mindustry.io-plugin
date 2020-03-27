@@ -407,10 +407,13 @@ public class ServerCommands {
                             .setTimestampToNow();
                     String target = ctx.args[1];
                     PlayerData pd = getData(target);
+                    Administration.PlayerInfo info = netServer.admins.getInfoOptional(target);
 
-                    if (pd != null) {
+                    if (pd != null && info != null) {
+                        pd.banned = true;
+                        setData(target, pd);
                         eb.setTitle("Blacklisted successfully.");
-                        eb.setDescription("`" + escapeCharacters(target) + "` was banned.");
+                        eb.setDescription("`" + escapeCharacters(info.lastName) + "` was banned.");
                     } else {
                         eb.setTitle("Command terminated");
                         eb.setColor(Pals.error);
