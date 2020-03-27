@@ -7,6 +7,7 @@ import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
+import mindustry.plugin.discordcommands.ReactionAdd;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import org.json.JSONObject;
@@ -22,6 +23,7 @@ public class BotThread extends Thread {
     private Thread mt;
     private JSONObject data;
     public DiscordCommands commandHandler = new DiscordCommands();
+    public ReactionAdd reactionHandler = new ReactionAdd();
     public CommandHandler iohandler = new CommandHandler("");
 
     public BotThread(JDA api, Thread mt, JSONObject data) {
@@ -30,7 +32,8 @@ public class BotThread extends Thread {
         this.data = data;
 
         // register commands
-        this.api.addEventListener(commandHandler);
+        api.addEventListener(commandHandler);
+        api.addEventListener(reactionHandler);
         //new ComCommands().registerCommands(commandHandler);
         new ComCommands().registerCommands(iohandler);
         //new ServerCommands(data).registerCommands(commandHandler);

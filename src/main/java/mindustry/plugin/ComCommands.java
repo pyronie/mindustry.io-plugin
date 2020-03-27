@@ -3,7 +3,6 @@ package mindustry.plugin;
 import arc.files.Fi;
 import arc.struct.Array;
 import arc.util.CommandHandler;
-import arc.util.Log;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
 
@@ -12,13 +11,11 @@ import mindustry.gen.Call;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discordcommands.Context;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Message;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import javax.imageio.ImageIO;
 import java.io.*;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.zip.InflaterInputStream;
 
 import static mindustry.Vars.*;
@@ -84,7 +81,6 @@ public class ComCommands {
                 ctx.sendEmbed(false, ":link: **you need to attach a valid .msav file!**");
                 return;
             }
-
             File mapFile = new File(assets + attachment.getFileName());
             attachment.downloadToFile(mapFile).thenAccept(file -> {
                 Fi fi = new Fi(mapFile);
@@ -97,24 +93,24 @@ public class ComCommands {
                         os.write(bytes);
 
                         ContentHandler.Map map = contentHandler.parseMap(fi.read());
-                        File imageFile = new File(assets + "image_" + map.name.replaceAll(".msav", ".png"));
+                        File imageFile = new File(assets + "image_" + attachment.getFileName().replaceAll(".msav", ".png"));
+                        ImageIO.write(map.image, "png", imageFile);
 
                         EmbedBuilder eb = new EmbedBuilder();
-                        eb.setColor(Pals.success);
-                        eb.setTitle(":map: **" + escapeCharacters(map.name) + "**");
+                        eb.setColor(Pals.progress);
+                        eb.setTitle(escapeCharacters(map.name));
                         eb.setDescription(map.description);
-                        eb.setAuthor(ctx.author.getAsTag(), ctx.author.getAsMention(), ctx.author.getAvatarUrl());
+                        eb.setAuthor(ctx.author.getAsTag(), null, ctx.author.getAvatarUrl());
                         eb.setFooter("react to this message accordingly to approve/disapprove this map.");
                         eb.setImage("attachment://" + imageFile.getName());
 
-                        Objects.requireNonNull(mapSubmissions).sendMessage(eb.build()).addFile(imageFile).queue(message -> {
-                            Log.info("reacting");
-                            message.addReaction("<:true:693182504810577991>").complete();
-                            message.addReaction("<:false:693182516840103946>").complete();
+                        mapSubmissions.sendFile(mapFile).addFile(imageFile).embed(eb.build()).queue(message -> {
+                            message.addReaction("true:693162979616751616").queue();
+                            message.addReaction("false:693162961761730723").queue();
                         });
 
                         ctx.sendEmbed(true, ":map: **" + escapeCharacters(map.name) + "** submitted successfully!", "a moderator will soon approve or disapprove your map.");
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 } else {
@@ -126,7 +122,7 @@ public class ComCommands {
         handler.<Context>register("players","Get all online in-game players.", (args, ctx) -> {
             HashMap<Integer, String> playersInRank = new HashMap<>();
             EmbedBuilder eb = new EmbedBuilder();
-            eb.setColor(Pals.success);
+            eb.setColor(Pals.progress);
             eb.setTitle(":satellite: **players online: **" + playerGroup.all().size);
             for(int rank : rankNames.keySet()){
                 playersInRank.put(rank, "");

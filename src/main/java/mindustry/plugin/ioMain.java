@@ -81,7 +81,7 @@ public class ioMain extends Plugin {
             Log.err("Couldn't read settings.json file.");
         }
         try {
-            api = new JDABuilder(data.getString("token")).build();
+            api = new JDABuilder(data.getString("token")).build().awaitReady();
         }catch (Exception e){
             Log.err("Couldn't log into discord.");
         }

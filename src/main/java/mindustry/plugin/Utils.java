@@ -103,6 +103,7 @@ public class Utils {
     public static class Pals {
         public static Color error = new Color(255, 60, 60);
         public static Color success = new Color(60, 255, 100);
+        public static Color progress = new Color(252, 243, 120);
     }
 
     public static class activeRequirements {
