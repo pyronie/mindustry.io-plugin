@@ -1,6 +1,8 @@
 package mindustry.plugin;
 
 import arc.math.Mathf;
+import arc.util.CommandHandler;
+import arc.util.Log;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
@@ -20,6 +22,7 @@ public class BotThread extends Thread {
     private Thread mt;
     private JSONObject data;
     public DiscordCommands commandHandler = new DiscordCommands();
+    public CommandHandler iohandler = new CommandHandler("");
 
     public BotThread(DiscordApi api, Thread mt, JSONObject data) {
         this.api = api; //new DiscordApiBuilder().setToken(data.get(0)).login().join();
@@ -28,7 +31,8 @@ public class BotThread extends Thread {
 
         // register commands
         this.api.addMessageCreateListener(commandHandler);
-        new ComCommands().registerCommands(commandHandler);
+        //new ComCommands().registerCommands(commandHandler);
+        new ComCommands().registerCommands(iohandler);
         new ServerCommands(data).registerCommands(commandHandler);
         //new MessageCreatedListeners(data).registerListeners(commandHandler);
     }

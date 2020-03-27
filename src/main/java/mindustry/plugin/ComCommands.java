@@ -2,6 +2,8 @@ package mindustry.plugin;
 
 import arc.files.Fi;
 import arc.math.Mathf;
+import arc.util.CommandHandler;
+import arc.util.Log;
 import arc.util.Timer;
 import mindustry.maps.Map;
 
@@ -18,6 +20,7 @@ import mindustry.plugin.discordcommands.Context;
 import mindustry.plugin.discordcommands.DiscordCommands;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.Message;
+import org.javacord.api.entity.message.MessageAuthor;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
 
@@ -30,8 +33,17 @@ import static mindustry.plugin.Utils.*;
 import static mindustry.plugin.ioMain.getTextChannel;
 
 public class ComCommands {
-    public void registerCommands(DiscordCommands handler) {
-        handler.registerCommand(new Command("chat") {
+    public void registerCommands(CommandHandler handler) {
+        handler.<Context>register("chat", "<message...>", "Send a message to in-game chat.", (args, ctx) -> {
+            Log.info("test received! author: " + ctx.author.getDiscriminatedName());
+            if(args[0].length() < chatMessageMaxSize){
+                Call.sendMessage("[sky]" + ctx.author.getDiscriminatedName() + " @discord >[] " + args[0]);
+                ctx.channel.sendMessage("Your message was sent successfully.");
+            } else{
+                ctx.channel.sendMessage("Message too big.");
+            }
+        });
+        /*handler.registerCommand(new Command("chat") {
             {
                 help = "<message> Sends a message to in-game chat.";
             }
@@ -236,7 +248,7 @@ public class ComCommands {
                                 p.passPhrase = String.valueOf(Mathf.random(1000, 9999));
                                 eb.setTitle("<a:loading:686693525907177519> Attempting link with " + escapeCharacters(p.name));
                                 eb.addField("Link PIN", p.passPhrase);
-                                eb.setDescription("Now, use the **/link " + p.passPhrase + "** command in game.");
+                                eb.setDescription("Now, use the /link " + p.passPhrase + "** command in game.");
                                 CompletableFuture<Message> msg = ctx.channel.sendMessage(eb);
                                 setData(uuid, pd);
                                 Timer.schedule(() -> {
@@ -283,6 +295,6 @@ public class ComCommands {
                     }
                 });
             }
-        });
+        });*/
     }
 }

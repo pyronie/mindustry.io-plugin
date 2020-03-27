@@ -48,6 +48,7 @@ public class ioMain extends Plugin {
     public static JedisPool pool;
     static Gson gson = new Gson();
 
+    public static BotThread bt;
     public static DiscordApi api = null;
     public static String prefix = ".";
     public static String serverName = "<untitled>";
@@ -77,7 +78,7 @@ public class ioMain extends Plugin {
         }catch (Exception e){
             Log.err("Couldn't log into discord.");
         }
-        BotThread bt = new BotThread(api, Thread.currentThread(), alldata);
+        bt = new BotThread(api, Thread.currentThread(), alldata);
         bt.setDaemon(false);
         bt.start();
 
@@ -95,6 +96,7 @@ public class ioMain extends Plugin {
         // setup prefix
         if (data.has("prefix")) {
             prefix = String.valueOf(data.getString("prefix").charAt(0));
+            bt.iohandler.setPrefix(ioMain.prefix);
         } else {
             Log.warn("Prefix not found, using default '.' prefix.");
         }
@@ -106,11 +108,13 @@ public class ioMain extends Plugin {
             Log.warn("No server name setting detected!");
         }
 
+        // setup anti vpn
         if(data.has("api_key")){
             apiKey = data.getString("api_key");
             Log.info("api_key set successfully");
         }
 
+        // setup minimum rank
         if(data.has("min_rank")){
             minRank = data.getInt("min_rank");
             Log.info("min_rank set successfully to " + minRank);
