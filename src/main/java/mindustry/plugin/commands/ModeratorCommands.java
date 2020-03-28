@@ -1,6 +1,8 @@
 package mindustry.plugin.commands;
 
+import arc.Events;
 import arc.util.CommandHandler;
+import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
@@ -27,7 +29,7 @@ public class ModeratorCommands {
                     ctx.sendEmbed(false, ":mountain_snow: *" + Funcs.escapeCharacters(args[0]) + "* not found", "display all maps with **" + prefix + "maps**");
                 }
             }else{
-                Call.onGameOver(Team.sharded);
+                Events.fire(new EventType.GameOverEvent(Team.sharded));
                 ctx.sendEmbed(true, ":mountain_snow: gameover event trigerred");
             }
         });

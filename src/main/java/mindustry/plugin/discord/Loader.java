@@ -116,7 +116,7 @@ public class Loader {
             mapSubmissions = getTextChannel(data.getString("mapSubmissions_id"));
         }
         if(data.has("warnings_chat_channel_id")) {
-            mapSubmissions = getTextChannel(data.getString("warnings_chat_channel_id"));
+            warnings = getTextChannel(data.getString("warnings_chat_channel_id"));
         }
 
         // setup roles

@@ -3,6 +3,7 @@ package mindustry.plugin.commands;
 import arc.files.Fi;
 import arc.struct.Array;
 import arc.util.CommandHandler;
+import arc.util.Log;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
 
@@ -95,6 +96,7 @@ public class PublicCommands {
                     try {
                         OutputStream os = new FileOutputStream(mapFile);
                         os.write(bytes);
+                        os.close();
 
                         ContentHandler.Map map = contentHandler.parseMap(fi.read());
                         File imageFile = new File(assets + "image_" + attachment.getFileName().replaceAll(".msav", ".png"));
@@ -107,7 +109,7 @@ public class PublicCommands {
                         eb.setAuthor(ctx.author.getAsTag(), null, ctx.author.getAvatarUrl());
                         eb.setFooter("react to this message accordingly to approve/disapprove this map.");
                         eb.setImage("attachment://" + imageFile.getName());
-
+                        
                         mapSubmissions.sendFile(mapFile).addFile(imageFile).embed(eb.build()).queue(message -> {
                             message.addReaction("true:693162979616751616").queue();
                             message.addReaction("false:693162961761730723").queue();
@@ -116,6 +118,7 @@ public class PublicCommands {
                         ctx.sendEmbed(true, ":map: **" + escapeCharacters(map.name) + "** submitted successfully!", "a moderator will soon approve or disapprove your map.");
                     } catch (Exception e) {
                         e.printStackTrace();
+                        ctx.sendEmbed(false, ":interrobang: **attachment invalid or corrupted!**");
                     }
                 } else {
                     ctx.sendEmbed(false, ":interrobang: **attachment invalid or corrupted!**");

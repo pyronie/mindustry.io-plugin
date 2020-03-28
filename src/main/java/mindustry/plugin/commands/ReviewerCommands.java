@@ -33,39 +33,6 @@ public class ReviewerCommands {
 
         if (data.has("administrator_roleid")) {
             String adminRole = data.getString("administrator_roleid");
-            handler.registerCommand(new RoleRestrictedCommand("changemap"){
-                {
-                    help = "<mapname/mapid> Change the current map to the one provided.";
-                    role = adminRole;
-                }
-
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    if (ctx.args.length < 2) {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("Not enough arguments, use `%changemap <mapname|mapid>`".replace("%", ioMain.prefix));
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-                    Map found = getMapBySelector(ctx.message.trim());
-                    if (found == null) {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("Map \"" + escapeCharacters(ctx.message.trim()) + "\" not found!");
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-
-                    changeMap(found);
-
-                    eb.setTitle("Command executed.");
-                    eb.setDescription("Changed map to " + found.name());
-                    ctx.channel.sendMessage(eb);
-
-                    maps.reload();
-                }
-            });
 
             handler.registerCommand(new RoleRestrictedCommand("setrank"){
                 {
@@ -106,18 +73,6 @@ public class ReviewerCommands {
             });
         }
 
-        if (data.has("exit_roleid")) {
-            handler.registerCommand(new RoleRestrictedCommand("exit") {
-                {
-                    help = "Close the server.";
-                    role = data.getString("exit_roleid");
-                }
-                public void run(Context ctx) {
-                    net.dispose();
-                    Core.app.exit();
-                }
-            });
-        }
         if (data.has("moderator_roleid")) {
             String banRole = data.getString("moderator_roleid");
 
