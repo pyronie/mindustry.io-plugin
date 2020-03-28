@@ -40,7 +40,7 @@ public class DiscordCommands extends ListenerAdapter {
             if(roles.contains(administrator) && !stop){
                 if(handleCommand(bt.adminHandler, content, ctx)) stop = true;
             }
-            if (!stop) ctx.sendEmbed(false, ":interrobang: **command not found**", "consider using the **" + prefix + "help** command");
+            if (!stop) ctx.sendEmbed(false, ":interrobang: no permission or command doesn't exist", "consider using the **" + prefix + "help** command");
         }
     }
 
