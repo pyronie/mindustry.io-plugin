@@ -12,7 +12,7 @@ import static mindustry.Vars.playerGroup;
 
 public class VoteSession{
     Map target;
-    ObjectSet<String> voted = new ObjectSet<>();
+    public ObjectSet<String> voted = new ObjectSet<>();
     VoteSession[] map;
     Timer.Task task;
     int votes;
@@ -36,7 +36,7 @@ public class VoteSession{
         return (int) (playerGroup.size() / 1.5f);
     }
 
-    void vote(Player player, int d){
+    public void vote(Player player, int d){
         votes += d;
         voted.addAll(player.uuid, netServer.admins.getInfo(player.uuid).lastIP);
 

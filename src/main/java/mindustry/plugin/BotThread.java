@@ -5,7 +5,10 @@ import arc.util.CommandHandler;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.plugin.commands.AdministratorCommands;
+import mindustry.plugin.commands.ModeratorCommands;
 import mindustry.plugin.commands.PublicCommands;
+import mindustry.plugin.commands.ReviewerCommands;
 import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discord.ReactionAdd;
@@ -27,6 +30,7 @@ public class BotThread extends Thread {
     private JSONObject data;
     public DiscordCommands commandHandler = new DiscordCommands();
     public ReactionAdd reactionHandler = new ReactionAdd();
+
     public CommandHandler publicHandler = new CommandHandler(prefix);
     public CommandHandler reviewerHandler = new CommandHandler(prefix);
     public CommandHandler moderatorHandler = new CommandHandler(prefix);
@@ -40,7 +44,11 @@ public class BotThread extends Thread {
         // register commands
         api.addEventListener(commandHandler);
         api.addEventListener(reactionHandler);
+
         new PublicCommands().registerCommands(publicHandler);
+        new ReviewerCommands().registerCommands(reviewerHandler);
+        new ModeratorCommands().registerCommands(moderatorHandler);
+        new AdministratorCommands().registerCommands(adminHandler);
     }
 
     public void run(){

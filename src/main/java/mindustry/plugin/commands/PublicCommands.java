@@ -17,8 +17,11 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 import javax.imageio.ImageIO;
 import java.io.*;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import java.util.zip.InflaterInputStream;
 
+import static arc.util.CommandHandler.*;
 import static mindustry.Vars.*;
 import static mindustry.plugin.utils.Funcs.*;
 import static mindustry.plugin.discord.Loader.*;
@@ -26,7 +29,7 @@ import static net.dv8tion.jda.api.entities.Message.*;
 
 public class PublicCommands {
     public void registerCommands(CommandHandler handler) {
-        handler.<Context>register("chat", "<message...>", "Send a message to in-game chat.", (args, ctx) -> {
+        handler.<Context>register("chat", "<message...>", "Send a message to in-game chat in " + serverName, (args, ctx) -> {
             if(args[0].length() < chatMessageMaxSize){
                 Call.sendMessage("[sky]" + ctx.author.getAsTag() + " @discord >[] " + args[0]);
                 ctx.sendEmbed(true, ":mailbox_with_mail: **message sent!**", "``" + escapeCharacters(args[0]) + "``");
@@ -35,7 +38,7 @@ public class PublicCommands {
             }
         });
 
-        handler.<Context>register("maps", "Display all available maps in the playlist.", (args, ctx) -> {
+        handler.<Context>register("maps", "Displays all available maps in the playlist.", (args, ctx) -> {
             Array<Map> mapList = maps.customMaps();
             StringBuilder smallMaps = new StringBuilder();
             StringBuilder mediumMaps = new StringBuilder();
@@ -55,7 +58,7 @@ public class PublicCommands {
             ctx.sendEmbed(true,":map: **" + mapList.size + " maps** in " + serverName + "'s playlist", fields, true);
         });
 
-        handler.<Context>register("map","<map...>", "Preview/download a map from the playlist.", (args, ctx) -> {
+        handler.<Context>register("map","<map...>", "Previews and provides a download for the specified map. (check maps with " + prefix + "maps)", (args, ctx) -> {
             Map map = getMapBySelector(args[0].trim());
             if (map != null){
                 try {
@@ -76,7 +79,7 @@ public class PublicCommands {
             }
         });
 
-        handler.<Context>register("submitmap", "Submit a map to be added to the server playlist.", (args, ctx) -> {
+        handler.<Context>register("submitmap", "Submit a map to be added to the server playlist (will be reviewed by a moderator automatically). Must attach a valid .msav file.", (args, ctx) -> {
             Attachment attachment = (ctx.event.getMessage().getAttachments().size() == 1 ? ctx.event.getMessage().getAttachments().get(0) : null);
             if (attachment == null) {
                 ctx.sendEmbed(false, ":link: **you need to attach a valid .msav file!**");
@@ -155,5 +158,54 @@ public class PublicCommands {
             ctx.sendEmbed(true, ":desktop: **" + serverName + "**", fields, false);
         });
 
+        handler.<Context>register("help", "[command]", "Display help for a specified command, or all commands.", (args, ctx) -> {
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.setTitle(":newspaper: all available commands");
+            eb.setDescription("use help [command] to view more information about a command.");
+            eb.setColor(Pals.progress);
+            if(args.length <= 0) {
+                StringBuilder admin = new StringBuilder();
+                StringBuilder mod = new StringBuilder();
+                StringBuilder reviewer = new StringBuilder();
+                StringBuilder publics = new StringBuilder();
+
+                for (Command cmd : bt.adminHandler.getCommandList()) {
+                    admin.append("**").append(cmd.text).append("**").append(" ").append(cmd.paramText).append("\n");
+                }
+                for (Command cmd : bt.moderatorHandler.getCommandList()) {
+                    mod.append("**").append(cmd.text).append("**").append(" ").append(cmd.paramText).append("\n");
+                }
+                for (Command cmd : bt.reviewerHandler.getCommandList()) {
+                    reviewer.append("**").append(cmd.text).append("**").append(" ").append(cmd.paramText).append("\n");
+                }
+                for (Command cmd : bt.publicHandler.getCommandList()) {
+                    publics.append("**").append(cmd.text).append("**").append(" ").append(cmd.paramText).append("\n");
+                }
+                eb.addField("Administration", admin.toString(), true);
+                eb.addField("Moderation", mod.toString(), true);
+                eb.addField("Maps", reviewer.toString(), true);
+                eb.addField("Public", publics.toString(), true);
+                ctx.channel.sendMessage(eb.build()).queue();
+            }else{
+                Command cmd = null;
+                for(Command c : bt.adminHandler.getCommandList()){
+                    if(c.text.equals(args[0].toLowerCase())) cmd = c;
+                }
+                for(Command c : bt.moderatorHandler.getCommandList()){
+                    if(c.text.equals(args[0].toLowerCase())) cmd = c;
+                }
+                for(Command c : bt.reviewerHandler.getCommandList()){
+                    if(c.text.equals(args[0].toLowerCase())) cmd = c;
+                }
+                for(Command c : bt.publicHandler.getCommandList()){
+                    if(c.text.equals(args[0].toLowerCase())) cmd = c;
+                }
+                if(cmd != null){
+                    ctx.sendEmbed(true, ":gear: " + cmd.text + (cmd.paramText.length() > 0 ? " *" + cmd.paramText + "*" : ""), cmd.description);
+                }else{
+                    ctx.sendEmbed(false, ":interrobang: that command doesn't exist!");
+                }
+            }
+        });
     }
 }

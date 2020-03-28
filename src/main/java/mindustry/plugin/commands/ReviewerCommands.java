@@ -1,42 +1,36 @@
 package mindustry.plugin.commands;
 
 import arc.util.CommandHandler;
+import mindustry.maps.Map;
+import mindustry.plugin.discord.Context;
+import mindustry.plugin.discord.Loader;
+import mindustry.plugin.utils.Funcs;
 
-import java.util.HashMap;
+import static mindustry.Vars.*;
+import static mindustry.plugin.discord.Loader.*;
+import static mindustry.plugin.utils.Funcs.getMapBySelector;
 
-public class RestrictedCommands {
-    public RestrictedCommands(){
+public class ReviewerCommands {
+    public ReviewerCommands(){
 
     }
 
     public void registerCommands(CommandHandler handler){
-
+        handler.<Context>register("removemap", "<map...>", "Remove the specified map from the playlist.", (args, ctx) -> {
+            Map map = getMapBySelector(args[0]);
+            if(map != null){
+                maps.removeMap(map);
+                maps.reload();
+                ctx.sendEmbed(true, ":knife: **" + map.name() + "** was murdered successfully");
+            } else{
+                ctx.sendEmbed(false, ":grey_question: **" + Funcs.escapeCharacters(args[0]) + "** not found", "display all maps with **" + prefix + "maps**");
+            }
+        });
     }
     /**
 
-    private JSONObject data;
-
-    public ServerCommands(JSONObject data){
-        this.data = data;
-    }
-
     public void registerCommands(DiscordCommands handler) {
 
-        handler.registerCommand(new Command("maps") {
-            {
-                help = "Check a list of available maps and their ids.";
-            }
-            public void run(Context ctx) {
-                StringBuilder msg = new StringBuilder().append("**All available maps in the playlist:**\n```");
-                Array<Map> mapList = maps.customMaps();
-                for (int i = 0; i < mapList.size; i++) {
-                    Map m = mapList.get(i);
-                    msg.append(i).append(" : ").append(m.name()).append(" : ").append(m.width).append(" x ").append(m.height).append("\n");
-                }
-                msg.append("```");
-                ctx.channel.sendMessage(msg.toString());
-            }
-        });
         if (data.has("administrator_roleid")) {
             String adminRole = data.getString("administrator_roleid");
             handler.registerCommand(new RoleRestrictedCommand("changemap"){

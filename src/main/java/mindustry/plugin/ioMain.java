@@ -15,6 +15,7 @@ import mindustry.graphics.Pal;
 import mindustry.net.Administration;
 import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
+import mindustry.plugin.discord.Loader;
 import mindustry.plugin.utils.ContentHandler;
 import mindustry.plugin.utils.MapRules;
 import mindustry.plugin.utils.VoteSession;
@@ -38,6 +39,7 @@ import static mindustry.plugin.discord.Loader.*;
 public class ioMain extends Plugin {
     //register event handlers and create variables in the constructor
     public ioMain() {
+        Loader.load();
         content.load();
         // display on screen messages
         float duration = 10f;

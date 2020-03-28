@@ -48,7 +48,7 @@ public class Loader {
         return api.getTextChannelById(id);
     }
 
-    public void load(){
+    public static void load(){
         Funcs.init();
 
         Log.info("<.io> loading");
@@ -79,6 +79,9 @@ public class Loader {
         if (data.has("prefix")) {
             prefix = String.valueOf(data.getString("prefix").charAt(0));
             bt.publicHandler.setPrefix(prefix);
+            bt.reviewerHandler.setPrefix(prefix);
+            bt.moderatorHandler.setPrefix(prefix);
+            bt.adminHandler.setPrefix(prefix);
         } else {
             Log.warn("Prefix not found, using default '.' prefix.");
         }

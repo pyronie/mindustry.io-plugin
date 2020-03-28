@@ -26,14 +26,13 @@ public class ReactionAdd extends ListenerAdapter {
         MessageReaction reaction = event.getReaction();
         Message message = event.getTextChannel().retrieveMessageById(event.getMessageId()).complete();
         MessageEmbed embed = (message.getEmbeds().size() > 0 ? message.getEmbeds().get(0) : null);
-        Emote emote = reaction.getReactionEmote().getEmote();
+        Emote emote = (reaction.getReactionEmote().isEmote() ? reaction.getReactionEmote().getEmote() : null);
         Member member = event.getMember();
         
         if(event.getUser() == api.getSelfUser() || event.getUser() == null) return;
-        if(embed != null && member != null){
+        if(embed != null && member != null && emote != null){
             if(message.getChannel() == mapSubmissions){ // if reacted to a message in map submissions
                 if(member.getRoles().contains(mapreviewer)){
-                    Log.info(emote.getId());
                     if(emote.getId().equals("693162979616751616")){
                         // approved, upload map
                         Attachment attachment = message.getAttachments().get(0);

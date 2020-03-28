@@ -1,14 +1,20 @@
 package mindustry.plugin.discord;
 
 import arc.util.CommandHandler;
+import arc.util.Log;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+
+import java.util.List;
 
 import static mindustry.plugin.discord.Loader.*;
 
 /** Represents a registry of commands */
 public class DiscordCommands extends ListenerAdapter {
+    private boolean stop = false;
     public DiscordCommands() {
     }
 
@@ -16,9 +22,31 @@ public class DiscordCommands extends ListenerAdapter {
     public void onMessageReceived(MessageReceivedEvent event) {
         // disable DMs
         if(event.isFromType(ChannelType.PRIVATE)) return;
+        Member member = event.getMember();
+        if(member == null) return;
 
         Context ctx = new Context(event);
-        CommandHandler.CommandResponse response = bt.publicHandler.handleMessage(event.getMessage().getContentRaw(), ctx);
+        String content = event.getMessage().getContentRaw();
+
+        List<Role> roles = member.getRoles();
+        stop = false;
+        if(!handleCommand(bt.publicHandler, content, ctx)){
+            if(roles.contains(mapreviewer)){
+                if(handleCommand(bt.reviewerHandler, content, ctx)) stop = true;
+            }
+            if(roles.contains(moderator) && !stop){
+                if(handleCommand(bt.moderatorHandler, content, ctx)) stop = true;
+            }
+            if(roles.contains(administrator) && !stop){
+                if(handleCommand(bt.adminHandler, content, ctx)) stop = true;
+            }
+            if (!stop) ctx.sendEmbed(false, ":interrobang: **command not found**", "consider using the **" + prefix + "help** command");
+        }
+    }
+
+    public boolean handleCommand(CommandHandler handler, String contentRaw, Context ctx){
+        boolean returnant = true;
+        CommandHandler.CommandResponse response = handler.handleMessage(contentRaw, ctx);
 
         if (response.type != CommandHandler.ResponseType.noCommand) {
             //a command was sent, now get the output
@@ -29,10 +57,10 @@ public class DiscordCommands extends ListenerAdapter {
                 }else if(response.type == CommandHandler.ResponseType.fewArguments){
                     ctx.sendEmbed(false,":interrobang: **too few arguments**", "**usage:** " + prefix + response.command.text + " " + response.command.paramText);
                 }else{ //unknown command
-                    ctx.sendEmbed(false,":interrobang: **unknown command**", "check **" + prefix + "help**");
+                    returnant = false;
                 }
             }
         }
+        return returnant;
     }
-
 }
