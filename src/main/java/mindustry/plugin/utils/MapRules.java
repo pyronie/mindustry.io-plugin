@@ -1,24 +1,17 @@
-package mindustry.plugin;
+package mindustry.plugin.utils;
 
-import arc.math.Mathf;
-import arc.util.Log;
-import arc.util.Time;
 import arc.util.Timer;
-import mindustry.Vars;
-import mindustry.content.Blocks;
-import mindustry.entities.type.Player;
 import mindustry.entities.type.TileEntity;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
-import mindustry.net.Administration;
 import mindustry.plugin.datas.PersistentPlayerData;
-import mindustry.plugin.datas.PlayerData;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.world;
-import static mindustry.plugin.Utils.*;
+import static mindustry.plugin.utils.Funcs.*;
+import static mindustry.plugin.discord.Loader.*;
 
 public class MapRules {
 
@@ -56,7 +49,7 @@ public class MapRules {
     public static void run(){
         onMapLoad();
 
-        for (java.util.Map.Entry<String, PersistentPlayerData> entry : ioMain.playerDataGroup.entrySet()) {
+        for (java.util.Map.Entry<String, PersistentPlayerData> entry : playerDataGroup.entrySet()) {
             PersistentPlayerData tdata = entry.getValue();
             if(tdata != null) {
                 tdata.spawnedPowerGen = false;

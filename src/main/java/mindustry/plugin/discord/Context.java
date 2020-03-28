@@ -1,8 +1,7 @@
-package mindustry.plugin.discordcommands;
+package mindustry.plugin.discord;
 
-import mindustry.plugin.Utils;
+import mindustry.plugin.utils.Funcs;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -36,9 +35,9 @@ public class Context {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(title);
         if(success){
-            eb.setColor(Utils.Pals.success);
+            eb.setColor(Funcs.Pals.success);
         } else{
-            eb.setColor(Utils.Pals.error);
+            eb.setColor(Funcs.Pals.error);
         }
         channel.sendMessage(eb.build()).queue();
     }
@@ -55,9 +54,9 @@ public class Context {
         eb.setTitle(title);
         eb.setDescription(description);
         if(success){
-            eb.setColor(Utils.Pals.success);
+            eb.setColor(Funcs.Pals.success);
         } else{
-            eb.setColor(Utils.Pals.error);
+            eb.setColor(Funcs.Pals.error);
         }
         channel.sendMessage(eb.build()).queue();;
     }
@@ -66,9 +65,9 @@ public class Context {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(title);
         if(success){
-            eb.setColor(Utils.Pals.success);
+            eb.setColor(Funcs.Pals.success);
         } else{
-            eb.setColor(Utils.Pals.error);
+            eb.setColor(Funcs.Pals.error);
         }
         for(String name : fields.keySet()){
             String desc = fields.get(name);

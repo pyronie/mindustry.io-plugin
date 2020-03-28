@@ -1,48 +1,17 @@
-package mindustry.plugin;
+package mindustry.plugin.commands;
 
-import mindustry.Vars;
-import mindustry.content.Blocks;
-import mindustry.content.Bullets;
-import mindustry.content.Mechs;
-import mindustry.content.UnitTypes;
-import mindustry.entities.bullet.BulletType;
-import mindustry.entities.type.BaseUnit;
-import mindustry.net.Administration;
-import mindustry.net.Packets;
-import mindustry.plugin.datas.PersistentPlayerData;
-import mindustry.plugin.datas.PlayerData;
-import mindustry.plugin.discordcommands.Context;
-import mindustry.plugin.discordcommands.DiscordCommands;
-import arc.Core;
-import arc.Events;
-import arc.files.Fi;
-import arc.struct.Array;
+import arc.util.CommandHandler;
 
-import mindustry.core.GameState;
-import mindustry.entities.type.Player;
-import mindustry.game.EventType.GameOverEvent;
-import mindustry.game.Team;
-import mindustry.gen.Call;
-import mindustry.maps.Map;
-import mindustry.io.SaveIO;
+import java.util.HashMap;
 
-import mindustry.type.Mech;
-import mindustry.type.UnitType;
-import mindustry.world.Block;
-import mindustry.world.Tile;
-import org.json.JSONObject;
+public class RestrictedCommands {
+    public RestrictedCommands(){
 
-import java.io.*;
-import java.lang.reflect.Field;
-import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.IntStream;
-import java.util.zip.InflaterInputStream;
+    }
 
-import static mindustry.Vars.*;
-import static mindustry.plugin.Utils.*;
+    public void registerCommands(CommandHandler handler){
 
-public class ServerCommands {
+    }
     /**
 
     private JSONObject data;

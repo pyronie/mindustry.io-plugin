@@ -1,4 +1,4 @@
-package mindustry.plugin;
+package mindustry.plugin.utils;
 
 import arc.*;
 import arc.files.*;

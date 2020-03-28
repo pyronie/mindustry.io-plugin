@@ -5,18 +5,21 @@ import arc.util.CommandHandler;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.plugin.commands.PublicCommands;
 import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
-import mindustry.plugin.discordcommands.ReactionAdd;
+import mindustry.plugin.discord.ReactionAdd;
+import mindustry.plugin.utils.Funcs;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import org.json.JSONObject;
 
-import mindustry.plugin.discordcommands.DiscordCommands;
+import mindustry.plugin.discord.DiscordCommands;
 
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
-import static mindustry.plugin.Utils.*;
+import static mindustry.plugin.utils.Funcs.*;
+import static mindustry.plugin.discord.Loader.*;
 
 public class BotThread extends Thread {
     public JDA api;
@@ -24,7 +27,10 @@ public class BotThread extends Thread {
     private JSONObject data;
     public DiscordCommands commandHandler = new DiscordCommands();
     public ReactionAdd reactionHandler = new ReactionAdd();
-    public CommandHandler iohandler = new CommandHandler("");
+    public CommandHandler publicHandler = new CommandHandler(prefix);
+    public CommandHandler reviewerHandler = new CommandHandler(prefix);
+    public CommandHandler moderatorHandler = new CommandHandler(prefix);
+    public CommandHandler adminHandler = new CommandHandler(prefix);
 
     public BotThread(JDA api, Thread mt, JSONObject data) {
         this.api = api; //new DiscordApiBuilder().setToken(data.get(0)).login().join();
@@ -34,10 +40,7 @@ public class BotThread extends Thread {
         // register commands
         api.addEventListener(commandHandler);
         api.addEventListener(reactionHandler);
-        //new ComCommands().registerCommands(commandHandler);
-        new ComCommands().registerCommands(iohandler);
-        //new ServerCommands(data).registerCommands(commandHandler);
-        //new MessageCreatedListeners(data).registerListeners(commandHandler);
+        new PublicCommands().registerCommands(publicHandler);
     }
 
     public void run(){
@@ -51,7 +54,7 @@ public class BotThread extends Thread {
                     if (pd == null) return;
 
                     // update buildings built
-                    PersistentPlayerData tdata = (ioMain.playerDataGroup.getOrDefault(p.uuid, null));
+                    PersistentPlayerData tdata = (playerDataGroup.getOrDefault(p.uuid, null));
                     if (tdata != null){
                         if (tdata.bbIncrementor > 0){
                             pd.buildingsBuilt = pd.buildingsBuilt + tdata.bbIncrementor;
@@ -62,11 +65,11 @@ public class BotThread extends Thread {
 
                     pd.playTime++;
                     if(pd.rank <= 0 && pd.playTime >= activeRequirements.playtime && pd.buildingsBuilt >= activeRequirements.buildingsBuilt && pd.gamesPlayed >= activeRequirements.gamesPlayed){
-                        Call.onInfoMessage(p.con, Utils.formatMessage(p, promotionMessage));
+                        Call.onInfoMessage(p.con, Funcs.formatMessage(p, Funcs.promotionMessage));
                         if (pd.rank < 1) pd.rank = 1;
                     }
                     setData(p.uuid, pd);
-                    ioMain.playerDataGroup.put(p.uuid, tdata); // update tdata with the new stuff
+                    playerDataGroup.put(p.uuid, tdata); // update tdata with the new stuff
                 }
                 if(Mathf.chance(0.01f)){
                     api.getPresence().setActivity(Activity.playing("( ͡° ͜ʖ ͡°)"));

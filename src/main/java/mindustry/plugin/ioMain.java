@@ -3,149 +3,42 @@ package mindustry.plugin;
 import java.awt.*;
 import java.lang.reflect.Field;
 import java.time.Instant;
-import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import arc.math.Mathf;
 import arc.util.*;
 import arc.util.Timer;
-import com.google.gson.Gson;
-import arc.util.Timer.Task;
 import mindustry.content.*;
 import mindustry.entities.Effects;
 import mindustry.entities.type.BaseUnit;
 import mindustry.graphics.Pal;
-import mindustry.maps.Map;
 import mindustry.net.Administration;
-import mindustry.plugin.datas.MapData;
 import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.plugin.datas.PlayerData;
-import mindustry.world.Build;
+import mindustry.plugin.utils.ContentHandler;
+import mindustry.plugin.utils.MapRules;
+import mindustry.plugin.utils.VoteSession;
 import mindustry.world.Tile;
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.TextChannel;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import arc.Core;
 import arc.Events;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.gen.Call;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
 
 import static mindustry.Vars.*;
-import static mindustry.plugin.Utils.*;
+import static mindustry.plugin.utils.Funcs.*;
+import static mindustry.plugin.discord.Loader.*;
 
 public class ioMain extends Plugin {
-    public static JedisPool pool;
-    static Gson gson = new Gson();
-    public static ContentHandler contentHandler;
-
-    public static BotThread bt;
-    public static JDA api = null;
-    public static String prefix = ".";
-    public static String serverName = "<untitled>";
-
-    public static Guild server;
-
-    public static TextChannel mapSubmissions;
-    public static TextChannel warnings;
-
-    public static Role mapreviewer;
-    public static Role moderator;
-    public static Role administrator;
-
-    public static HashMap<String, PersistentPlayerData> playerDataGroup = new HashMap<>(); // uuid, data
-
-    public static JSONObject data;
-    public static String apiKey = "";
-    public static int minRank = 0;
-
     //register event handlers and create variables in the constructor
     public ioMain() {
-        Utils.init();
-
-        try {
-            String pureJson = Core.settings.getDataDirectory().child("mods/settings.json").readString();
-            data = new JSONObject(new JSONTokener(pureJson));
-        } catch (Exception e) {
-            Log.err("Couldn't read settings.json file.");
-        }
-        try {
-            api = new JDABuilder(data.getString("token")).build().awaitReady();
-        }catch (Exception e){
-            Log.err("Couldn't log into discord.");
-        }
-        bt = new BotThread(api, Thread.currentThread(), data);
-        bt.setDaemon(false);
-        bt.start();
-
-
-
-        // database
-        try {
-            pool = new JedisPool(new JedisPoolConfig(), "localhost");
-            Log.info("jedis database loaded");
-        } catch (Exception e){
-            e.printStackTrace();
-            Core.app.exit();
-        }
-
-        // setup prefix
-        if (data.has("prefix")) {
-            prefix = String.valueOf(data.getString("prefix").charAt(0));
-            bt.iohandler.setPrefix(ioMain.prefix);
-        } else {
-            Log.warn("Prefix not found, using default '.' prefix.");
-        }
-
-        // setup name
-        if (data.has("server_name")) {
-            serverName = String.valueOf(data.getString("server_name"));
-        } else {
-            Log.warn("No server name setting detected!");
-        }
-
-        // setup anti vpn
-        if(data.has("api_key")){
-            apiKey = data.getString("api_key");
-            Log.info("api_key set successfully");
-        }
-
-        // setup minimum rank
-        if(data.has("min_rank")){
-            minRank = data.getInt("min_rank");
-            Log.info("min_rank set successfully to " + minRank);
-        } else{
-            Log.info("no min_rank found, setting to default: 0");
-        }
-
-
-        // setup server
-        if(data.has("server_id")) {
-            server = api.getGuildById(data.getString("server_id"));
-        }
-
-        // setup channels
-        if(data.has("mapSubmissions_id")) {
-            mapSubmissions = ioMain.getTextChannel(ioMain.data.getString("mapSubmissions_id"));
-        }
-
-        // setup roles
-        if (data.has("mapSubmissions_roleid")) mapreviewer = api.getRoleById(data.getString("mapSubmissions_roleid"));
-        if (data.has("moderator_roleid")) moderator = api.getRoleById(data.getString("moderator_roleid"));
-        if (data.has("administrator_roleid")) administrator = api.getRoleById(data.getString("administrator_roleid"));
-
-
+        content.load();
         // display on screen messages
         float duration = 10f;
         int start = 450;
@@ -366,23 +259,13 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.GameOverEvent.class, () -> {
             CompletableFuture.runAsync(() -> {
-                for (Player p : playerGroup.all()) { // update playerdata
+                for (Player p : playerGroup.all()) {
                     PlayerData pd = getData(p.uuid);
                     if (pd != null) {
                         pd.gamesPlayed++;
                         setData(p.uuid, pd);
                         Call.onInfoToast(p.con, "[accent]+1 games played", 10);
                     }
-                }
-                Map map = world.getMap();
-                String bMap = mapSaveKey + Base64.getEncoder().encodeToString(map.name().getBytes());
-                MapData md = getMapData(bMap);
-                if(md != null){
-                    md.timesPlayed++;
-                    if(md.maxWave < state.wave) md.maxWave = state.wave;
-                    setMapData(bMap, md);
-                } else{
-                    setMapData(bMap, new MapData(map.name(), map.description(), map.name()));
                 }
             });
         });
@@ -422,36 +305,6 @@ public class ioMain extends Plugin {
             handler.<Player>register("inspector", "Toggle on tile inspector. (Grief detection)", (args, player) -> {
                 player.inspector = !player.inspector;
                 player.sendMessage("[accent]Tile inspector toggled.");
-            });
-
-            handler.<Player>register("d", "<text...>", "Sends a message to moderators. Use when no moderators are online and there's a griefer.", (args, player) -> {
-
-                if (!data.has("warnings_chat_channel_id")) {
-                    player.sendMessage("[scarlet]This command is disabled.");
-                } else {
-                    TextChannel tc = getTextChannel(data.getString("warnings_chat_channel_id"));
-                    if (tc == null) {
-                        player.sendMessage("[scarlet]This command is disabled.");
-                        return;
-                    }
-                    tc.sendMessage(escapeCharacters(player.name) + " *@mindustry* : `" + args[0] + "`");
-                    player.sendMessage("[scarlet]Successfully sent message to moderators.");
-                }
-
-            });
-
-            handler.<Player>register("players", "Display all players and their ids", (args, player) -> {
-                StringBuilder builder = new StringBuilder();
-                builder.append("[orange]List of players: \n");
-                for (Player p : Vars.playerGroup.all()) {
-                    if(p.isAdmin) {
-                        builder.append("[accent]");
-                    } else{
-                        builder.append("[lightgray]");
-                    }
-                    builder.append(p.name).append("[accent] : ").append(p.id).append("\n");
-                }
-                player.sendMessage(builder.toString());
             });
 
             handler.<Player>register("rainbow", "[regular+] Give your username a rainbow animation", (args, player) -> {
@@ -513,80 +366,6 @@ public class ioMain extends Plugin {
                             Call.sendMessage(player.name + "[#b177fc] spawned in a draug pet! " + tdata.draugPets.size + "/" + pd.rank + " spawned.");
                         } else {
                             player.sendMessage("[#b177fc]You already have " + pd.rank + " draug pets active!");
-                        }
-                    } else {
-                        player.sendMessage(noPermissionMessage);
-                    }
-                } else {
-                    player.sendMessage("[scarlet]This command is disabled on pvp.");
-                }
-            });
-
-            handler.<Player>register("lichpet", "[donator+] Spawn yourself a lich defense pet (max. 1 per game, lasts 2 minutes, disabled on pvp)", (args, player) -> {
-                if(!state.rules.pvp || player.isAdmin) {
-                    PlayerData pd = getData(player.uuid);
-                    if (pd != null && pd.rank >= 3) {
-                        PersistentPlayerData tdata = playerDataGroup.get(player.uuid);
-                        if (tdata == null) return;
-                        if (!tdata.spawnedLichPet || player.isAdmin) {
-                            tdata.spawnedLichPet = true;
-                            BaseUnit baseUnit = UnitTypes.lich.create(player.getTeam());
-                            baseUnit.set(player.getClosestCore().x, player.getClosestCore().y);
-                            baseUnit.health = 200f;
-                            baseUnit.add();
-                            Call.sendMessage(player.name + "[#ff0000] spawned in a lich defense pet! (lasts 2 minutes)");
-                            Timer.schedule(baseUnit::kill, 120);
-                        } else {
-                            player.sendMessage("[#42a1f5]You already spawned a lich defense pet in this game!");
-                        }
-                    } else {
-                        player.sendMessage(noPermissionMessage);
-                    }
-                } else {
-                    player.sendMessage("[scarlet]This command is disabled on pvp.");
-                }
-            });
-
-            handler.<Player>register("powergen", "[donator+] Spawn yourself a power generator.", (args, player) -> {
-                if(!state.rules.pvp || player.isAdmin) {
-                    PlayerData pd = getData(player.uuid);
-                    if (pd != null && pd.rank >= 3) {
-                        PersistentPlayerData tdata = playerDataGroup.get(player.uuid);
-                        if (tdata == null) return;
-                        if (!tdata.spawnedPowerGen || player.isAdmin) {
-                            float x = player.getX();
-                            float y = player.getY();
-
-                            Tile targetTile = world.tileWorld(x, y);
-
-                            if (targetTile == null || !Build.validPlace(player.getTeam(), targetTile.x, targetTile.y, Blocks.rtgGenerator, 0)) {
-                                Call.onInfoToast(player.con, "[scarlet]Cannot place a power generator here.",5f);
-                                return;
-                            }
-
-                            tdata.spawnedPowerGen = true;
-                            targetTile.setNet(Blocks.rtgGenerator, player.getTeam(), 0);
-                            Call.onLabel("[accent]" + escapeCharacters(escapeColorCodes(player.name)) + "'s[] generator", 60f, targetTile.worldx(), targetTile.worldy());
-                            Call.onEffectReliable(Fx.explosion, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
-                            Call.onEffectReliable(Fx.placeBlock, targetTile.worldx(), targetTile.worldy(), 0, Pal.accent);
-                            Call.sendMessage(player.name + "[#ff82d1] spawned in a power generator!");
-
-                            // ok seriously why is this necessary
-                            new Object() {
-                                private Task task;
-                                {
-                                    task = Timer.schedule(() -> {
-                                        if (targetTile.block() == Blocks.rtgGenerator) {
-                                            Call.transferItemTo(Items.thorium, 1, targetTile.drawx(), targetTile.drawy(), targetTile);
-                                        } else {
-                                            player.sendMessage("[scarlet]Your power generator was destroyed!");
-                                            task.cancel();
-                                        }
-                                    }, 0, 6);
-                                }
-                            };
-                        } else {
-                            player.sendMessage("[#ff82d1]You already spawned a power generator in this game!");
                         }
                     } else {
                         player.sendMessage(noPermissionMessage);
@@ -671,7 +450,7 @@ public class ioMain extends Plugin {
 
             VoteSession[] currentlyKicking = {null};
 
-            handler.<Player>register("nominate","[map...]", "[regular+] Vote to change to a specific map.", (args, player) -> {
+            handler.<Player>register("nominate","<map...>", "[regular+] Vote to change to a specific map.", (args, player) -> {
                 if(!state.rules.pvp || player.isAdmin) {
                     PlayerData pd = getData(player.uuid);
                     if (pd != null && pd.rank >= 2) {
@@ -736,32 +515,6 @@ public class ioMain extends Plugin {
                 }
             });
 
-            handler.<Player>register("link", "<pin>", "Finish linking your account with discord, start prompt with `link` command on http://discord.mindustry.io", (args, player) -> {
-                String pin = args[0];
-                String uuid = player.uuid;
-                PlayerData pd = getData(uuid);
-                if(player.passPhrase.equals("")){
-                    player.sendMessage("[#7289da]\uE848[#99aab5] You first need to initiate a link on the #bot channel in our discord, http://discord.mindustry.io");
-                    return;
-                }
-                if(pin.length() != 4){
-                    player.sendMessage("[scarlet]Incorrect PIN.");
-                    return;
-                }
-                if (pd!=null){
-                    if(player.passPhrase.length() > 0){
-                        if(player.passPhrase.equals(pin)){
-                            player.passPhrase = "OK";
-                            player.sendMessage("[#7289da]\uE848[#99aab5] Discord link successful, thank you for linking your account!");
-                            player.canInteract = true;
-                        } else{
-                            player.sendMessage("[#7289da]\uE848[#99aab5] Incorrect PIN.");
-                        }
-                    }
-                }
-            });
-            
-
             handler.<Player>register("removelink", "Remove your active discord link.", (args, player) -> {
                 CompletableFuture.runAsync(() -> {
                     String uuid = player.uuid;
@@ -778,10 +531,6 @@ public class ioMain extends Plugin {
             });
         }
 
-    }
-
-    public static TextChannel getTextChannel(String id){
-        return api.getTextChannelById(id);
     }
 
 }

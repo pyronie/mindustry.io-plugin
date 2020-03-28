@@ -1,4 +1,4 @@
-package mindustry.plugin;
+package mindustry.plugin.utils;
 
 import arc.Core;
 import arc.Events;
@@ -13,6 +13,7 @@ import mindustry.maps.Map;
 import mindustry.maps.Maps;
 import mindustry.plugin.datas.MapData;
 import mindustry.plugin.datas.PlayerData;
+import mindustry.plugin.discord.Loader;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
@@ -28,20 +29,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static mindustry.Vars.*;
+import static mindustry.plugin.discord.Loader.*;
 import static mindustry.plugin.ioMain.*;
 
-public class Utils {
+public class Funcs {
     public static int chatMessageMaxSize = 256;
-    static String assets = "iocontent/";
+    public static String assets = "iocontent/";
     static String mapSaveKey = "bXn94MAP";
-    static String welcomeMessage = "";
-    static String statMessage = "";
-    static String noPermissionMessage = "[accent]You don't have permissions to execute this command!\nObtain the donator rank here: http://donate.mindustry.io";
+    public static String welcomeMessage = "";
+    public static String statMessage = "";
+    public static String noPermissionMessage = "[accent]You don't have permissions to execute this command!\nObtain the donator rank here: http://donate.mindustry.io";
 
     // wheter ip verification is in place (detect vpns, disallow their build rights)
-    static Boolean verification = true;
+    public static Boolean verification = true;
 
-    static String promotionMessage =
+    public static String promotionMessage =
             "[sky]%player%, you have been promoted to [sky]<active>[]!\n" +
             "[#4287f5]You reached a playtime of - %playtime% minutes! That's 10+ hours!\n" +
             "[#f54263]You played a total of %games% games!\n" +
@@ -49,18 +51,18 @@ public class Utils {
             "[sky]Thank you for participating and enjoy your time on [orange]<[white]io[orange]>[sky]!\n"+
             "[scarlet]Please rejoin for the change to take effect.";
 
-    static String verificationMessage = "[scarlet]Your IP was flagged as a VPN.\n" +
+    public static String verificationMessage = "[scarlet]Your IP was flagged as a VPN.\n" +
             "\n" +
             "[sky]Please join our discord:\n" +
             "http://discord.mindustry.io\n" +
             "[#7a7a7a]verify your account in #verifications";
 
-    static HashMap<Integer, Rank> rankNames = new HashMap<>();
+    public static HashMap<Integer, Rank> rankNames = new HashMap<>();
     static HashMap<String, Integer> rankRoles = new HashMap<>();
-    static Array<String> bannedNames = new Array<>();
-    static Array<String> onScreenMessages = new Array<>();
-    static String eventIp = "";
-    static int eventPort = 6567;
+    public static Array<String> bannedNames = new Array<>();
+    public static Array<String> onScreenMessages = new Array<>();
+    public static String eventIp = "";
+    public static int eventPort = 6567;
 
     public static class Rank{
         public String tag = "";
@@ -180,7 +182,7 @@ public class Utils {
 
     // playerdata
     public static PlayerData getData(String uuid) {
-        try(Jedis jedis = ioMain.pool.getResource()) {
+        try(Jedis jedis = pool.getResource()) {
             String json = jedis.get(uuid);
             if(json == null) return null;
 
@@ -195,7 +197,7 @@ public class Utils {
 
     public static void setData(String uuid, PlayerData pd) {
         CompletableFuture.runAsync(() -> {
-            try (Jedis jedis = ioMain.pool.getResource()) {
+            try (Jedis jedis = pool.getResource()) {
                 try {
                     String json = gson.toJson(pd);
                     jedis.set(uuid, json);
@@ -204,35 +206,6 @@ public class Utils {
                 }
             }
         });
-    }
-
-
-    // mapdata
-    public static void setMapData(String mapName, MapData md) {
-        CompletableFuture.runAsync(() -> {
-            try (Jedis jedis = ioMain.pool.getResource()) {
-                try {
-                    String json = gson.toJson(md);
-                    jedis.set(mapName, json); // encode map name in base64
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    public static MapData getMapData(String mapName) {
-        try(Jedis jedis = ioMain.pool.getResource()) {
-            String json = jedis.get(mapName);
-            if(json == null) return null;
-
-            try {
-                return gson.fromJson(json, MapData.class);
-            } catch(Exception e){
-                e.printStackTrace();
-                return null;
-            }
-        }
     }
 
     public static void changeMap(Map found){

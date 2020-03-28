@@ -1,13 +1,11 @@
-package mindustry.plugin;
+package mindustry.plugin.utils;
 
 import arc.struct.ObjectSet;
 import arc.util.Strings;
-import arc.util.Time;
 import arc.util.Timer;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
-import mindustry.net.Packets;
 
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
@@ -49,7 +47,7 @@ public class VoteSession{
     boolean checkPass(){
         if(votes >= votesRequired()){
             Call.sendMessage(Strings.format("[orange]Vote passed.[scarlet] changing map to {0}.", target.name()));
-            Utils.changeMap(target);
+            Funcs.changeMap(target);
             map[0] = null;
             task.cancel();
             return true;

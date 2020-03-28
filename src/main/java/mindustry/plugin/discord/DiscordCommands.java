@@ -1,11 +1,11 @@
-package mindustry.plugin.discordcommands;
+package mindustry.plugin.discord;
 
 import arc.util.CommandHandler;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-import static mindustry.plugin.ioMain.*;
+import static mindustry.plugin.discord.Loader.*;
 
 /** Represents a registry of commands */
 public class DiscordCommands extends ListenerAdapter {
@@ -18,7 +18,7 @@ public class DiscordCommands extends ListenerAdapter {
         if(event.isFromType(ChannelType.PRIVATE)) return;
 
         Context ctx = new Context(event);
-        CommandHandler.CommandResponse response = bt.iohandler.handleMessage(event.getMessage().getContentRaw(), ctx);
+        CommandHandler.CommandResponse response = bt.publicHandler.handleMessage(event.getMessage().getContentRaw(), ctx);
 
         if (response.type != CommandHandler.ResponseType.noCommand) {
             //a command was sent, now get the output

@@ -1,4 +1,4 @@
-package mindustry.plugin;
+package mindustry.plugin.commands;
 
 import arc.files.Fi;
 import arc.struct.Array;
@@ -9,7 +9,8 @@ import mindustry.maps.Map;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.plugin.datas.PlayerData;
-import mindustry.plugin.discordcommands.Context;
+import mindustry.plugin.discord.Context;
+import mindustry.plugin.utils.ContentHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
@@ -19,11 +20,11 @@ import java.util.HashMap;
 import java.util.zip.InflaterInputStream;
 
 import static mindustry.Vars.*;
-import static mindustry.plugin.Utils.*;
-import static mindustry.plugin.ioMain.*;
+import static mindustry.plugin.utils.Funcs.*;
+import static mindustry.plugin.discord.Loader.*;
 import static net.dv8tion.jda.api.entities.Message.*;
 
-public class ComCommands {
+public class PublicCommands {
     public void registerCommands(CommandHandler handler) {
         handler.<Context>register("chat", "<message...>", "Send a message to in-game chat.", (args, ctx) -> {
             if(args[0].length() < chatMessageMaxSize){
