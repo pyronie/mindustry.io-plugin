@@ -23,7 +23,7 @@ public class ReviewerCommands {
                 maps.reload();
                 ctx.sendEmbed(true, ":knife: **" + map.name() + "** was murdered successfully");
             } else{
-                ctx.sendEmbed(false, ":grey_question: *" + Funcs.escapeCharacters(args[0]) + "* not found", "display all maps with **" + prefix + "maps**");
+                ctx.sendEmbed(false, ":knife: *" + Funcs.escapeCharacters(args[0]) + "* not found", "display all maps with **" + prefix + "maps**");
             }
         });
     }

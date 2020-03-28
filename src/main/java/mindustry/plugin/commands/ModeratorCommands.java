@@ -24,7 +24,7 @@ public class ModeratorCommands {
                     changeMap(map);
                     ctx.sendEmbed(true, ":mountain_snow: map changed to *"  + escapeCharacters(map.name()) + "*");
                 }else{
-                    ctx.sendEmbed(false, ":grey_question: *" + Funcs.escapeCharacters(args[0]) + "* not found", "display all maps with **" + prefix + "maps**");
+                    ctx.sendEmbed(false, ":mountain_snow: *" + Funcs.escapeCharacters(args[0]) + "* not found", "display all maps with **" + prefix + "maps**");
                 }
             }else{
                 Call.onGameOver(Team.sharded);
