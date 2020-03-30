@@ -15,15 +15,15 @@ repositories{
 }
 
 ext{
-    mindustryVersion = 'canInteract'
-    arcVersion = 'v104'
+    mindustryVersion = 'c104.6'
+    arcVersion = 'v104.6'
     jdaVersion = "v4.1.1"
 }
 
 dependencies{
     implementation 'com.google.code.gson:gson:2.8.6'
 
-    compile "com.github.fuzzbuck.Arc:arc-core:$arcVersion"
+    compile "com.github.Anuken.Arc:arc-core:$arcVersion"
     compile "com.github.fuzzbuck.Mindustry:core:$mindustryVersion"
     compile "com.github.fuzzbuck.Mindustry:server:$mindustryVersion"
 
