@@ -3,8 +3,11 @@ package mindustry.plugin.commands;
 import arc.Events;
 import arc.util.CommandHandler;
 import arc.util.Log;
+import mindustry.content.Bullets;
 import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
+import mindustry.entities.bullet.BulletType;
+import mindustry.entities.traits.HealthTrait;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.entities.type.Unit;
@@ -237,7 +240,51 @@ public class ModeratorCommands {
         });
 
         handler.<Context>register("kill", "<player|unit>", "Kill the specified player or all specified units on the map.", (args, ctx) -> {
-            //todo
+            UnitType desiredUnitType = UnitTypes.dagger;
+            try {
+                Field field = UnitTypes.class.getDeclaredField(args[0]);
+                desiredUnitType = (UnitType) field.get(null);
+                int amt = 0;
+                for(Unit unit : unitGroup.all()){
+                    if(unit.getTypeID() == desiredUnitType.typeID){ unit.kill(); amt++; }
+                }
+                ctx.sendEmbed(true, ":knife: killed " + amt + " " + args[0] + "s");
+            } catch (NoSuchFieldException | IllegalAccessException ignored) {
+                Player player = findPlayer(args[0]);
+                if(player != null){
+                    player.kill();
+                    ctx.sendEmbed(true, ":knife: killed " + escapeCharacters(player.name));
+                }else if(args[0].toLowerCase().equals("all")){
+                    playerGroup.all().forEach(HealthTrait::kill);
+                    ctx.sendEmbed(true, ":knife: killed everyone, muhahaha");
+                }else{
+                    ctx.sendEmbed(false, ":knife: can't find " + escapeCharacters(args[0]));
+                }
+            }
+        });
+
+        handler.<Context>register("weapon", "<player> <bullet> [lifetime] [velocity]", "Modify the specified players weapon with the provided parameters", (args, ctx) -> {
+            BulletType desiredBulletType;
+            float life = 1f;
+            float vel = 1f;
+            if(args.length > 2){
+                try{
+                    life = Float.parseFloat(args[3]);
+                }catch (Exception e){ ctx.sendEmbed(false, ":gun: error parsing lifetime number"); return;}
+            }
+            if(args.length > 3){
+                try{
+                    vel = Float.parseFloat(args[4]);
+                }catch (Exception e){ ctx.sendEmbed(false, ":gun: error parsing velocity number"); return;}
+            }
+            try {
+                Field field = Bullets.class.getDeclaredField(args[1]);
+                desiredBulletType = (BulletType) field.get(null);
+            } catch (NoSuchFieldException | IllegalAccessException ignored) {
+                ctx.sendEmbed(false, ":gun: invalid bullet type");
+                return;
+            }
+
         });
     }
 }
