@@ -162,18 +162,7 @@ public class Funcs {
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
             PlayerData pd = getData(player.uuid);
             if (pd != null) {
-                message = message.replaceAll("%playtime%", String.valueOf(pd.playTime));
-                message = message.replaceAll("%games%", String.valueOf(pd.gamesPlayed));
-                message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
-                message = message.replaceAll("%rank%", rankNames.get(pd.rank).tag + " " + escapeColorCodes(rankNames.get(pd.rank).name));
-                if(pd.discordLink.length() > 0){
-                    User discordUser = api.getUserById(pd.discordLink);
-                    if(discordUser != null) {
-                        message = message.replaceAll("%discord%", discordUser.getAsTag());
-                    }
-                } else{
-                    message = message.replaceAll("%discord%", "unlinked");
-                }
+
             }
         }catch(Exception ignore){};
         return message;
