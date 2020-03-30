@@ -127,27 +127,13 @@ public class PublicCommands {
         });
 
         handler.<Context>register("players","Get all online in-game players.", (args, ctx) -> {
-            HashMap<Integer, String> playersInRank = new HashMap<>();
             EmbedBuilder eb = new EmbedBuilder();
             eb.setColor(Pals.progress);
             eb.setTitle(":satellite: **players online: **" + playerGroup.all().size);
-            for(int rank : rankNames.keySet()){
-                playersInRank.put(rank, "");
-            }
+
+            StringBuilder s = new StringBuilder();
             for(Player p : playerGroup.all()){
-                try {
-                    PlayerData pd = getData(p.uuid);
-                    if (pd != null) {
-                        playersInRank.put(pd.rank, playersInRank.get(pd.rank) + escapeCharacters(p.name) + "\n");
-                    }
-                } catch(JedisConnectionException e){
-                    e.printStackTrace();
-                }
-            }
-            for(int rank : rankNames.keySet()){
-                if(playersInRank.get(rank).length() > 0) {
-                    eb.addField(rankNames.get(rank).name, playersInRank.get(rank), true);
-                }
+                s.append(p.name).append("\n");
             }
             ctx.sendEmbed(eb);
         });
