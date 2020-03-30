@@ -99,7 +99,7 @@ public class ioMain extends Plugin {
             Player player = event.player;
             PlayerData pd = getData(player.uuid);
             if (pd != null){
-                if (pd.banned || pd.bannedUntil > Instant.now().getEpochSecond()){
+                if (pd.bannedUntil > Instant.now().getEpochSecond()){
                     player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason, 0);
                 }
             }
@@ -120,18 +120,20 @@ public class ioMain extends Plugin {
                 if (pd != null) {
                     try {
                         if (pd.banReason == null) {
-                            pd.reprocess();
+                            pd.reprocess(player);
+                            Log.info("Reprocessing data for " + player.name);
                             setData(player.uuid, pd);
                         }
                     } catch (Exception ignored) {
-                        pd.reprocess();
+                        pd.reprocess(player);
+                        Log.info("Reprocessing data for " + player.name);
                         setData(player.uuid, pd);
                     }
-                    if (pd.banned || pd.bannedUntil > Instant.now().getEpochSecond()) {
+                    if (pd.bannedUntil > Instant.now().getEpochSecond()) {
                         player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
                     }
                 } else { // not in database
-                    setData(player.uuid, new PlayerData());
+                    setData(player.uuid, new PlayerData(player));
                 }
 
                 if (welcomeMessage.length() > 0) {
