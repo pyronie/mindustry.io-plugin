@@ -1,28 +1,22 @@
 package mindustry.plugin;
 
-import java.awt.*;
-import java.lang.reflect.Field;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
 import arc.math.Mathf;
 import arc.util.*;
 import arc.util.Timer;
 import mindustry.content.*;
-import mindustry.entities.Effects;
-import mindustry.entities.type.BaseUnit;
 import mindustry.graphics.Pal;
 import mindustry.net.Administration;
-import mindustry.plugin.datas.PersistentPlayerData;
+import mindustry.plugin.datas.Achievements;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discord.Loader;
 import mindustry.plugin.utils.ContentHandler;
 import mindustry.plugin.utils.MapRules;
 import mindustry.plugin.utils.VoteSession;
-import mindustry.world.Block;
 import mindustry.world.Tile;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import arc.Events;
 import mindustry.Vars;
@@ -30,18 +24,20 @@ import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.gen.Call;
 
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MediaType;
-
 import static mindustry.Vars.*;
 import static mindustry.plugin.utils.Funcs.*;
 import static mindustry.plugin.discord.Loader.*;
 
 public class ioMain extends Plugin {
+    public static HashMap<String, PlayerData> playerDataHashMap = new HashMap<>();
     //register event handlers and create variables in the constructor
     public ioMain() {
+        Achievements achievementHandler = new Achievements();
+
+        //we can load this before anything else, it doesnt matter
         Loader.load();
         content.load();
+        achievementHandler.load();
 
         // display on screen messages
         float duration = 10f;
@@ -97,7 +93,7 @@ public class ioMain extends Plugin {
         // player connected
         Events.on(EventType.PlayerConnect.class, event -> {
             Player player = event.player;
-            PlayerData pd = getData(player.uuid);
+            PlayerData pd = playerDataHashMap.get(player.uuid);
             if (pd != null){
                 if (pd.bannedUntil > Instant.now().getEpochSecond()){
                     player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason, 0);
@@ -105,36 +101,28 @@ public class ioMain extends Plugin {
             }
         });
 
+        // player disconnected
+        Events.on(EventType.PlayerLeave.class, event -> {
+            String uuid = event.player.uuid;
+            setJedisData(uuid, playerDataHashMap.get(uuid));
+        });
+
         // player joined
         Events.on(EventType.PlayerJoin.class, event -> {
             CompletableFuture.runAsync(() -> {
                 Player player = event.player;
-                player.origName = player.name;
-                if (bannedNames.contains(player.name)) {
-                    player.con.kick("[scarlet]Download the game from legitimate sources to join.\n[accent]https://anuke.itch.io/mindustry");
-                    return;
-                }
-
-                PlayerData pd = getData(player.uuid);
+                PlayerData pd = playerDataHashMap.get(player.uuid);
 
                 if (pd != null) {
-                    try {
-                        if (pd.banReason == null) {
-                            pd.reprocess(player);
-                            Log.info("Reprocessing data for " + player.name);
-                            setData(player.uuid, pd);
-                        }
-                    } catch (Exception ignored) {
-                        pd.reprocess(player);
-                        Log.info("Reprocessing data for " + player.name);
-                        setData(player.uuid, pd);
-                    }
                     if (pd.bannedUntil > Instant.now().getEpochSecond()) {
                         player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
+                        return;
                     }
                 } else { // not in database
-                    setData(player.uuid, new PlayerData(player));
+                    pd = new PlayerData();
+                    setJedisData(player.uuid, new PlayerData());
                 }
+                playerDataHashMap.put(player.uuid, pd);
 
                 if (welcomeMessage.length() > 0) {
                     Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
@@ -193,6 +181,32 @@ public class ioMain extends Plugin {
                 return action.type != Administration.ActionType.rotate;
             });
         });
+
+        // achievement-related events
+
+        Events.on(EventType.DepositEvent.class, event -> {
+            CompletableFuture.runAsync(() -> {
+                for(Achievements.Achievement achievement : achievementHandler.all){
+                    achievement.onItemDeposit(event);
+                }
+            });
+        });
+
+        Events.on(EventType.WithdrawEvent.class, event -> {
+            CompletableFuture.runAsync(() -> {
+                for(Achievements.Achievement achievement : achievementHandler.all){
+                    achievement.onItemWithdraw(event);
+                }
+            });
+        });
+
+        Events.on(EventType.WaveEvent.class, event -> {
+            CompletableFuture.runAsync(() -> {
+                for(Achievements.Achievement achievement : achievementHandler.all){
+                    achievement.onWave();
+                }
+            });
+        });
     }
 
     //register commands that run on the server
@@ -208,6 +222,11 @@ public class ioMain extends Plugin {
     @Override
     public void registerClientCommands(CommandHandler handler){
         if (api != null) {
+            handler.<Player>register("reset","stat reset", (args, player) -> {
+                playerDataHashMap.put(player.uuid, new PlayerData());
+                setJedisData(player.uuid, new PlayerData());
+            });
+
 
             handler.<Player>register("inspector", "Toggle on tile inspector. (Grief detection)", (args, player) -> {
                 player.inspector = !player.inspector;
