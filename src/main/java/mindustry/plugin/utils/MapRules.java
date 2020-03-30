@@ -48,14 +48,5 @@ public class MapRules {
 
     public static void run(){
         onMapLoad();
-
-        for (java.util.Map.Entry<String, PersistentPlayerData> entry : playerDataGroup.entrySet()) {
-            PersistentPlayerData tdata = entry.getValue();
-            if(tdata != null) {
-                tdata.spawnedPowerGen = false;
-                tdata.spawnedLichPet = false;
-                tdata.draugPets.clear();
-            }
-        }
     }
 }
