@@ -38,8 +38,6 @@ public class Loader {
     public static Role moderator;
     public static Role administrator;
 
-    public static HashMap<String, PersistentPlayerData> playerDataGroup = new HashMap<>(); // uuid, data
-
     public static JSONObject data;
     public static String apiKey = "";
     public static int minRank = 0;
