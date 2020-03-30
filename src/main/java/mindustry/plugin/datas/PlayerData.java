@@ -1,27 +1,17 @@
 package mindustry.plugin.datas;
 
-import mindustry.entities.type.Player;
+import java.util.HashMap;
 
-import static mindustry.plugin.datas.Achievements.*;
-
-public class PlayerData implements Cloneable{
+public class PlayerData{
     public int highestWave;
-    public Achievements achievements;
     public int role;
 
     public long bannedUntil = 0;
     public String banReason = "";
 
-    public PlayerData(Player player) {
-        achievements = new Achievements(player.uuid);
-    }
+    public HashMap<Integer, Integer> achievements; // achievement id, progress <0-100>
 
-    public void reprocess(Player player){
-        if(banReason == null || achievements == null){
-            this.banReason = "";
-            this.achievements = new Achievements(player.uuid);
-        }
+    public PlayerData() {
+        achievements = new HashMap<>();
     }
-
-    public Object clone()throws CloneNotSupportedException{return super.clone();}
 }
