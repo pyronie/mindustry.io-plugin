@@ -68,7 +68,7 @@ public class PublicCommands {
                     File imageFile = new File(assets + "image_" + mapFile.name().replaceAll(".msav", ".png"));
                     ImageIO.write(visualMap.image, "png", imageFile);
 
-                    EmbedBuilder eb = new EmbedBuilder().setColor(Pals.success).setTitle(":map: **" + escapeCharacters(map.name())).setFooter(map.width + "x" + map.height).setDescription(escapeCharacters(map.description())).setAuthor(escapeCharacters(map.author()));
+                    EmbedBuilder eb = new EmbedBuilder().setColor(Pals.success).setTitle(":map: " + escapeCharacters(map.name())).setFooter(map.width + "x" + map.height).setDescription(escapeCharacters(map.description())).setAuthor(escapeCharacters(map.author()));
                     eb.setImage("attachment://" + imageFile.getName());
                     ctx.channel.sendFile(mapFile.file()).addFile(imageFile).embed(eb.build()).queue();
                 } catch (IOException e) {
