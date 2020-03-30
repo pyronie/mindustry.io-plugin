@@ -49,46 +49,6 @@ public class ReviewerCommands {
 
     public void registerCommands(DiscordCommands handler) {
 
-            handler.registerCommand(new RoleRestrictedCommand("killunits") {
-                {
-                    help = "<playerid|ip|name> <unit> Kills all units of the team of the specified player";
-                    role = banRole;
-                }
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    String target = ctx.args[1];
-                    String targetUnit = ctx.args[2];
-                    UnitType desiredUnit = UnitTypes.dagger;
-                    if(target.length() > 0 && targetUnit.length() > 0) {
-                        try {
-                            Field field = UnitTypes.class.getDeclaredField(targetUnit);
-                            desiredUnit = (UnitType)field.get(null);
-                        } catch (NoSuchFieldException | IllegalAccessException ignored) {}
-
-                        Player player = findPlayer(target);
-                        if(player!=null){
-                            int amount = 0;
-                            for(BaseUnit unit : Vars.unitGroup.all()) {
-                                if(unit.getTeam() == player.getTeam()){
-                                    if(unit.getType() == desiredUnit) {
-                                        unit.kill();
-                                        amount++;
-                                    }
-                                }
-                            }
-                            eb.setTitle("Command executed successfully.");
-                            eb.setDescription("Killed " + amount + " " + targetUnit + "s on team " + player.getTeam());
-                            ctx.channel.sendMessage(eb);
-                        }
-                    } else{
-                        eb.setTitle("Command terminated");
-                        eb.setDescription("Invalid arguments provided.");
-                        eb.setColor(Pals.error);
-                        ctx.channel.sendMessage(eb);
-                    }
-                }
-            });
-
             handler.registerCommand(new RoleRestrictedCommand("setblock") {
                 {
                     help = "<playerid|ip|name> <block> Create a block at the player's current location and on the player's current team.";
@@ -187,58 +147,6 @@ public class ReviewerCommands {
 
         }
 
-            handler.registerCommand(new Command("sendm"){ // use sendm to send embed messages when needed locally, disable for now
-                public void run(Context ctx){
-                    EmbedBuilder eb = new EmbedBuilder()
-                            .setColor(Utils.Pals.info)
-                            .setTitle("Support mindustry.io by donating, and receive custom ranks!")
-                            .setUrl("https://donate.mindustry.io/")
-                            .setDescription("By donating, you directly help me pay for the monthly server bills I receive for hosting 4 servers with **150+** concurrent players daily.")
-                            .addField("VIP", "**VIP** is obtainable through __nitro boosting__ the server or __donating $1.59+__ to the server.", false)
-                            .addField("__**MVP**__", "**MVP** is a more enchanced **vip** rank, obtainable only through __donating $3.39+__ to the server.", false)
-                            .addField("Where do I get it?", "You can purchase **vip** & **mvp** ranks here: https://donate.mindustry.io", false)
-                            .addField("\uD83E\uDD14 io is pay2win???", "Nope. All perks vips & mvp's gain are aesthetic items **or** items that indirectly help the team. Powerful commands that could give you an advantage are __disabled on pvp.__", true);
-                    ctx.channel.sendMessage(eb);
-                }
-            });
-
-
-        if(data.has("mapSubmissions_roleid")){
-            String reviewerRole = data.getString("mapSubmissions_roleid");
-
-            handler.registerCommand(new RoleRestrictedCommand("removemap") {
-                {
-                    help = "<mapname/mapid> Remove a map from the playlist (use mapname/mapid retrieved from the %maps command)".replace("%", ioMain.prefix);
-                    role = reviewerRole;
-                }
-                @Override
-                public void run(Context ctx) {
-                    EmbedBuilder eb = new EmbedBuilder();
-                    if (ctx.args.length < 2) {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("Not enough arguments, use `%removemap <mapname/mapid>`".replace("%", ioMain.prefix));
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-                    Map found = getMapBySelector(ctx.message.trim());
-                    if (found == null) {
-                        eb.setTitle("Command terminated.");
-                        eb.setColor(Pals.error);
-                        eb.setDescription("Map not found");
-                        ctx.channel.sendMessage(eb);
-                        return;
-                    }
-
-                    maps.removeMap(found);
-                    maps.reload();
-
-                    eb.setTitle("Command executed.");
-                    eb.setDescription(found.name() + " was successfully removed from the playlist.");
-                    ctx.channel.sendMessage(eb);
-                }
-            });
-        }
     }
     */
 }
