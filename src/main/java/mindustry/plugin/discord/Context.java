@@ -61,6 +61,22 @@ public class Context {
         channel.sendMessage(eb.build()).queue();;
     }
 
+    public void sendEmbed(boolean success, String title, String description, HashMap<String, String> fields, boolean inline){
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle(title);
+        eb.setDescription(description);
+        if(success){
+            eb.setColor(Funcs.Pals.success);
+        } else{
+            eb.setColor(Funcs.Pals.error);
+        }
+        for(String name : fields.keySet()){
+            String desc = fields.get(name);
+            eb.addField(name, desc, inline);
+        }
+        channel.sendMessage(eb.build()).queue();;
+    }
+
     public void sendEmbed(boolean success, String title, HashMap<String, String> fields, boolean inline){
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(title);
