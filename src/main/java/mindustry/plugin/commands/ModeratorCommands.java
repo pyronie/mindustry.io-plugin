@@ -1,8 +1,6 @@
 package mindustry.plugin.commands;
 
-import arc.Events;
 import arc.util.CommandHandler;
-import arc.util.Log;
 import mindustry.content.Bullets;
 import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
@@ -11,29 +9,26 @@ import mindustry.entities.traits.HealthTrait;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.entities.type.Unit;
-import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
-import mindustry.graphics.Pal;
-import mindustry.maps.Map;
 import mindustry.net.Administration;
-import mindustry.net.Packets;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discord.Context;
-import mindustry.plugin.utils.Funcs;
+import mindustry.plugin.ioMain;
 import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import net.dv8tion.jda.api.EmbedBuilder;
 
 import java.lang.reflect.Field;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.stream.IntStream;
 
 import static mindustry.Vars.*;
 import static mindustry.net.Administration.*;
 import static mindustry.net.Packets.*;
-import static mindustry.plugin.discord.Loader.prefix;
 import static mindustry.plugin.discord.Loader.serverName;
+import static mindustry.plugin.ioMain.*;
 import static mindustry.plugin.utils.Funcs.*;
 
 public class ModeratorCommands {
@@ -77,24 +72,26 @@ public class ModeratorCommands {
         handler.<Context>register("ban", "<player> <minutes> [reason...]", "Ban a player by the provided name, id or uuid (do offline bans using uuid)", (args, ctx) -> {
             Player player = findPlayer(args[0]);
             if(player!= null){
-                PlayerData pd = getData(player.uuid);
+                PlayerData pd = getJedisData(player.uuid);
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
                     pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid.substring(0, 4);
-                    setData(player.uuid, pd);
+                    playerDataHashMap.put(player.uuid, pd);
+                    setJedisData(player.uuid, pd);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + pd.banReason + "*\n");
                     player.con.kick(KickReason.banned);
                 }else{
                     ctx.sendEmbed(false, ":interrobang: internal server error, please ping fuzz");
                 }
             }else{
-                PlayerData pd = getData(args[0]);
+                PlayerData pd = getJedisData(args[0]);
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
                     pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid.substring(0, 4);
-                    setData(player.uuid, pd);
+                    playerDataHashMap.put(player.uuid, pd);
+                    setJedisData(player.uuid, pd);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(netServer.admins.getInfo(args[0]).lastName),"reason: *" + pd.banReason + "*");
                 }else{
                     ctx.sendEmbed(false, ":hammer: that player or uuid cannot be found");
@@ -113,12 +110,12 @@ public class ModeratorCommands {
         });
 
         handler.<Context>register("unban", "<uuid>", "Unban the specified player by uuid (works for votekicks as well)", (args, ctx) -> {
-            PlayerData pd = getData(args[0]);
+            PlayerData pd = getJedisData(args[0]);
             if(pd!= null){
                 PlayerInfo info = netServer.admins.getInfo(args[0]);
                 info.lastKicked = 0;
                 pd.bannedUntil = 0;
-                setData(player.uuid, pd);
+                setJedisData(player.uuid, pd);
                 ctx.sendEmbed(true, ":wrench: unbanned " + escapeCharacters(info.lastName) + " successfully!");
             }else{
                 ctx.sendEmbed(false, ":wrench: that uuid doesn't exist in the database..");
@@ -215,7 +212,7 @@ public class ModeratorCommands {
         handler.<Context>register("spawn", "<player> <unit> <amount>", "Spawn a specified amount of units near the player's position.", (args, ctx) -> {
             int amt;
             try{
-                amt = Integer.parseInt(args[1]);
+                amt = Integer.parseInt(args[2]);
             }catch (Exception e){ ctx.sendEmbed(false, ":robot: error parsing amount number"); return;}
 
             UnitType desiredUnitType = UnitTypes.dagger;
@@ -269,12 +266,12 @@ public class ModeratorCommands {
             float vel = 1f;
             if(args.length > 2){
                 try{
-                    life = Float.parseFloat(args[3]);
+                    life = Float.parseFloat(args[2]);
                 }catch (Exception e){ ctx.sendEmbed(false, ":gun: error parsing lifetime number"); return;}
             }
             if(args.length > 3){
                 try{
-                    vel = Float.parseFloat(args[4]);
+                    vel = Float.parseFloat(args[3]);
                 }catch (Exception e){ ctx.sendEmbed(false, ":gun: error parsing velocity number"); return;}
             }
             try {
@@ -284,7 +281,29 @@ public class ModeratorCommands {
                 ctx.sendEmbed(false, ":gun: invalid bullet type");
                 return;
             }
-            //todo: finish
+            HashMap<String, String> fields = new HashMap<>();
+            Player player = findPlayer(args[0]);
+            if(player != null){
+                player.bt = desiredBulletType;
+                player.sclLifetime = life;
+                player.sclVelocity = vel;
+                fields.put("Bullet", args[1]);
+                fields.put("Bullet lifetime", args[2]);
+                fields.put("Bullet velocity", args[3]);
+                ctx.sendEmbed(true, ":gun: modded " + escapeCharacters(player.name) + "'s gun", fields, true);
+            }else if(args[0].toLowerCase().equals("all")){
+                for(Player p : playerGroup.all()) {
+                    p.bt = desiredBulletType;
+                    p.sclLifetime = life;
+                    p.sclVelocity = vel;
+                }
+                fields.put("Bullet", args[1]);
+                fields.put("Bullet lifetime", args[2]);
+                fields.put("Bullet velocity", args[3]);
+                ctx.sendEmbed(true, ":gun: modded everyone's gun", fields, true);
+            }else{
+                ctx.sendEmbed(false, ":gun: can't find " + escapeCharacters(args[0]));
+            }
         });
     }
 }
