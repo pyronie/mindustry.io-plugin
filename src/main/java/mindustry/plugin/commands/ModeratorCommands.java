@@ -284,7 +284,7 @@ public class ModeratorCommands {
                 ctx.sendEmbed(false, ":gun: invalid bullet type");
                 return;
             }
-
+            //todo: finish
         });
     }
 }
