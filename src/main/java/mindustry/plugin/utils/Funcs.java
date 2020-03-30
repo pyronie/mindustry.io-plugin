@@ -3,6 +3,7 @@ package mindustry.plugin.utils;
 import arc.Core;
 import arc.Events;
 import arc.struct.Array;
+import arc.util.Log;
 import arc.util.Strings;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
@@ -11,13 +12,10 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.maps.Maps;
-import mindustry.plugin.datas.MapData;
 import mindustry.plugin.datas.PlayerData;
-import mindustry.plugin.discord.Loader;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
-import net.dv8tion.jda.api.entities.User;
 import redis.clients.jedis.Jedis;
 
 import java.awt.*;
@@ -26,11 +24,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import static mindustry.Vars.*;
 import static mindustry.plugin.discord.Loader.*;
-import static mindustry.plugin.ioMain.*;
 
 public class Funcs {
     public static int chatMessageMaxSize = 256;
@@ -160,7 +156,7 @@ public class Funcs {
             message = message.replaceAll("%player%", escapeCharacters(player.name));
             message = message.replaceAll("%map%", world.getMap().name());
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
-            PlayerData pd = getData(player.uuid);
+            PlayerData pd = getJedisData(player.uuid);
             if (pd != null) {
 
             }
@@ -170,21 +166,21 @@ public class Funcs {
 
 
     // playerdata
-    public static PlayerData getData(String uuid) {
+    public static PlayerData getJedisData(String uuid) {
         try(Jedis jedis = pool.getResource()) {
             String json = jedis.get(uuid);
             if(json == null) return null;
-
+            Log.info(json);
             try {
                 return gson.fromJson(json, PlayerData.class);
             } catch(Exception e){
-                e.printStackTrace();
+                setJedisData(uuid, new PlayerData());
                 return null;
             }
         }
     }
 
-    public static void setData(String uuid, PlayerData pd) {
+    public static void setJedisData(String uuid, PlayerData pd) {
         CompletableFuture.runAsync(() -> {
             try (Jedis jedis = pool.getResource()) {
                 try {
