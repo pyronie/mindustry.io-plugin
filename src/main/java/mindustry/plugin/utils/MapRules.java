@@ -4,14 +4,12 @@ import arc.util.Timer;
 import mindustry.entities.type.TileEntity;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
-import mindustry.plugin.datas.PersistentPlayerData;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.world;
 import static mindustry.plugin.utils.Funcs.*;
-import static mindustry.plugin.discord.Loader.*;
 
 public class MapRules {
 
@@ -44,6 +42,7 @@ public class MapRules {
                 }
             }
         }
+
     }
 
     public static void run(){
