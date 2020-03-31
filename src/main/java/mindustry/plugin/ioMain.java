@@ -32,6 +32,7 @@ import static mindustry.plugin.discord.Loader.*;
 public class ioMain extends Plugin {
     public static HashMap<String, PlayerData> playerDataHashMap = new HashMap<>();
     public static Achievements achievementHandler = new Achievements();
+    public static int minutesPassed = 0;
     //register event handlers and create variables in the constructor
     public ioMain() {
         //we can load this before anything else, it doesnt matter
@@ -127,7 +128,7 @@ public class ioMain extends Plugin {
                 }
                 playerDataHashMap.put(player.uuid, pd);
 
-                if (welcomeMessage.length() > 0) {
+                if (welcomeMessage.length() > 0 && !welcomeMessage.equals("none")) {
                     Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
                 }
 
@@ -162,10 +163,6 @@ public class ioMain extends Plugin {
                 info.configuredBy = player.name;
                 info.configuredByUUID = player.uuid;
             }
-        });
-
-        Events.on(EventType.GameOverEvent.class, () -> {
-
         });
 
         Events.on(EventType.WorldLoadEvent.class, event -> {
@@ -218,6 +215,22 @@ public class ioMain extends Plugin {
                 }
             });
         });
+
+        Events.on(EventType.BlockDestroyEvent.class, event -> {
+            CompletableFuture.runAsync(() -> {
+                for(Achievement achievement : achievementHandler.all){
+                    achievement.onDeconstruct(event);
+                }
+            });
+        });
+
+        Events.on(EventType.GameOverEvent.class, () -> {
+            CompletableFuture.runAsync(() -> {
+                for(Achievement achievement : achievementHandler.all){
+                    achievement.onGameover();
+                }
+            });
+        });
     }
 
     //register commands that run on the server
@@ -246,12 +259,20 @@ public class ioMain extends Plugin {
                 player.sendMessage("[accent]Tile inspector toggled.");
             });
 
-            handler.<Player>register("stats", "<player...>", "Display stats of the specified player.", (args, player) -> {
-                //todo
-            });
+            handler.<Player>register("stats", "[<]player...]", "Display stats of the specified player (or yourself, if no player provided)", (args, player) -> {
+                if(!statMessage.equals("none")) {
+                    if (args.length <= 1) {
+                        Call.onInfoMessage(player.con, formatMessage(player, statMessage));
+                    } else {
+                        Player p = findPlayer(args[0]);
+                        if (p != null) {
+                            Call.onInfoMessage(player.con, formatMessage(p, statMessage));
+                        } else {
 
-            handler.<Player>register("info", "Display your stats.", (args, player) -> { // self info
-                //todo
+                            player.sendMessage("[lightgray]Can't find that player!");
+                        }
+                    }
+                }
             });
 
             handler.<Player>register("event", "Join an ongoing event (if there is one)", (args, player) -> {
@@ -263,7 +284,7 @@ public class ioMain extends Plugin {
             });
 
 
-            handler.<Player>register("acv","[page]", "Display all acvs.", (args, player) -> { // self info
+            handler.<Player>register("achievements","[page]", "Display your achievements.", (args, player) -> { // self info
                 if(args.length > 0 && !Strings.canParseInt(args[0])){
                     player.sendMessage("[scarlet]'page' must be a number.");
                     return;
@@ -281,7 +302,7 @@ public class ioMain extends Plugin {
 
                 PlayerData pd = playerDataHashMap.get(player.uuid);
                 StringBuilder result = new StringBuilder();
-                result.append(Strings.format("[orange]-- Maps Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
+                result.append(Strings.format("[orange]-- Achievements Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
 
                 if(pd != null) {
                     for (int i = perPage * page; i < Math.min(perPage * (page + 1), achievementHandler.all.size); i++) {
@@ -296,36 +317,6 @@ public class ioMain extends Plugin {
                 }
             });
 
-
-            handler.<Player>register("achievements","[page]", "Display all achievements", (args, player) -> {
-                if(args.length > 0 && !Strings.canParseInt(args[0])){
-                    player.sendMessage("[scarlet]'page' must be a number.");
-                    return;
-                }
-
-                Log.info(achievementHandler.all.size);
-
-                int perPage = 6;
-                int page = args.length > 0 ? Strings.parseInt(args[0]) : 1;
-                int pages = Mathf.ceil((float)achievementHandler.all.size / perPage);
-
-                page --;
-
-                if(page >= pages || page < 0){
-                    player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
-                    return;
-                }
-                PlayerData pd = playerDataHashMap.get(player.uuid);
-                StringBuilder result = new StringBuilder();
-                result.append(Strings.format("[orange]-- Achievements Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
-
-                for(int i = perPage * page; i < Math.min(perPage * (page + 1), achievementHandler.all.size / perPage); i++){
-                    Achievement achievement = achievementHandler.all.get(i);
-                    int progress = (int) (pd.achievements.containsKey(achievement.id) ? pd.achievements.get(achievement.id) : 0);
-                    result.append("[white] - [accent]").append(achievement.name).append("[white] - ").append(progress >= 100 ? achievement.desc : "[lightgray]????????[]").append(" - [accent]").append(progress).append("%\n");
-                }
-                player.sendMessage(result.toString());
-            });
 
             handler.<Player>register("maps","[page]", "Display all maps in the playlist.", (args, player) -> { // self info
                 if(args.length > 0 && !Strings.canParseInt(args[0])){

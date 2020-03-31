@@ -12,6 +12,7 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.maps.Maps;
+import mindustry.plugin.datas.Achievements;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.ioMain;
 import mindustry.world.Block;
@@ -133,7 +134,13 @@ public class Funcs {
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
             PlayerData pd = playerDataHashMap.get(player.uuid);
             if (pd != null) {
-
+                int achives = 0;
+                for(Achievements.Achievement a : achievementHandler.all){
+                    if(pd.achievements.containsKey(a.id) && pd.achievements.get(a.id) >= 100){
+                        achives++;
+                    }
+                }
+                message = message.replaceAll("%achievements%", String.valueOf(achives));
             }
         }catch(Exception ignore){};
         return message;
@@ -145,7 +152,6 @@ public class Funcs {
         try(Jedis jedis = pool.getResource()) {
             String json = jedis.get(uuid);
             if(json == null) return null;
-            Log.info(json);
             try {
                 return gson.fromJson(json, PlayerData.class);
             } catch(Exception e){
