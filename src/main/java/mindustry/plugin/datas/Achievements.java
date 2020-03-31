@@ -46,7 +46,7 @@ public class Achievements {
     public void load(){
 
         wave1000 = new Achievement(1,"5 hours later", "Reach wave 1000"){
-            int limit = 5;
+            float limit = 1000;
             @Override
             public void onWave(){
                 int wave = state.wave;
