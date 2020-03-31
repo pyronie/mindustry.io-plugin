@@ -4,10 +4,10 @@ import arc.math.Mathf;
 import arc.util.CommandHandler;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
-import mindustry.plugin.commands.AdministratorCommands;
 import mindustry.plugin.commands.ModeratorCommands;
 import mindustry.plugin.commands.PublicCommands;
 import mindustry.plugin.commands.ReviewerCommands;
+import mindustry.plugin.datas.Achievements;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discord.ReactionAdd;
 import net.dv8tion.jda.api.JDA;
@@ -15,6 +15,8 @@ import net.dv8tion.jda.api.entities.Activity;
 import org.json.JSONObject;
 
 import mindustry.plugin.discord.DiscordCommands;
+
+import java.util.concurrent.CompletableFuture;
 
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
@@ -32,7 +34,6 @@ public class BotThread extends Thread {
     public CommandHandler publicHandler = new CommandHandler(prefix);
     public CommandHandler reviewerHandler = new CommandHandler(prefix);
     public CommandHandler moderatorHandler = new CommandHandler(prefix);
-    public CommandHandler adminHandler = new CommandHandler(prefix);
 
     public BotThread(JDA api, Thread mt, JSONObject data) {
         this.api = api; //new DiscordApiBuilder().setToken(data.get(0)).login().join();
@@ -46,7 +47,6 @@ public class BotThread extends Thread {
         new PublicCommands().registerCommands(publicHandler);
         new ReviewerCommands().registerCommands(reviewerHandler);
         new ModeratorCommands().registerCommands(moderatorHandler);
-        new AdministratorCommands().registerCommands(adminHandler);
     }
 
     public void run(){
@@ -64,6 +64,14 @@ public class BotThread extends Thread {
                 } else {
                     api.getPresence().setActivity(Activity.playing("with " + playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players"));
                 }
+
+                CompletableFuture.runAsync(() -> {
+                    for(Achievements.Achievement achievement : achievementHandler.all){
+                        achievement.onInterval();
+                    }
+                });
+
+                minutesPassed++;
             } catch (Exception e) {
                 e.printStackTrace();
             }

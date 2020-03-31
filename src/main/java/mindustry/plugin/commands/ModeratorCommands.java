@@ -72,7 +72,7 @@ public class ModeratorCommands {
 
         handler.<Context>register("ban", "<player> <minutes> [reason...]", "Ban a player by the provided name, id or uuid (do offline bans using uuid)", (args, ctx) -> {
             Player player = findPlayer(args[0]);
-            if(player!= null){
+            if(player != null){
                 PlayerData pd = getJedisData(player.uuid);
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
@@ -80,7 +80,9 @@ public class ModeratorCommands {
                     pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid.substring(0, 4);
                     playerDataHashMap.put(player.uuid, pd);
                     setJedisData(player.uuid, pd);
-                    ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + pd.banReason + "*\n");
+                    HashMap<String, String> fields = new HashMap<>();
+                    fields.put("UUID", player.uuid);
+                    ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
                     player.con.kick(KickReason.banned);
                 }else{
                     ctx.sendEmbed(false, ":interrobang: internal server error, please ping fuzz");
@@ -90,10 +92,11 @@ public class ModeratorCommands {
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
-                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid.substring(0, 4);
-                    playerDataHashMap.put(player.uuid, pd);
-                    setJedisData(player.uuid, pd);
-                    ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(netServer.admins.getInfo(args[0]).lastName),"reason: *" + pd.banReason + "*");
+                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + args[0].substring(0, 4);
+                    setJedisData(args[0], pd);
+                    HashMap<String, String> fields = new HashMap<>();
+                    fields.put("UUID", args[0]);
+                    ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(netServer.admins.getInfo(args[0]).lastName),"reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
                 }else{
                     ctx.sendEmbed(false, ":hammer: that player or uuid cannot be found");
                 }
@@ -104,7 +107,7 @@ public class ModeratorCommands {
             Player player = findPlayer(args[0]);
             if(player != null){
                 player.con.kick(KickReason.kick);
-                ctx.sendEmbed(true, ":football: kicked " + escapeCharacters(player.name) + " successfully!");
+                ctx.sendEmbed(true, ":football: kicked " + escapeCharacters(player.name) + " successfully!", player.uuid);
             }else{
                 ctx.sendEmbed(false, ":round_pushpin: can't find player " + escapeCharacters(args[0]));
             }
@@ -116,7 +119,7 @@ public class ModeratorCommands {
                 PlayerInfo info = netServer.admins.getInfo(args[0]);
                 info.lastKicked = 0;
                 pd.bannedUntil = 0;
-                setJedisData(player.uuid, pd);
+                setJedisData(args[0], pd);
                 ctx.sendEmbed(true, ":wrench: unbanned " + escapeCharacters(info.lastName) + " successfully!");
             }else{
                 ctx.sendEmbed(false, ":wrench: that uuid doesn't exist in the database..");
@@ -198,7 +201,7 @@ public class ModeratorCommands {
                 welcomeMessage = args[0];
                 ctx.sendEmbed(true, ":newspaper: changed welcome message successfully!", args[0]);
             }
-            Core.settings.put("welcomeMessage", args[0]);
+            Core.settings.put("welcomeMessage", welcomeMessage);
         });
 
         handler.<Context>register("statmessage", "<message...>", "Change the stat message popup when a player uses the /info command", (args, ctx) -> {
@@ -209,7 +212,7 @@ public class ModeratorCommands {
                 statMessage = args[0];
                 ctx.sendEmbed(true, ":newspaper: changed stat message successfully!", args[0]);
             }
-            Core.settings.put("statMessage", args[0]);
+            Core.settings.put("statMessage", statMessage);
         });
 
         handler.<Context>register("spawn", "<player> <unit> <amount>", "Spawn a specified amount of units near the player's position.", (args, ctx) -> {
