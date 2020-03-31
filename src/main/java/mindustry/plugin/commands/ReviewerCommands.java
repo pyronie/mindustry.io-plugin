@@ -6,7 +6,6 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.plugin.discord.Context;
-import mindustry.plugin.discord.Loader;
 import mindustry.plugin.utils.Funcs;
 
 import static mindustry.Vars.*;
@@ -35,7 +34,7 @@ public class ReviewerCommands {
                 Map map = getMapBySelector(args[0]);
                 if(map != null){
                     changeMap(map);
-                    ctx.sendEmbed(true, ":mountain_snow: map changed to *"  + escapeCharacters(map.name()) + "*");
+                    ctx.sendEmbed(true, ":mountain_snow: map changed to "  + escapeCharacters(map.name()));
                 }else{
                     ctx.sendEmbed(false, ":mountain_snow: *" + Funcs.escapeCharacters(args[0]) + "* not found", "display all maps with **" + prefix + "maps**");
                 }
