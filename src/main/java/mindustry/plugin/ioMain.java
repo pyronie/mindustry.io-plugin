@@ -105,6 +105,9 @@ public class ioMain extends Plugin {
         Events.on(EventType.PlayerLeave.class, event -> {
             String uuid = event.player.uuid;
             setJedisData(uuid, playerDataHashMap.get(uuid));
+
+            //free ram
+            playerDataHashMap.remove(uuid);
         });
 
         // player joined
@@ -130,10 +133,6 @@ public class ioMain extends Plugin {
             });
         });
 
-        // player built building
-        Events.on(EventType.BlockBuildEndEvent.class, event -> {
-
-        });
 
         Events.on(EventType.BuildSelectEvent.class, event -> {
             if(event.builder instanceof Player){
@@ -204,6 +203,14 @@ public class ioMain extends Plugin {
             CompletableFuture.runAsync(() -> {
                 for(Achievements.Achievement achievement : achievementHandler.all){
                     achievement.onWave();
+                }
+            });
+        });
+
+        Events.on(EventType.BlockBuildEndEvent.class, event -> {
+            CompletableFuture.runAsync(() -> {
+                for(Achievements.Achievement achievement : achievementHandler.all){
+                    achievement.onBuild(event);
                 }
             });
         });

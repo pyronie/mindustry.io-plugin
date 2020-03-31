@@ -13,6 +13,7 @@ import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.maps.Maps;
 import mindustry.plugin.datas.PlayerData;
+import mindustry.plugin.ioMain;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
@@ -27,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static mindustry.Vars.*;
 import static mindustry.plugin.discord.Loader.*;
+import static mindustry.plugin.ioMain.*;
 
 public class Funcs {
     public static int chatMessageMaxSize = 256;
@@ -55,7 +57,6 @@ public class Funcs {
 
     public static HashMap<Integer, Rank> rankNames = new HashMap<>();
     static HashMap<String, Integer> rankRoles = new HashMap<>();
-    public static Array<String> bannedNames = new Array<>();
     public static Array<String> onScreenMessages = new Array<>();
     public static String eventIp = "";
     public static int eventPort = 6567;
@@ -71,28 +72,9 @@ public class Funcs {
     }
 
     public static void init(){
-        rankNames.put(0, new Rank("[#7d7d7d]<none>[]", "guest"));
-        rankNames.put(1, new Rank("[accent]<[white]\uE810[accent]>[]", "active"));
+        rankNames.put(1, new Rank("", ""));
         rankNames.put(2, new Rank("[accent]<[white]\uE809[accent]>[]", "regular"));
         rankNames.put(3, new Rank("[accent]<[white]\uE84E[accent]>[]", "donator"));
-        rankNames.put(4, new Rank("[accent]<[white]\uE84F[accent]>[]", "moderator"));
-        rankNames.put(5, new Rank("[accent]<[white]\uE828[accent]>[]", "admin"));
-
-        rankRoles.put("627985513600516109", 1);
-        rankRoles.put("636968410441318430", 2);
-        rankRoles.put("674778262857187347", 3);
-        rankRoles.put("624959361789329410", 4);
-
-        bannedNames.add("IGGGAMES");
-        bannedNames.add("CODEX");
-        bannedNames.add("VALVE");
-        bannedNames.add("tuttop");
-        bannedNames.add("IgruhaOrg");
-
-        activeRequirements.bannedBlocks.add(Blocks.conveyor);
-        activeRequirements.bannedBlocks.add(Blocks.titaniumConveyor);
-        activeRequirements.bannedBlocks.add(Blocks.junction);
-        activeRequirements.bannedBlocks.add(Blocks.router);
 
         statMessage = Core.settings.getString("statMessage");
         welcomeMessage = Core.settings.getString("welcomeMessage");
@@ -102,13 +84,6 @@ public class Funcs {
         public static Color error = new Color(255, 60, 60);
         public static Color success = new Color(60, 255, 100);
         public static Color progress = new Color(252, 243, 120);
-    }
-
-    public static class activeRequirements {
-        public static Array<Block> bannedBlocks = new Array<>();
-        public static int playtime = 60 * 10;
-        public static int buildingsBuilt = 1000 * 10;
-        public static int gamesPlayed = 10;
     }
 
     public static String escapeCharacters(String string){
@@ -156,7 +131,7 @@ public class Funcs {
             message = message.replaceAll("%player%", escapeCharacters(player.name));
             message = message.replaceAll("%map%", world.getMap().name());
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
-            PlayerData pd = getJedisData(player.uuid);
+            PlayerData pd = playerDataHashMap.get(player.uuid);
             if (pd != null) {
 
             }
