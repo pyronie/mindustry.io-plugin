@@ -12,6 +12,7 @@ import mindustry.gen.Call;
 import mindustry.graphics.Pal;
 import mindustry.plugin.ioMain;
 import mindustry.world.blocks.distribution.Conveyor;
+import mindustry.world.blocks.power.PowerGenerator;
 
 import java.time.Instant;
 
@@ -19,6 +20,15 @@ import static mindustry.Vars.*;
 import static mindustry.plugin.ioMain.playerDataHashMap;
 
 public class Achievements {
+
+    /*
+     SPOILERS !!!!
+
+     BY READING THIS CODE YOU WILL SPOIL THE EXPERIENCE OF UNLOCKING ACHIEVEMENTS YOURSELF.
+
+     IF YOU ARE TO RUIN YOUR OWN EXPERIENCE, PLEASE DON'T RUIN THE EXPERIENCE OF OTHER PLAYERS
+     BY TELLING THEM HOW TO UNLOCK ACHIEVEMENTS.
+     */
     public Array<Achievement> all = new Array<>();
 
     public static Achievement wave1000;
@@ -44,6 +54,7 @@ public class Achievements {
     public static Achievement silicon;
     public static Achievement deposits;
     public static Achievement shocking;
+    public static Achievement remotepower;
 
     public Achievements() {
     }
@@ -616,6 +627,31 @@ public class Achievements {
             }
         };
         all.add(shocking);
+
+        remotepower = new Achievement(24,"Remote Power", "Transfer an item into a generator"){
+            @Override
+            public void onItemDeposit(EventType.DepositEvent event){
+                if(event.player == null) return;
+                String uuid = event.player.uuid;
+                if(event.tile.block() instanceof PowerGenerator){
+                    TileEntity entity = event.tile.entity;
+                    if(entity != null){
+                        PlayerData pd = playerDataHashMap.get(uuid);
+                        if(pd != null){
+                            if(!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
+                            float progress = pd.achievements.get(id);
+                            if(progress < 100){
+                                progress = 100;
+                                pd.achievements.put(id, progress);
+                                playerDataHashMap.put(uuid, pd);
+                                displayCompletion(event.player, event.tile.worldx(), event.tile.worldy());
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        all.add(remotepower);
     }
 
     public static class Achievement{
