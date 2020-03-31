@@ -57,14 +57,13 @@ public class Funcs {
             "[#7a7a7a]verify your account in #verifications";
 
     public static HashMap<Integer, Rank> rankNames = new HashMap<>();
-    static HashMap<String, Integer> rankRoles = new HashMap<>();
     public static Array<String> onScreenMessages = new Array<>();
     public static String eventIp = "";
     public static int eventPort = 6567;
 
     public static class Rank{
-        public String tag = "";
-        public String name = "";
+        public String tag;
+        public String name;
 
         Rank(String t, String n){
             this.tag = t;
@@ -73,9 +72,9 @@ public class Funcs {
     }
 
     public static void init(){
-        rankNames.put(1, new Rank("", ""));
-        rankNames.put(2, new Rank("[accent]<[white]\uE809[accent]>[]", "regular"));
-        rankNames.put(3, new Rank("[accent]<[white]\uE84E[accent]>[]", "donator"));
+        rankNames.put(0, new Rank("", "[lightgray]guest[]"));
+        rankNames.put(1, new Rank("\uE809 ", "[#45a8ff]member[]"));
+        rankNames.put(2, new Rank("\uE828 ", "[#ff6745]moderator[]"));
 
         statMessage = Core.settings.getString("statMessage");
         welcomeMessage = Core.settings.getString("welcomeMessage");
@@ -132,6 +131,7 @@ public class Funcs {
             message = message.replaceAll("%player%", escapeCharacters(player.name));
             message = message.replaceAll("%map%", world.getMap().name());
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
+            message = message.replaceAll("%achievementcap%", String.valueOf(achievementHandler.all.size));
             PlayerData pd = playerDataHashMap.get(player.uuid);
             if (pd != null) {
                 int achives = 0;
@@ -141,6 +141,7 @@ public class Funcs {
                     }
                 }
                 message = message.replaceAll("%achievements%", String.valueOf(achives));
+                message = message.replaceAll("%rank%", rankNames.get(pd.role).name);
             }
         }catch(Exception ignore){};
         return message;
