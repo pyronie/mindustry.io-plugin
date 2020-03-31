@@ -122,6 +122,9 @@ public class ioMain extends Plugin {
                         player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
                         return;
                     }
+                    if(pd.role > 0){
+                        player.tag = rankNames.get(pd.role).tag;
+                    }
                 } else { // not in database
                     pd = new PlayerData();
                     setJedisData(player.uuid, new PlayerData());
@@ -268,7 +271,6 @@ public class ioMain extends Plugin {
                         if (p != null) {
                             Call.onInfoMessage(player.con, formatMessage(p, statMessage));
                         } else {
-
                             player.sendMessage("[lightgray]Can't find that player!");
                         }
                     }
@@ -282,7 +284,6 @@ public class ioMain extends Plugin {
                     player.sendMessage("[accent]There is no ongoing event at this time.");
                 }
             });
-
 
             handler.<Player>register("achievements","[page]", "Display your achievements.", (args, player) -> { // self info
                 if(args.length > 0 && !Strings.canParseInt(args[0])){

@@ -1,6 +1,7 @@
 package mindustry.plugin.commands;
 
 import arc.Core;
+import arc.math.Mathf;
 import arc.util.CommandHandler;
 import mindustry.content.Bullets;
 import mindustry.content.Mechs;
@@ -152,6 +153,29 @@ public class ModeratorCommands {
             }
             eb.setDescription(s.toString());
             ctx.channel.sendMessage(eb.build()).queue();
+        });
+
+        handler.<Context>register("setrank", "<uuid> <rank>", "Set the specified uuid's rank to the one provided.", (args, ctx) -> {
+            int rank = 0;
+            try{
+                rank = Integer.parseInt(args[1]);
+            }catch (NumberFormatException e) {
+                ctx.sendEmbed(false, ":wrench: error parsing rank number");
+                return;
+            }
+            if(rank < rankNames.size()) {
+                PlayerData pd = getJedisData(args[0]);
+                if (pd != null) {
+                    pd.role = rank;
+                    setJedisData(args[0], pd);
+                    PlayerInfo info = netServer.admins.getInfo(args[0]);
+                    ctx.sendEmbed(true, ":wrench: set " + escapeCharacters(info.lastName) + "'s rank to " + rankNames.get(rank));
+                } else {
+                    ctx.sendEmbed(false, ":wrench: that uuid doesn't exist in the database..");
+                }
+            }else{
+                ctx.sendEmbed(false, ":wrench: error parsing rank number");
+            }
         });
 
         handler.<Context>register("mech", "<player> <mech>", "Change a players mech into the specified mech", (args, ctx) -> {
