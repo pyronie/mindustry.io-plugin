@@ -1,5 +1,6 @@
 package mindustry.plugin.commands;
 
+import arc.Core;
 import arc.util.CommandHandler;
 import mindustry.content.Bullets;
 import mindustry.content.Mechs;
@@ -197,6 +198,7 @@ public class ModeratorCommands {
                 welcomeMessage = args[0];
                 ctx.sendEmbed(true, ":newspaper: changed welcome message successfully!", args[0]);
             }
+            Core.settings.put("welcomeMessage", args[0]);
         });
 
         handler.<Context>register("statmessage", "<message...>", "Change the stat message popup when a player uses the /info command", (args, ctx) -> {
@@ -207,6 +209,7 @@ public class ModeratorCommands {
                 statMessage = args[0];
                 ctx.sendEmbed(true, ":newspaper: changed stat message successfully!", args[0]);
             }
+            Core.settings.put("statMessage", args[0]);
         });
 
         handler.<Context>register("spawn", "<player> <unit> <amount>", "Spawn a specified amount of units near the player's position.", (args, ctx) -> {
