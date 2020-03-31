@@ -13,6 +13,8 @@ import mindustry.graphics.Pal;
 import mindustry.plugin.ioMain;
 import mindustry.world.blocks.distribution.Conveyor;
 
+import java.time.Instant;
+
 import static mindustry.Vars.*;
 import static mindustry.plugin.ioMain.playerDataHashMap;
 
@@ -39,6 +41,9 @@ public class Achievements {
     public static Achievement hour;
     public static Achievement day;
     public static Achievement speedrun;
+    public static Achievement silicon;
+    public static Achievement deposits;
+    public static Achievement shocking;
 
     public Achievements() {
     }
@@ -129,7 +134,7 @@ public class Achievements {
             public void onBuild(EventType.BlockBuildEndEvent event){
                 if(event.player == null) return;
                 String uuid = event.player.uuid;
-                if(event.tile.block() == Blocks.router && (event.tile.getNearby(1, 0).block()==Blocks.router || event.tile.getNearby(-1, 0).block()==Blocks.router) || event.tile.getNearby(0, 1).block()==Blocks.router || event.tile.getNearby(0, -1).block()==Blocks.router){
+                if(!event.breaking && event.tile.block() == Blocks.router && (event.tile.getNearby(1, 0).block()==Blocks.router || event.tile.getNearby(-1, 0).block()==Blocks.router) || event.tile.getNearby(0, 1).block()==Blocks.router || event.tile.getNearby(0, -1).block()==Blocks.router){
                     PlayerData pd = playerDataHashMap.get(uuid);
                     if(pd != null) {
                         if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
@@ -152,7 +157,7 @@ public class Achievements {
             public void onBuild(EventType.BlockBuildEndEvent event){
                 if(event.player == null) return;
                 String uuid = event.player.uuid;
-                if(event.tile.block() == Blocks.impactReactor){
+                if(event.tile.block() == Blocks.impactReactor && !event.breaking){
                     PlayerData pd = playerDataHashMap.get(uuid);
                     if(pd != null) {
                         if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
@@ -199,7 +204,7 @@ public class Achievements {
             public void onBuild(EventType.BlockBuildEndEvent event){
                 if(event.player == null) return;
                 String uuid = event.player.uuid;
-                if(event.tile.block() == Blocks.cultivator){
+                if(event.tile.block() == Blocks.cultivator && !event.breaking){
                     PlayerData pd = playerDataHashMap.get(uuid);
                     if(pd != null) {
                         if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
@@ -223,7 +228,7 @@ public class Achievements {
             public void onBuild(EventType.BlockBuildEndEvent event){
                 if(event.player == null) return;
                 String uuid = event.player.uuid;
-                if(event.tile.block() == Blocks.cultivator){
+                if(event.tile.block() == Blocks.cultivator && !event.breaking){
                     PlayerData pd = playerDataHashMap.get(uuid);
                     if(pd != null) {
                         if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
@@ -247,7 +252,7 @@ public class Achievements {
             public void onBuild(EventType.BlockBuildEndEvent event){
                 if(event.player == null) return;
                 String uuid = event.player.uuid;
-                if((event.tile.block() == Blocks.invertedSorter || event.tile.block() == Blocks.overflowGate) && (event.tile.getNearby(1, 0).block()==Blocks.invertedSorter || event.tile.getNearby(-1, 0).block()==Blocks.invertedSorter) || event.tile.getNearby(0, 1).block()==Blocks.invertedSorter || event.tile.getNearby(0, -1).block()==Blocks.invertedSorter){
+                if(!event.breaking && (event.tile.block() == Blocks.invertedSorter || event.tile.block() == Blocks.overflowGate) && (event.tile.getNearby(1, 0).block()==Blocks.invertedSorter || event.tile.getNearby(-1, 0).block()==Blocks.invertedSorter) || event.tile.getNearby(0, 1).block()==Blocks.invertedSorter || event.tile.getNearby(0, -1).block()==Blocks.invertedSorter){
                     PlayerData pd = playerDataHashMap.get(uuid);
                     if(pd != null) {
                         if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
@@ -338,7 +343,7 @@ public class Achievements {
             public void onBuild(EventType.BlockBuildEndEvent event){
                 if(event.player == null) return;
                 String uuid = event.player.uuid;
-                if(event.tile.block() == Blocks.battery || event.tile.block() == Blocks.batteryLarge){
+                if((event.tile.block() == Blocks.battery || event.tile.block() == Blocks.batteryLarge) && !event.breaking){
                     PlayerData pd = playerDataHashMap.get(uuid);
                     if(pd != null) {
                         if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
@@ -542,6 +547,75 @@ public class Achievements {
             }
         };
         all.add(speedrun);
+
+        silicon = new Achievement(21,"Still not enough?", "Build 100 silicon smelters"){
+            @Override
+            public void onBuild(EventType.BlockBuildEndEvent event){
+                if(event.player == null) return;
+                String uuid = event.player.uuid;
+                if(event.tile.block() == Blocks.siliconSmelter && !event.breaking){
+                    PlayerData pd = playerDataHashMap.get(uuid);
+                    if(pd != null) {
+                        if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
+                        float progress = pd.achievements.get(id);
+                        if (progress < 100) {
+                            progress = progress + 1f;
+                            if(progress >= 100){
+                                displayCompletion(event.player, event.tile.worldx(), event.tile.worldy());
+                            }
+                            pd.achievements.put(id, progress);
+                            playerDataHashMap.put(uuid, pd);
+                        }
+                    }
+                }
+            }
+        };
+        all.add(silicon);
+
+        deposits = new Achievement(22,"Manual Labor", "Manually transfer items 100 times"){
+            @Override
+            public void onItemDeposit(EventType.DepositEvent event){
+                if(event.player == null) return;
+                String uuid = event.player.uuid;
+                PlayerData pd = playerDataHashMap.get(uuid);
+                if(pd != null){
+                    if(!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
+                    float progress = pd.achievements.get(id);
+                    if (progress < 100) {
+                        progress = progress + 1f;
+                        if(progress >= 100){
+                            displayCompletion(event.player, event.tile.worldx(), event.tile.worldy());
+                        }
+                        pd.achievements.put(id, progress);
+                        playerDataHashMap.put(uuid, pd);
+                    }
+                }
+            }
+        };
+        all.add(deposits);
+
+        shocking = new Achievement(23,"Shocking", "Does anyone even use these anymore?"){
+            @Override
+            public void onBuild(EventType.BlockBuildEndEvent event){
+                if(event.player == null) return;
+                String uuid = event.player.uuid;
+                if(event.tile.block() == Blocks.shockMine && !event.breaking){
+                    PlayerData pd = playerDataHashMap.get(uuid);
+                    if(pd != null) {
+                        if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
+                        float progress = pd.achievements.get(id);
+                        if (progress < 100) {
+
+                            progress = 100;
+                            pd.achievements.put(id, progress);
+                            playerDataHashMap.put(uuid, pd);
+                            displayCompletion(event.player, event.tile.worldx(), event.tile.worldy());
+                        }
+                    }
+                }
+            }
+        };
+        all.add(shocking);
     }
 
     public static class Achievement{
