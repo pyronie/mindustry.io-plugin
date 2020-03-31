@@ -79,7 +79,6 @@ public class Loader {
             bt.publicHandler.setPrefix(prefix);
             bt.reviewerHandler.setPrefix(prefix);
             bt.moderatorHandler.setPrefix(prefix);
-            bt.adminHandler.setPrefix(prefix);
         } else {
             Log.warn("Prefix not found, using default '.' prefix.");
         }
