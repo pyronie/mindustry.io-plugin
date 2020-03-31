@@ -135,6 +135,7 @@ public class PublicCommands {
             for(Player p : playerGroup.all()){
                 s.append(p.name).append("\n");
             }
+            eb.setDescription(s);
             ctx.sendEmbed(eb);
         });
 
@@ -157,10 +158,6 @@ public class PublicCommands {
                 StringBuilder mod = new StringBuilder();
                 StringBuilder reviewer = new StringBuilder();
                 StringBuilder publics = new StringBuilder();
-
-                for (Command cmd : bt.adminHandler.getCommandList()) {
-                    admin.append("**").append(cmd.text).append("**").append(" ").append(cmd.paramText).append("\n");
-                }
                 for (Command cmd : bt.moderatorHandler.getCommandList()) {
                     mod.append("**").append(cmd.text).append("**").append(" ").append(cmd.paramText).append("\n");
                 }
@@ -170,16 +167,12 @@ public class PublicCommands {
                 for (Command cmd : bt.publicHandler.getCommandList()) {
                     publics.append("**").append(cmd.text).append("**").append(" ").append(cmd.paramText).append("\n");
                 }
-                eb.addField("Administration", admin.toString(), true);
                 eb.addField("Moderation", mod.toString(), true);
                 eb.addField("Maps", reviewer.toString(), true);
                 eb.addField("Public", publics.toString(), true);
                 ctx.channel.sendMessage(eb.build()).queue();
             }else{
                 Command cmd = null;
-                for(Command c : bt.adminHandler.getCommandList()){
-                    if(c.text.equals(args[0].toLowerCase())) cmd = c;
-                }
                 for(Command c : bt.moderatorHandler.getCommandList()){
                     if(c.text.equals(args[0].toLowerCase())) cmd = c;
                 }
