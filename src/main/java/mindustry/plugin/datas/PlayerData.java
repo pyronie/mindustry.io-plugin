@@ -9,7 +9,7 @@ public class PlayerData{
     public long bannedUntil = 0;
     public String banReason = "";
 
-    public HashMap<Integer, Integer> achievements; // achievement id, progress <0-100>
+    public HashMap<Integer, Float> achievements; // achievement id, progress <0-100>
 
     public PlayerData() {
         achievements = new HashMap<>();
