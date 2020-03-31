@@ -25,15 +25,15 @@ import mindustry.game.EventType;
 import mindustry.gen.Call;
 
 import static mindustry.Vars.*;
+import static mindustry.plugin.datas.Achievements.*;
 import static mindustry.plugin.utils.Funcs.*;
 import static mindustry.plugin.discord.Loader.*;
 
 public class ioMain extends Plugin {
     public static HashMap<String, PlayerData> playerDataHashMap = new HashMap<>();
+    public static Achievements achievementHandler = new Achievements();
     //register event handlers and create variables in the constructor
     public ioMain() {
-        Achievements achievementHandler = new Achievements();
-
         //we can load this before anything else, it doesnt matter
         Loader.load();
         content.load();
@@ -114,7 +114,7 @@ public class ioMain extends Plugin {
         Events.on(EventType.PlayerJoin.class, event -> {
             CompletableFuture.runAsync(() -> {
                 Player player = event.player;
-                PlayerData pd = playerDataHashMap.get(player.uuid);
+                PlayerData pd = getJedisData(player.uuid);
 
                 if (pd != null) {
                     if (pd.bannedUntil > Instant.now().getEpochSecond()) {
@@ -129,6 +129,10 @@ public class ioMain extends Plugin {
 
                 if (welcomeMessage.length() > 0) {
                     Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
+                }
+
+                for(Achievement achievement : achievementHandler.all){
+                    achievement.onPlayerJoin(event);
                 }
             });
         });
@@ -185,7 +189,7 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.DepositEvent.class, event -> {
             CompletableFuture.runAsync(() -> {
-                for(Achievements.Achievement achievement : achievementHandler.all){
+                for(Achievement achievement : achievementHandler.all){
                     achievement.onItemDeposit(event);
                 }
             });
@@ -193,7 +197,7 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.WithdrawEvent.class, event -> {
             CompletableFuture.runAsync(() -> {
-                for(Achievements.Achievement achievement : achievementHandler.all){
+                for(Achievement achievement : achievementHandler.all){
                     achievement.onItemWithdraw(event);
                 }
             });
@@ -201,7 +205,7 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.WaveEvent.class, event -> {
             CompletableFuture.runAsync(() -> {
-                for(Achievements.Achievement achievement : achievementHandler.all){
+                for(Achievement achievement : achievementHandler.all){
                     achievement.onWave();
                 }
             });
@@ -209,7 +213,7 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.BlockBuildEndEvent.class, event -> {
             CompletableFuture.runAsync(() -> {
-                for(Achievements.Achievement achievement : achievementHandler.all){
+                for(Achievement achievement : achievementHandler.all){
                     achievement.onBuild(event);
                 }
             });
@@ -230,8 +234,10 @@ public class ioMain extends Plugin {
     public void registerClientCommands(CommandHandler handler){
         if (api != null) {
             handler.<Player>register("reset","stat reset", (args, player) -> {
+                playerDataHashMap.remove(player.uuid);
                 playerDataHashMap.put(player.uuid, new PlayerData());
                 setJedisData(player.uuid, new PlayerData());
+                Log.info("reset data successfully");
             });
 
 
@@ -248,7 +254,7 @@ public class ioMain extends Plugin {
                 //todo
             });
 
-            handler.<Player>register("event", "Join an ongoing event (if there is one)", (args, player) -> { // self info
+            handler.<Player>register("event", "Join an ongoing event (if there is one)", (args, player) -> {
                 if(eventIp.length() > 0){
                     Call.onConnect(player.con, eventIp, eventPort);
                 } else{
@@ -256,14 +262,79 @@ public class ioMain extends Plugin {
                 }
             });
 
+
+            handler.<Player>register("acv","[page]", "Display all acvs.", (args, player) -> { // self info
+                if(args.length > 0 && !Strings.canParseInt(args[0])){
+                    player.sendMessage("[scarlet]'page' must be a number.");
+                    return;
+                }
+                int perPage = 6;
+                int page = args.length > 0 ? Strings.parseInt(args[0]) : 1;
+                int pages = Mathf.ceil((float)achievementHandler.all.size / perPage);
+
+                page --;
+
+                if(page >= pages || page < 0){
+                    player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
+                    return;
+                }
+
+                PlayerData pd = playerDataHashMap.get(player.uuid);
+                StringBuilder result = new StringBuilder();
+                result.append(Strings.format("[orange]-- Maps Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
+
+                if(pd != null) {
+                    for (int i = perPage * page; i < Math.min(perPage * (page + 1), achievementHandler.all.size); i++) {
+                        Achievement a = achievementHandler.all.get(i);
+                        int progress = (int) (pd.achievements.containsKey(a.id) ? pd.achievements.get(a.id) : 0);
+                        //result.append("[white] - [accent]").append(escapeColorCodes(a.name)).append("\n");
+                        result.append("[white] - [accent]").append(a.name).append("[white] - ").append(progress >= 100 ? a.desc : "[lightgray]????????[]").append(" - [accent]").append(progress).append("%\n");
+                    }
+                    player.sendMessage(result.toString());
+                }else{
+                    player.sendMessage("[lightgray]An unexpected error has occured.");
+                }
+            });
+
+
+            handler.<Player>register("achievements","[page]", "Display all achievements", (args, player) -> {
+                if(args.length > 0 && !Strings.canParseInt(args[0])){
+                    player.sendMessage("[scarlet]'page' must be a number.");
+                    return;
+                }
+
+                Log.info(achievementHandler.all.size);
+
+                int perPage = 6;
+                int page = args.length > 0 ? Strings.parseInt(args[0]) : 1;
+                int pages = Mathf.ceil((float)achievementHandler.all.size / perPage);
+
+                page --;
+
+                if(page >= pages || page < 0){
+                    player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
+                    return;
+                }
+                PlayerData pd = playerDataHashMap.get(player.uuid);
+                StringBuilder result = new StringBuilder();
+                result.append(Strings.format("[orange]-- Achievements Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
+
+                for(int i = perPage * page; i < Math.min(perPage * (page + 1), achievementHandler.all.size / perPage); i++){
+                    Achievement achievement = achievementHandler.all.get(i);
+                    int progress = (int) (pd.achievements.containsKey(achievement.id) ? pd.achievements.get(achievement.id) : 0);
+                    result.append("[white] - [accent]").append(achievement.name).append("[white] - ").append(progress >= 100 ? achievement.desc : "[lightgray]????????[]").append(" - [accent]").append(progress).append("%\n");
+                }
+                player.sendMessage(result.toString());
+            });
+
             handler.<Player>register("maps","[page]", "Display all maps in the playlist.", (args, player) -> { // self info
                 if(args.length > 0 && !Strings.canParseInt(args[0])){
                     player.sendMessage("[scarlet]'page' must be a number.");
                     return;
                 }
-                int commandsPerPage = 6;
+                int perPage = 6;
                 int page = args.length > 0 ? Strings.parseInt(args[0]) : 1;
-                int pages = Mathf.ceil((float)Vars.maps.customMaps().size / commandsPerPage);
+                int pages = Mathf.ceil((float)Vars.maps.customMaps().size / perPage);
 
                 page --;
 
@@ -275,7 +346,7 @@ public class ioMain extends Plugin {
                 StringBuilder result = new StringBuilder();
                 result.append(Strings.format("[orange]-- Maps Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
 
-                for(int i = commandsPerPage * page; i < Math.min(commandsPerPage * (page + 1), Vars.maps.customMaps().size); i++){
+                for(int i = perPage * page; i < Math.min(perPage * (page + 1), Vars.maps.customMaps().size); i++){
                     mindustry.maps.Map map = Vars.maps.customMaps().get(i);
                     result.append("[white] - [accent]").append(escapeColorCodes(map.name())).append("\n");
                 }
