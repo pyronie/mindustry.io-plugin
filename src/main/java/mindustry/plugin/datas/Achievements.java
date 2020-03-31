@@ -26,9 +26,10 @@ public class Achievements {
     public static Achievement shrooms;
     public static Achievement shrooooms;
     public static Achievement snek;
+    public static Achievement mmo;
+    public static Achievement fuzz;
 
     public Achievements() {
-        load();
     }
 
     public void load(){
@@ -235,7 +236,7 @@ public class Achievements {
             public void onBuild(EventType.BlockBuildEndEvent event){
                 if(event.player == null) return;
                 String uuid = event.player.uuid;
-                if(event.tile.block() == Blocks.invertedSorter || event.tile.block() == Blocks.overflowGate && (event.tile.getNearby(1, 0).block()==Blocks.invertedSorter || event.tile.getNearby(-1, 0).block()==Blocks.invertedSorter) || event.tile.getNearby(0, 1).block()==Blocks.invertedSorter || event.tile.getNearby(0, -1).block()==Blocks.invertedSorter){
+                if((event.tile.block() == Blocks.invertedSorter || event.tile.block() == Blocks.overflowGate) && (event.tile.getNearby(1, 0).block()==Blocks.invertedSorter || event.tile.getNearby(-1, 0).block()==Blocks.invertedSorter) || event.tile.getNearby(0, 1).block()==Blocks.invertedSorter || event.tile.getNearby(0, -1).block()==Blocks.invertedSorter){
                     PlayerData pd = playerDataHashMap.get(uuid);
                     if(pd != null) {
                         if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
@@ -252,6 +253,54 @@ public class Achievements {
             }
         };
         all.add(snek);
+
+        mmo = new Achievement(10,"MMO", "Play a game with 50+ players online"){
+            @Override
+            public void onPlayerJoin(EventType.PlayerJoin event){
+                int count = playerGroup.all().size;
+                for(Player p : playerGroup.all()){
+                    PlayerData pd = playerDataHashMap.get(p.uuid);
+                    if(pd != null){
+                        if(!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
+                        float progress = pd.achievements.get(id);
+                        if(progress < 100){
+
+                            progress = (count / 50f) * 100;
+                            if(progress >= 100){
+                                progress = 100;
+                                displayCompletion(p);
+                            }
+                            pd.achievements.put(id, progress);
+                            playerDataHashMap.put(p.uuid, pd);
+                        }
+                    }
+                }
+            }
+        };
+        all.add(mmo);
+
+        fuzz = new Achievement(11,"What the fuzz", "Meet the fuzzbuck himself"){
+            @Override
+            public void onPlayerJoin(EventType.PlayerJoin event){
+                if(event.player.isAdmin && event.player.name.contains("fuzz")) {
+                    for (Player p : playerGroup.all()) {
+                        PlayerData pd = playerDataHashMap.get(p.uuid);
+                        if (pd != null) {
+                            if (!pd.achievements.containsKey(id)) pd.achievements.put(id, 0f);
+                            float progress = pd.achievements.get(id);
+                            if (progress < 100) {
+
+                                progress = 100;
+                                displayCompletion(p);
+                                pd.achievements.put(id, progress);
+                                playerDataHashMap.put(p.uuid, pd);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        all.add(fuzz);
     }
 
     public static class Achievement{
@@ -260,6 +309,8 @@ public class Achievements {
         public String desc;
 
         public void onWave(){}
+
+        public void onPlayerJoin(EventType.PlayerJoin event){}
 
         public void onBuild(EventType.BlockBuildEndEvent event){}
 
@@ -271,7 +322,7 @@ public class Achievements {
 
         public void displayCompletion(Player player){
             Call.onInfoToast(player.con, "[yellow]Achievement get![]", 4f);
-            Timer.schedule(() -> Call.onInfoToast(player.con, "[accent]" + name + "[] - " + desc, 8f), 14f);
+            Timer.schedule(() -> Call.onInfoToast(player.con, "[accent]" + name + "[] - " + desc, 14f), 4f);
         }
 
         public void displayCompletion(Player player, float worldx, float worldy){
