@@ -39,7 +39,7 @@ public class PublicCommands {
             }
         });
 
-        handler.<Context>register("maps", "Displays all available maps in the playlist.", (args, ctx) -> {
+        handler.<Context>register("maps", "Displays all available maps in the playlist. Use " + prefix + "map <name> to download a specific map.", (args, ctx) -> {
             Array<Map> mapList = maps.customMaps();
             StringBuilder smallMaps = new StringBuilder();
             StringBuilder mediumMaps = new StringBuilder();

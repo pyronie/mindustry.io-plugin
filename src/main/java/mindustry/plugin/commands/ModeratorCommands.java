@@ -74,13 +74,13 @@ public class ModeratorCommands {
         handler.<Context>register("ban", "<player> <minutes> [reason...]", "Ban a player by the provided name, id or uuid (do offline bans using uuid)", (args, ctx) -> {
             Player player = findPlayer(args[0]);
             if(player != null){
-                PlayerData pd = getJedisData(player.uuid);
+                PlayerData pd = playerDataHashMap.get(player.uuid);
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
                     pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid.substring(0, 4);
                     playerDataHashMap.put(player.uuid, pd);
-                    setJedisData(player.uuid, pd);
+                    // setJedisData(player.uuid, pd);
                     HashMap<String, String> fields = new HashMap<>();
                     fields.put("UUID", player.uuid);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
@@ -134,13 +134,20 @@ public class ModeratorCommands {
             if (player != null) {
                 info = netServer.admins.getInfo(player.uuid);
             } else{
-                info = netServer.admins.getInfo(args[0]);
+                if(args[0].length() == 24) { // uuid length
+                    info = netServer.admins.getInfo(args[0]);
+                }else{
+                    ctx.sendEmbed(false, ":mag: can't find that uuid in the database..");
+                    return;
+                }
             }
             eb.setColor(Pals.progress);
             eb.setTitle(":mag: " + escapeCharacters(info.lastName) + "'s lookup");
             eb.addField("UUID", info.id, false);
             eb.addField("Last used ip", info.lastIP, true);
             eb.addField("Times kicked", String.valueOf(info.timesKicked), true);
+
+
 
             StringBuilder s = new StringBuilder();
             s.append("**All used names: **\n");
@@ -156,7 +163,7 @@ public class ModeratorCommands {
         });
 
         handler.<Context>register("setrank", "<uuid> <rank>", "Set the specified uuid's rank to the one provided.", (args, ctx) -> {
-            int rank = 0;
+            int rank;
             try{
                 rank = Integer.parseInt(args[1]);
             }catch (NumberFormatException e) {
@@ -164,12 +171,15 @@ public class ModeratorCommands {
                 return;
             }
             if(rank < rankNames.size()) {
-                PlayerData pd = getJedisData(args[0]);
+                PlayerData pd = playerDataHashMap.containsKey(args[0]) ? playerDataHashMap.get(args[0]) : getJedisData(args[0]);
                 if (pd != null) {
                     pd.role = rank;
+                    if(playerDataHashMap.containsKey(args[0])){
+                        playerDataHashMap.put(args[0],  pd);
+                    }
                     setJedisData(args[0], pd);
                     PlayerInfo info = netServer.admins.getInfo(args[0]);
-                    ctx.sendEmbed(true, ":wrench: set " + escapeCharacters(info.lastName) + "'s rank to " + rankNames.get(rank));
+                    ctx.sendEmbed(true, ":wrench: set " + escapeCharacters(info.lastName) + "'s rank to " + escapeColorCodes(rankNames.get(rank).name));
                 } else {
                     ctx.sendEmbed(false, ":wrench: that uuid doesn't exist in the database..");
                 }
@@ -179,7 +189,7 @@ public class ModeratorCommands {
         });
 
         handler.<Context>register("mech", "<player> <mech>", "Change a players mech into the specified mech", (args, ctx) -> {
-            Mech desiredMech = Mechs.alpha;
+            Mech desiredMech;
             try {
                 Field field = Mechs.class.getDeclaredField(args[1]);
                 desiredMech = (Mech)field.get(null);
@@ -226,6 +236,7 @@ public class ModeratorCommands {
                 ctx.sendEmbed(true, ":newspaper: changed welcome message successfully!", args[0]);
             }
             Core.settings.put("welcomeMessage", welcomeMessage);
+            Core.settings.save();
         });
 
         handler.<Context>register("statmessage", "<message...>", "Change the stat message popup when a player uses the /info command", (args, ctx) -> {
@@ -237,6 +248,7 @@ public class ModeratorCommands {
                 ctx.sendEmbed(true, ":newspaper: changed stat message successfully!", args[0]);
             }
             Core.settings.put("statMessage", statMessage);
+            Core.settings.save();
         });
 
         handler.<Context>register("spawn", "<player> <unit> <amount>", "Spawn a specified amount of units near the player's position.", (args, ctx) -> {
@@ -261,6 +273,7 @@ public class ModeratorCommands {
                     unit.set(player.getX(), player.getY());
                     unit.add();
                 });
+                ctx.sendEmbed(true, ":robot: spawned " + amt + " " + finalDesiredUnitType + "s at " + escapeColorCodes(player.name) + "'s position");
             }else{
                 ctx.sendEmbed(false, ":robot: can't find " + escapeCharacters(args[0]));
             }

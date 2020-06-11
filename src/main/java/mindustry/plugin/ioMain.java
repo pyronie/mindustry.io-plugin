@@ -3,14 +3,16 @@ package mindustry.plugin;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import arc.math.Mathf;
+import arc.math.geom.Geometry;
 import arc.util.*;
 import arc.util.Timer;
 import mindustry.content.*;
+import mindustry.game.Team;
 import mindustry.graphics.Pal;
 import mindustry.net.Administration;
-import mindustry.plugin.datas.Achievements;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discord.Loader;
 import mindustry.plugin.utils.ContentHandler;
@@ -23,22 +25,20 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.gen.Call;
+import mindustry.world.blocks.StaticWall;
 
 import static mindustry.Vars.*;
-import static mindustry.plugin.datas.Achievements.*;
 import static mindustry.plugin.utils.Funcs.*;
 import static mindustry.plugin.discord.Loader.*;
 
 public class ioMain extends Plugin {
     public static HashMap<String, PlayerData> playerDataHashMap = new HashMap<>();
-    public static Achievements achievementHandler = new Achievements();
     public static int minutesPassed = 0;
     //register event handlers and create variables in the constructor
     public ioMain() {
         //we can load this before anything else, it doesnt matter
         Loader.load();
         content.load();
-        achievementHandler.load();
 
         // display on screen messages
         float duration = 10f;
@@ -105,7 +105,8 @@ public class ioMain extends Plugin {
         // player disconnected
         Events.on(EventType.PlayerLeave.class, event -> {
             String uuid = event.player.uuid;
-            setJedisData(uuid, playerDataHashMap.get(uuid));
+            if(playerDataHashMap.containsKey(uuid))
+                setJedisData(uuid, playerDataHashMap.get(uuid));
 
             //free ram
             playerDataHashMap.remove(uuid);
@@ -116,6 +117,9 @@ public class ioMain extends Plugin {
             CompletableFuture.runAsync(() -> {
                 Player player = event.player;
                 PlayerData pd = getJedisData(player.uuid);
+                if(pd == null && playerDataHashMap.containsKey(player.uuid)){
+                    pd = playerDataHashMap.get(player.uuid);
+                }
 
                 if (pd != null) {
                     if (pd.bannedUntil > Instant.now().getEpochSecond()) {
@@ -135,9 +139,6 @@ public class ioMain extends Plugin {
                     Call.onInfoMessage(player.con, formatMessage(player, welcomeMessage));
                 }
 
-                for(Achievement achievement : achievementHandler.all){
-                    achievement.onPlayerJoin(event);
-                }
             });
         });
 
@@ -185,53 +186,28 @@ public class ioMain extends Plugin {
             });
         });
 
-        // achievement-related events
-
-        Events.on(EventType.DepositEvent.class, event -> {
-            CompletableFuture.runAsync(() -> {
-                for(Achievement achievement : achievementHandler.all){
-                    achievement.onItemDeposit(event);
+        Events.on(EventType.Trigger.update, () -> {
+            for(Player p : playerGroup.all()){
+                if (p.bt != null && p.isShooting()) {
+                    Call.createBullet(p.bt, p.getTeam(), p.getX(), p.getY(), p.rotation, p.sclVelocity, p.sclLifetime);
                 }
-            });
+            }
         });
 
-        Events.on(EventType.WithdrawEvent.class, event -> {
-            CompletableFuture.runAsync(() -> {
-                for(Achievement achievement : achievementHandler.all){
-                    achievement.onItemWithdraw(event);
-                }
-            });
-        });
 
-        Events.on(EventType.WaveEvent.class, event -> {
-            CompletableFuture.runAsync(() -> {
-                for(Achievement achievement : achievementHandler.all){
-                    achievement.onWave();
-                }
-            });
-        });
-
-        Events.on(EventType.BlockBuildEndEvent.class, event -> {
-            CompletableFuture.runAsync(() -> {
-                for(Achievement achievement : achievementHandler.all){
-                    achievement.onBuild(event);
-                }
-            });
-        });
-
-        Events.on(EventType.BlockDestroyEvent.class, event -> {
-            CompletableFuture.runAsync(() -> {
-                for(Achievement achievement : achievementHandler.all){
-                    achievement.onDeconstruct(event);
-                }
-            });
-        });
-
-        Events.on(EventType.GameOverEvent.class, () -> {
-            CompletableFuture.runAsync(() -> {
-                for(Achievement achievement : achievementHandler.all){
-                    achievement.onGameover();
-                }
+        // thorium reactor terraforming
+        Events.on(EventType.OverheatEvent.class, event -> {
+            int radius = 15;
+            AtomicBoolean got = new AtomicBoolean(false);
+            Geometry.circle(event.tile.x, event.tile.y, radius, (cx, cy) -> {
+                Tile t = world.tile(cx, cy);
+                Timer.schedule(() -> {
+                    if (t != null && t.block() instanceof StaticWall) {
+                        got.set(true);
+                        t.setNet(Blocks.air, Team.derelict, 0);
+                        Call.onEffectReliable(Fx.explosion, t.worldx(), t.worldy(), 1, Pal.breakInvalid);
+                    }
+                }, (t != null ? t.dst(event.tile) / radius / 4 : 0));
             });
         });
     }
@@ -249,22 +225,15 @@ public class ioMain extends Plugin {
     @Override
     public void registerClientCommands(CommandHandler handler){
         if (api != null) {
-            handler.<Player>register("reset","stat reset", (args, player) -> {
-                playerDataHashMap.remove(player.uuid);
-                playerDataHashMap.put(player.uuid, new PlayerData());
-                setJedisData(player.uuid, new PlayerData());
-                Log.info("reset data successfully");
-            });
-
 
             handler.<Player>register("inspector", "Toggle on tile inspector. (Grief detection)", (args, player) -> {
                 player.inspector = !player.inspector;
                 player.sendMessage("[accent]Tile inspector toggled.");
             });
 
-            handler.<Player>register("stats", "[<]player...]", "Display stats of the specified player (or yourself, if no player provided)", (args, player) -> {
+            handler.<Player>register("stats", "[player...]", "Display stats of the specified player (or yourself, if no player provided)", (args, player) -> {
                 if(!statMessage.equals("none")) {
-                    if (args.length <= 1) {
+                    if (args.length <= 0) {
                         Call.onInfoMessage(player.con, formatMessage(player, statMessage));
                     } else {
                         Player p = findPlayer(args[0]);
@@ -284,40 +253,6 @@ public class ioMain extends Plugin {
                     player.sendMessage("[accent]There is no ongoing event at this time.");
                 }
             });
-
-            handler.<Player>register("achievements","[page]", "Display your achievements.", (args, player) -> { // self info
-                if(args.length > 0 && !Strings.canParseInt(args[0])){
-                    player.sendMessage("[scarlet]'page' must be a number.");
-                    return;
-                }
-                int perPage = 6;
-                int page = args.length > 0 ? Strings.parseInt(args[0]) : 1;
-                int pages = Mathf.ceil((float)achievementHandler.all.size / perPage);
-
-                page --;
-
-                if(page >= pages || page < 0){
-                    player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
-                    return;
-                }
-
-                PlayerData pd = playerDataHashMap.get(player.uuid);
-                StringBuilder result = new StringBuilder();
-                result.append(Strings.format("[orange]-- Achievements Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
-
-                if(pd != null) {
-                    for (int i = perPage * page; i < Math.min(perPage * (page + 1), achievementHandler.all.size); i++) {
-                        Achievement a = achievementHandler.all.get(i);
-                        int progress = (int) (pd.achievements.containsKey(a.id) ? pd.achievements.get(a.id) : 0);
-                        //result.append("[white] - [accent]").append(escapeColorCodes(a.name)).append("\n");
-                        result.append("[white] - [accent]").append(a.name).append("[white] - ").append(progress >= 100 ? a.desc : "[lightgray]????????[]").append(" - [accent]").append(progress).append("%\n");
-                    }
-                    player.sendMessage(result.toString());
-                }else{
-                    player.sendMessage("[lightgray]An unexpected error has occured.");
-                }
-            });
-
 
             handler.<Player>register("maps","[page]", "Display all maps in the playlist.", (args, player) -> { // self info
                 if(args.length > 0 && !Strings.canParseInt(args[0])){

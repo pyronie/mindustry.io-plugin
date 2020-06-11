@@ -6,7 +6,6 @@ import com.google.gson.Gson;
 import mindustry.plugin.BotThread;
 import mindustry.plugin.utils.ContentHandler;
 import mindustry.plugin.utils.Funcs;
-import mindustry.plugin.datas.PersistentPlayerData;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;

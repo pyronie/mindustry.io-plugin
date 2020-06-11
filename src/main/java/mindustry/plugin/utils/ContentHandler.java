@@ -34,7 +34,6 @@ import static mindustry.Vars.*;
 
 public class ContentHandler{
     public static final byte[] mapHeader = {77, 83, 65, 86};
-    public static final String schemHeader = "bXNjaAB";
 
     Graphics2D currentGraphics;
     BufferedImage currentImage;

@@ -7,7 +7,6 @@ import mindustry.entities.type.Player;
 import mindustry.plugin.commands.ModeratorCommands;
 import mindustry.plugin.commands.PublicCommands;
 import mindustry.plugin.commands.ReviewerCommands;
-import mindustry.plugin.datas.Achievements;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discord.ReactionAdd;
 import net.dv8tion.jda.api.JDA;
@@ -16,7 +15,6 @@ import org.json.JSONObject;
 
 import mindustry.plugin.discord.DiscordCommands;
 
-import java.util.concurrent.CompletableFuture;
 
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
@@ -52,26 +50,20 @@ public class BotThread extends Thread {
     public void run(){
         while (this.mt.isAlive()){
             try {
-                Thread.sleep(60 * 1000);
+                Thread.sleep(30 * 1000);
 
                 for (Player p : Vars.playerGroup.all()) {
                     PlayerData pd = playerDataHashMap.get(p.uuid);
-                    if (pd == null) return;
-                    setJedisData(p.uuid, pd);
+                    if (pd != null)
+                        setJedisData(p.uuid, pd);
                 }
+
                 if(Mathf.chance(0.01f)){
                     api.getPresence().setActivity(Activity.playing("( ͡° ͜ʖ ͡°)"));
                 } else {
                     api.getPresence().setActivity(Activity.playing("with " + playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players"));
                 }
 
-                CompletableFuture.runAsync(() -> {
-                    for(Achievements.Achievement achievement : achievementHandler.all){
-                        achievement.onInterval();
-                    }
-                });
-
-                minutesPassed++;
             } catch (Exception e) {
                 e.printStackTrace();
             }

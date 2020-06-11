@@ -12,7 +12,6 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.maps.Maps;
-import mindustry.plugin.datas.Achievements;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.ioMain;
 import mindustry.world.Block;
@@ -34,27 +33,8 @@ import static mindustry.plugin.ioMain.*;
 public class Funcs {
     public static int chatMessageMaxSize = 256;
     public static String assets = "iocontent/";
-    static String mapSaveKey = "bXn94MAP";
     public static String welcomeMessage = "";
     public static String statMessage = "";
-    public static String noPermissionMessage = "[accent]You don't have permissions to execute this command!\nObtain the donator rank here: http://donate.mindustry.io";
-
-    // wheter ip verification is in place (detect vpns, disallow their build rights)
-    public static Boolean verification = true;
-
-    public static String promotionMessage =
-            "[sky]%player%, you have been promoted to [sky]<active>[]!\n" +
-            "[#4287f5]You reached a playtime of - %playtime% minutes! That's 10+ hours!\n" +
-            "[#f54263]You played a total of %games% games!\n" +
-            "[#9342f5]You built a total of %buildings% buildings!\n" +
-            "[sky]Thank you for participating and enjoy your time on [orange]<[white]io[orange]>[sky]!\n"+
-            "[scarlet]Please rejoin for the change to take effect.";
-
-    public static String verificationMessage = "[scarlet]Your IP was flagged as a VPN.\n" +
-            "\n" +
-            "[sky]Please join our discord:\n" +
-            "http://discord.mindustry.io\n" +
-            "[#7a7a7a]verify your account in #verifications";
 
     public static HashMap<Integer, Rank> rankNames = new HashMap<>();
     public static Array<String> onScreenMessages = new Array<>();
@@ -131,16 +111,8 @@ public class Funcs {
             message = message.replaceAll("%player%", escapeCharacters(player.name));
             message = message.replaceAll("%map%", world.getMap().name());
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
-            message = message.replaceAll("%achievementcap%", String.valueOf(achievementHandler.all.size));
             PlayerData pd = playerDataHashMap.get(player.uuid);
             if (pd != null) {
-                int achives = 0;
-                for(Achievements.Achievement a : achievementHandler.all){
-                    if(pd.achievements.containsKey(a.id) && pd.achievements.get(a.id) >= 100){
-                        achives++;
-                    }
-                }
-                message = message.replaceAll("%achievements%", String.valueOf(achives));
                 message = message.replaceAll("%rank%", rankNames.get(pd.role).name);
             }
         }catch(Exception ignore){};

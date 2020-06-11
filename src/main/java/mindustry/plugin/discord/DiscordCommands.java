@@ -1,16 +1,27 @@
 package mindustry.plugin.discord;
 
+import arc.files.Fi;
 import arc.util.CommandHandler;
 import arc.util.Log;
+import mindustry.io.SaveIO;
+import mindustry.plugin.utils.ContentHandler;
+import mindustry.plugin.utils.Funcs;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+import javax.imageio.ImageIO;
+import java.io.*;
 import java.util.List;
+import java.util.zip.InflaterInputStream;
 
 import static mindustry.plugin.discord.Loader.*;
+import static mindustry.plugin.utils.Funcs.assets;
+import static mindustry.plugin.utils.Funcs.escapeCharacters;
 
 /** Represents a registry of commands */
 public class DiscordCommands extends ListenerAdapter {
@@ -20,8 +31,10 @@ public class DiscordCommands extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        // disable DMs
+        // disable DMs & self messages
         if(event.isFromType(ChannelType.PRIVATE)) return;
+        if(event.getMessage().getAuthor() == api.getSelfUser()) return;
+
         Member member = event.getMember();
         if(member == null) return;
 
