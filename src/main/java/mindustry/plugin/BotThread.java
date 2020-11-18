@@ -2,8 +2,8 @@ package mindustry.plugin;
 
 import arc.math.Mathf;
 import arc.util.CommandHandler;
-import mindustry.Vars;
-import mindustry.entities.type.Player;
+import mindustry.gen.Groups;
+import mindustry.gen.Player;
 import mindustry.plugin.commands.ModeratorCommands;
 import mindustry.plugin.commands.PublicCommands;
 import mindustry.plugin.commands.ReviewerCommands;
@@ -17,7 +17,6 @@ import mindustry.plugin.discord.DiscordCommands;
 
 
 import static mindustry.Vars.netServer;
-import static mindustry.Vars.playerGroup;
 import static mindustry.plugin.ioMain.*;
 import static mindustry.plugin.utils.Funcs.*;
 import static mindustry.plugin.discord.Loader.*;
@@ -52,16 +51,16 @@ public class BotThread extends Thread {
             try {
                 Thread.sleep(30 * 1000);
 
-                for (Player p : Vars.playerGroup.all()) {
-                    PlayerData pd = playerDataHashMap.get(p.uuid);
+                for (Player p : Groups.player) {
+                    PlayerData pd = playerDataHashMap.get(p.uuid());
                     if (pd != null)
-                        setJedisData(p.uuid, pd);
+                        setJedisData(p.uuid(), pd);
                 }
 
                 if(Mathf.chance(0.01f)){
                     api.getPresence().setActivity(Activity.playing("( ͡° ͜ʖ ͡°)"));
                 } else {
-                    api.getPresence().setActivity(Activity.playing("with " + playerGroup.all().size + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players"));
+                    api.getPresence().setActivity(Activity.playing("with " + Groups.player.size() + (netServer.admins.getPlayerLimit() == 0 ? "" : "/" + netServer.admins.getPlayerLimit()) + " players"));
                 }
 
             } catch (Exception e) {

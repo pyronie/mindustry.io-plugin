@@ -15,8 +15,8 @@ repositories{
 }
 
 ext{
-    mindustryVersion = 'c104.607'
-    arcVersion = 'v104.6'
+    mindustryVersion = 'v114'
+    arcVersion = '7e9d4252f8ab586d4911fbb4167c4c88cb523234'
     jdaVersion = "v4.1.1"
 }
 
@@ -24,12 +24,13 @@ dependencies{
     implementation 'com.google.code.gson:gson:2.8.6'
 
     compile "com.github.Anuken.Arc:arc-core:$arcVersion"
-    compile "com.github.fuzzbuck.Mindustry:core:$mindustryVersion"
-    compile "com.github.fuzzbuck.Mindustry:server:$mindustryVersion"
+    compile "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    compile "com.github.Anuken.Mindustry:server:$mindustryVersion"
 
     compile "org.glassfish.jersey.core:jersey-client:2.25.1"
     compile "redis.clients:jedis:3.2.0"
     compile group: 'org.json', name: 'json', version: '20190722'
+    compile "org.jsoup:jsoup:1.7.2"
 
     implementation 'com.github.DV8FromTheWorld:JDA:v4.1.1'
 }

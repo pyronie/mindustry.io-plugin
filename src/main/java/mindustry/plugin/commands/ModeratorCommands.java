@@ -4,20 +4,17 @@ import arc.Core;
 import arc.math.Mathf;
 import arc.util.CommandHandler;
 import mindustry.content.Bullets;
-import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
 import mindustry.entities.bullet.BulletType;
-import mindustry.entities.traits.HealthTrait;
-import mindustry.entities.type.BaseUnit;
-import mindustry.entities.type.Player;
-import mindustry.entities.type.Unit;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Player;
+import mindustry.gen.Unit;
 import mindustry.net.Administration;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.discord.Context;
 import mindustry.plugin.ioMain;
-import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -39,7 +36,7 @@ public class ModeratorCommands {
 
     public void registerCommands(CommandHandler handler){
         handler.<Context>register("announce", "<text...>", "Display a message on top of the screen for all players for 10 seconds", (args, ctx) -> {
-            Call.onInfoToast(args[0], 10);
+            Call.infoToast(args[0], 10);
             ctx.sendEmbed(true, ":round_pushpin: announcement sent successfully!", args[0]);
         });
 
@@ -49,8 +46,8 @@ public class ModeratorCommands {
             boolean f = false;
             if(args.length >= 3 && Boolean.parseBoolean(args[2])) {
                 f = true;
-                playerGroup.all().forEach(player -> {
-                    Call.onConnect(player.con, eventIp, eventPort);
+                Groups.player.forEach(player -> {
+                    Call.connect(player.con, eventIp, eventPort);
                 });
             }
             ctx.sendEmbed(true, ":crossed_swords: event ip set successfully!", args[0] + ":" + eventPort + (f ? "\nalso forced everyone to join" : ""));
@@ -59,11 +56,11 @@ public class ModeratorCommands {
         handler.<Context>register("alert", "<player> <text...>", " " + serverName, (args, ctx) -> {
             Player player = findPlayer(args[0]);
             if(args[0].toLowerCase().equals("all")){
-                Call.onInfoMessage(args[1]);
+                Call.infoMessage(args[1]);
                 ctx.sendEmbed(true, ":round_pushpin: alert to everyone sent successfully!", args[1]);
             }else{
                 if(player != null){
-                    Call.onInfoMessage(player.con, args[1]);
+                    Call.infoMessage(player.con, args[1]);
                     ctx.sendEmbed(true, ":round_pushpin: alert to " + escapeCharacters(player.name) + " sent successfully!", args[1]);
                 }else{
                     ctx.sendEmbed(false, ":round_pushpin: can't find player " + args[1]);
@@ -74,15 +71,15 @@ public class ModeratorCommands {
         handler.<Context>register("ban", "<player> <minutes> [reason...]", "Ban a player by the provided name, id or uuid (do offline bans using uuid)", (args, ctx) -> {
             Player player = findPlayer(args[0]);
             if(player != null){
-                PlayerData pd = playerDataHashMap.get(player.uuid);
+                PlayerData pd = playerDataHashMap.get(player.uuid());
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
-                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid.substring(0, 4);
-                    playerDataHashMap.put(player.uuid, pd);
+                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4);
+                    playerDataHashMap.put(player.uuid(), pd);
                     // setJedisData(player.uuid, pd);
                     HashMap<String, String> fields = new HashMap<>();
-                    fields.put("UUID", player.uuid);
+                    fields.put("UUID", player.uuid());
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
                     player.con.kick(KickReason.banned);
                 }else{
@@ -108,7 +105,7 @@ public class ModeratorCommands {
             Player player = findPlayer(args[0]);
             if(player != null){
                 player.con.kick(KickReason.kick);
-                ctx.sendEmbed(true, ":football: kicked " + escapeCharacters(player.name) + " successfully!", player.uuid);
+                ctx.sendEmbed(true, ":football: kicked " + escapeCharacters(player.name) + " successfully!", player.uuid());
             }else{
                 ctx.sendEmbed(false, ":round_pushpin: can't find player " + escapeCharacters(args[0]));
             }
@@ -132,7 +129,7 @@ public class ModeratorCommands {
             Administration.PlayerInfo info;
             Player player = findPlayer(args[0]);
             if (player != null) {
-                info = netServer.admins.getInfo(player.uuid);
+                info = netServer.admins.getInfo(player.uuid());
             } else{
                 if(args[0].length() == 24) { // uuid length
                     info = netServer.admins.getInfo(args[0]);
@@ -188,22 +185,38 @@ public class ModeratorCommands {
             }
         });
 
-        handler.<Context>register("mech", "<player> <mech>", "Change a players mech into the specified mech", (args, ctx) -> {
-            Mech desiredMech;
+        handler.<Context>register("convert", "<player> <unit>", "Change a players unit into the specified one", (args, ctx) -> {
+            UnitType desiredUnit;
             try {
-                Field field = Mechs.class.getDeclaredField(args[1]);
-                desiredMech = (Mech)field.get(null);
+                Field field = UnitTypes.class.getDeclaredField(args[1]);
+                desiredUnit = (UnitType)field.get(null);
             } catch (NoSuchFieldException | IllegalAccessException ignored) {
-                ctx.sendEmbed(false, ":robot: that mech doesn't exist");
+                ctx.sendEmbed(false, ":robot: that unit doesn't exist");
                 return;
             }
             Player player = findPlayer(args[0]);
             if(player != null){
-                player.mech = desiredMech;
-                ctx.sendEmbed(true, ":robot: changed " + escapeCharacters(player.name) + "'s mech to " + desiredMech.name);
+
+                Unit nu = desiredUnit.create(player.team());
+                nu.set(player.getX(), player.getY());
+                nu.add();
+
+                player.unit().kill();
+                player.unit(nu);
+                player.afterSync();
+
+                ctx.sendEmbed(true, ":robot: changed " + escapeCharacters(player.name) + "'s unit to " + desiredUnit.name);
             }else if(args[0].toLowerCase().equals("all")){
-                for(Player p : playerGroup.all()){ p.mech = desiredMech; }
-                ctx.sendEmbed(true, ":robot: changed everyone's mech to " + desiredMech.name);
+                for(Player p : Groups.player){
+                    Unit nu = desiredUnit.create(p.team());
+                    nu.set(p.getX(), p.getY());
+                    nu.add();
+
+                    p.unit().kill();
+                    p.unit(nu);
+                    p.afterSync();
+                }
+                ctx.sendEmbed(true, ":robot: changed everyone's unit to " + desiredUnit.name);
             }else{
                 ctx.sendEmbed(false, ":robot: can't find " + escapeCharacters(args[0]));
             }
@@ -217,10 +230,10 @@ public class ModeratorCommands {
 
             Player player = findPlayer(args[0]);
             if(player != null){
-                player.setTeam(Team.get(teamid));
+                player.team(Team.get(teamid));
                 ctx.sendEmbed(true, ":triangular_flag_on_post: changed " + escapeCharacters(player.name) + "'s team to " + Team.get(teamid).name);
             }else if(args[0].toLowerCase().equals("all")){
-                for(Player p : playerGroup.all()){ p.setTeam(Team.get(teamid)); }
+                for(Player p : Groups.player){ p.team(Team.get(teamid)); }
                 ctx.sendEmbed(true, ":triangular_flag_on_post: changed everyone's team to " + Team.get(teamid).name);
             }else{
                 ctx.sendEmbed(false, ":triangular_flag_on_post: can't find " + escapeCharacters(args[0]));
@@ -236,7 +249,7 @@ public class ModeratorCommands {
                 ctx.sendEmbed(true, ":newspaper: changed welcome message successfully!", args[0]);
             }
             Core.settings.put("welcomeMessage", welcomeMessage);
-            Core.settings.save();
+            Core.settings.forceSave();
         });
 
         handler.<Context>register("statmessage", "<message...>", "Change the stat message popup when a player uses the /info command", (args, ctx) -> {
@@ -248,7 +261,7 @@ public class ModeratorCommands {
                 ctx.sendEmbed(true, ":newspaper: changed stat message successfully!", args[0]);
             }
             Core.settings.put("statMessage", statMessage);
-            Core.settings.save();
+            Core.settings.forceSave();
         });
 
         handler.<Context>register("spawn", "<player> <unit> <amount>", "Spawn a specified amount of units near the player's position.", (args, ctx) -> {
@@ -269,7 +282,7 @@ public class ModeratorCommands {
             if(player != null){
                 UnitType finalDesiredUnitType = desiredUnitType;
                 IntStream.range(0, amt).forEach(i -> {
-                    BaseUnit unit = finalDesiredUnitType.create(player.getTeam());
+                    Unit unit = finalDesiredUnitType.create(player.team());
                     unit.set(player.getX(), player.getY());
                     unit.add();
                 });
@@ -280,22 +293,22 @@ public class ModeratorCommands {
         });
 
         handler.<Context>register("kill", "<player|unit>", "Kill the specified player or all specified units on the map.", (args, ctx) -> {
-            UnitType desiredUnitType = UnitTypes.dagger;
+            UnitType desiredUnitType;
             try {
                 Field field = UnitTypes.class.getDeclaredField(args[0]);
                 desiredUnitType = (UnitType) field.get(null);
                 int amt = 0;
-                for(Unit unit : unitGroup.all()){
-                    if(unit.getTypeID() == desiredUnitType.typeID){ unit.kill(); amt++; }
+                for(Unit unit : Groups.unit){
+                    if(unit.type == desiredUnitType){ unit.kill(); amt++; }
                 }
                 ctx.sendEmbed(true, ":knife: killed " + amt + " " + args[0] + "s");
             } catch (NoSuchFieldException | IllegalAccessException ignored) {
                 Player player = findPlayer(args[0]);
                 if(player != null){
-                    player.kill();
+                    player.unit().kill();
                     ctx.sendEmbed(true, ":knife: killed " + escapeCharacters(player.name));
                 }else if(args[0].toLowerCase().equals("all")){
-                    playerGroup.all().forEach(HealthTrait::kill);
+                    Groups.player.forEach(p -> p.unit().kill());
                     ctx.sendEmbed(true, ":knife: killed everyone, muhahaha");
                 }else{
                     ctx.sendEmbed(false, ":knife: can't find " + escapeCharacters(args[0]));
@@ -326,19 +339,21 @@ public class ModeratorCommands {
             }
             HashMap<String, String> fields = new HashMap<>();
             Player player = findPlayer(args[0]);
+            PlayerData pd = playerDataHashMap.get(player.uuid());
+
             if(player != null){
-                player.bt = desiredBulletType;
-                player.sclLifetime = life;
-                player.sclVelocity = vel;
+                pd.bt = desiredBulletType;
+                pd.sclLifetime = life;
+                pd.sclVelocity = vel;
                 fields.put("Bullet", args[1]);
                 fields.put("Bullet lifetime", args[2]);
                 fields.put("Bullet velocity", args[3]);
                 ctx.sendEmbed(true, ":gun: modded " + escapeCharacters(player.name) + "'s gun", fields, true);
             }else if(args[0].toLowerCase().equals("all")){
-                for(Player p : playerGroup.all()) {
-                    p.bt = desiredBulletType;
-                    p.sclLifetime = life;
-                    p.sclVelocity = vel;
+                for(Player p : Groups.player) {
+                    pd.bt = desiredBulletType;
+                    pd.sclLifetime = life;
+                    pd.sclVelocity = vel;
                 }
                 fields.put("Bullet", args[1]);
                 fields.put("Bullet lifetime", args[2]);

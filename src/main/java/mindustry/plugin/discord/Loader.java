@@ -4,7 +4,7 @@ import arc.Core;
 import arc.util.Log;
 import com.google.gson.Gson;
 import mindustry.plugin.BotThread;
-import mindustry.plugin.utils.ContentHandler;
+import mindustry.plugin.datas.ContentHandler;
 import mindustry.plugin.utils.Funcs;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -16,14 +16,12 @@ import org.json.JSONTokener;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-import java.util.HashMap;
-
 public class Loader {
     public static JedisPool pool;
     public static Gson gson = new Gson();
-    public static ContentHandler contentHandler;
 
     public static BotThread bt;
+    public static ContentHandler contentHandler;
     public static JDA api = null;
     public static String prefix = ".";
     public static String serverName = "<untitled>";
@@ -47,6 +45,8 @@ public class Loader {
 
     public static void load(){
         Funcs.init();
+        contentHandler = new ContentHandler();
+
 
         Log.info("<.io> loading");
         try {

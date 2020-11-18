@@ -2,19 +2,16 @@ package mindustry.plugin.utils;
 
 import arc.Core;
 import arc.Events;
-import arc.struct.Array;
 import arc.util.Log;
 import arc.util.Strings;
 import mindustry.content.Blocks;
-import mindustry.entities.type.Player;
-import mindustry.entities.type.TileEntity;
 import mindustry.game.EventType;
 import mindustry.game.Team;
-import mindustry.maps.Map;
-import mindustry.maps.Maps;
+import mindustry.gen.Building;
+import mindustry.gen.Groups;
+import mindustry.gen.Player;
 import mindustry.plugin.datas.PlayerData;
-import mindustry.plugin.ioMain;
-import mindustry.world.Block;
+import mindustry.server.ServerControl;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
 import redis.clients.jedis.Jedis;
@@ -37,7 +34,7 @@ public class Funcs {
     public static String statMessage = "";
 
     public static HashMap<Integer, Rank> rankNames = new HashMap<>();
-    public static Array<String> onScreenMessages = new Array<>();
+    public static ArrayList<String> onScreenMessages = new ArrayList<>();
     public static String eventIp = "";
     public static int eventPort = 6567;
 
@@ -74,14 +71,14 @@ public class Funcs {
         return Strings.stripColors(string);
     }
 
-    public static Map getMapBySelector(String query) {
-        Map found = null;
+    public static mindustry.maps.Map getMapBySelector(String query) {
+        mindustry.maps.Map found = null;
         try {
             // try by number
             found = maps.customMaps().get(Integer.parseInt(query));
         } catch (Exception e) {
             // try by name
-            for (Map m : maps.customMaps()) {
+            for (mindustry.maps.Map m : maps.customMaps()) {
                 if (m.name().replaceAll(" ", "").toLowerCase().contains(query.toLowerCase().replaceAll(" ", ""))) {
                     found = m;
                     break;
@@ -93,13 +90,13 @@ public class Funcs {
 
     public static Player findPlayer(String identifier){
         Player found = null;
-        for (Player player : playerGroup.all()) {
+        for (Player player : Groups.player) {
             if(player == null) return null;
-            if(player.uuid == null) return null;
+            if(player.uuid() == null) return null;
             if(player.con == null) return null;
             if(player.con.address == null) return null;
 
-            if (player.con.address.equals(identifier.replaceAll(" ", "")) || String.valueOf(player.id).equals(identifier.replaceAll(" ", "")) || player.uuid.equals(identifier.replaceAll(" ", "")) || escapeColorCodes(player.name.toLowerCase().replaceAll(" ", "")).replaceAll("<.*?>", "").startsWith(identifier.toLowerCase().replaceAll(" ", ""))) {
+            if (player.con.address.equals(identifier.replaceAll(" ", "")) || String.valueOf(player.id).equals(identifier.replaceAll(" ", "")) || player.uuid().equals(identifier.replaceAll(" ", "")) || escapeColorCodes(player.name.toLowerCase().replaceAll(" ", "")).replaceAll("<.*?>", "").startsWith(identifier.toLowerCase().replaceAll(" ", ""))) {
                 found = player;
             }
         }
@@ -109,9 +106,9 @@ public class Funcs {
     public static String formatMessage(Player player, String message){
         try {
             message = message.replaceAll("%player%", escapeCharacters(player.name));
-            message = message.replaceAll("%map%", world.getMap().name());
+            message = message.replaceAll("%map%", state.map.name());
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
-            PlayerData pd = playerDataHashMap.get(player.uuid);
+            PlayerData pd = playerDataHashMap.get(player.uuid());
             if (pd != null) {
                 message = message.replaceAll("%rank%", rankNames.get(pd.role).name);
             }
@@ -147,54 +144,21 @@ public class Funcs {
         });
     }
 
-    public static void changeMap(Map found){
-        Class<Maps> mapsClass = Maps.class;
-        Field mapsField;
+    public static void changeMap(mindustry.maps.Map found){
         try {
-            mapsField = mapsClass.getDeclaredField("maps");
-        } catch (NoSuchFieldException ex) {
-            throw new RuntimeException("Could not find field 'maps' of class 'mindustry.maps.Maps'");
+            Field f = ServerControl.class.getDeclaredField("nextMapOverride");
+            f.setAccessible(true);
+            f.set(ServerControl.class, found);
+            Log.info("next map override set: " + f.get(ServerControl.class));
+        }catch(Exception e){
+
         }
-        mapsField.setAccessible(true);
-        Field mapsListField = mapsField;
-
-        Array<Map> mapsList;
-        try {
-            mapsList = (Array<Map>)mapsListField.get(maps);
-        } catch (IllegalAccessException ex) {
-            throw new RuntimeException("unreachable");
-        }
-
-        Array<Map> tempMapsList = mapsList.removeAll(map -> !map.custom || map != found);
-
-        try {
-            mapsListField.set(maps, tempMapsList);
-        } catch (IllegalAccessException ex) {
-            throw new RuntimeException("unreachable");
-        }
-
-        Events.fire(new EventType.GameOverEvent(Team.crux));
-
-        try {
-            mapsListField.set(maps, mapsList);
-        } catch (IllegalAccessException ex) {
-            throw new RuntimeException("unreachable");
-        }
-        maps.reload();
     }
 
-    public static CoreBlock.CoreEntity getCore(Team team){
-        Tile[][] tiles = world.getTiles();
-        for (int x = 0; x < tiles.length; ++x) {
-            for(int y = 0; y < tiles[0].length; ++y) {
-                if (tiles[x][y] != null && tiles[x][y].entity != null) {
-                    TileEntity ent = tiles[x][y].ent();
-                    if (ent instanceof CoreBlock.CoreEntity) {
-                        if(ent.getTeam() == team){
-                            return (CoreBlock.CoreEntity) ent;
-                        }
-                    }
-                }
+    public static Building getCore(Team team){
+        for(Tile t : world.tiles){
+            if (t.build != null && t.build.block instanceof CoreBlock && t.build.team == team){
+                return t.build;
             }
         }
         return null;

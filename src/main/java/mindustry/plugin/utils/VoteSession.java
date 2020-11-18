@@ -3,12 +3,12 @@ package mindustry.plugin.utils;
 import arc.struct.ObjectSet;
 import arc.util.Strings;
 import arc.util.Timer;
-import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Player;
 import mindustry.maps.Map;
 
 import static mindustry.Vars.netServer;
-import static mindustry.Vars.playerGroup;
 
 public class VoteSession{
     Map target;
@@ -33,12 +33,12 @@ public class VoteSession{
     }
 
     public int votesRequired(){
-        return (int) (playerGroup.size() / 1.5f);
+        return (int) (Groups.player.size() / 1.5f);
     }
 
     public void vote(Player player, int d){
         votes += d;
-        voted.addAll(player.uuid, netServer.admins.getInfo(player.uuid).lastIP);
+        voted.addAll(player.uuid(), netServer.admins.getInfo(player.uuid()).lastIP);
 
         Call.sendMessage(Strings.format("[orange]{0}[lightgray] has voted to change the map to[orange] {1}[].[accent] ({2}/{3})\n[lightgray]Type[orange] /rtv to agree.",
                 player.name, target.name(), votes, votesRequired()));

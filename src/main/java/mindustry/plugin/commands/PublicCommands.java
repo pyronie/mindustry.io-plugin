@@ -1,25 +1,22 @@
 package mindustry.plugin.commands;
 
 import arc.files.Fi;
-import arc.struct.Array;
+import arc.struct.Seq;
 import arc.util.CommandHandler;
-import arc.util.Log;
+import mindustry.gen.Groups;
+import mindustry.gen.Player;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
 
-import mindustry.entities.type.Player;
 import mindustry.gen.Call;
-import mindustry.plugin.datas.PlayerData;
+import mindustry.plugin.datas.ContentHandler;
 import mindustry.plugin.discord.Context;
-import mindustry.plugin.utils.ContentHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import javax.imageio.ImageIO;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 import java.util.zip.InflaterInputStream;
 
 import static arc.util.CommandHandler.*;
@@ -40,7 +37,7 @@ public class PublicCommands {
         });
 
         handler.<Context>register("maps", "Displays all available maps in the playlist. Use " + prefix + "map <name> to download a specific map.", (args, ctx) -> {
-            Array<Map> mapList = maps.customMaps();
+            Seq<Map> mapList = maps.customMaps();
             StringBuilder smallMaps = new StringBuilder();
             StringBuilder mediumMaps = new StringBuilder();
             StringBuilder bigMaps = new StringBuilder();
@@ -63,15 +60,18 @@ public class PublicCommands {
             Map map = getMapBySelector(args[0].trim());
             if (map != null){
                 try {
-                    ContentHandler.Map visualMap = contentHandler.parseMap(map.file.read());
                     Fi mapFile = map.file;
+
+                    ContentHandler.Map visualMap = contentHandler.readMap(map.file.read());
                     File imageFile = new File(assets + "image_" + mapFile.name().replaceAll(".msav", ".png"));
                     ImageIO.write(visualMap.image, "png", imageFile);
+
 
                     EmbedBuilder eb = new EmbedBuilder().setColor(Pals.success).setTitle(":map: " + escapeCharacters(map.name())).setFooter(map.width + "x" + map.height).setDescription(escapeCharacters(map.description())).setAuthor(escapeCharacters(map.author()));
                     eb.setImage("attachment://" + imageFile.getName());
                     ctx.channel.sendFile(mapFile.file()).addFile(imageFile).embed(eb.build()).queue();
-                } catch (IOException e) {
+                    //ctx.channel.sendFile(mapFile.file()).embed(eb.build()).queue();
+                } catch (Exception e) {
                     ctx.sendEmbed(false, ":eyes: **internal server error**");
                     e.printStackTrace();
                 }
@@ -94,13 +94,15 @@ public class PublicCommands {
                 DataInputStream dis = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(bytes)));
                 if (attachment.getFileName().endsWith(".msav") && SaveIO.isSaveValid(dis)) {
                     try {
+
                         OutputStream os = new FileOutputStream(mapFile);
                         os.write(bytes);
                         os.close();
 
-                        ContentHandler.Map map = contentHandler.parseMap(fi.read());
+                        ContentHandler.Map map = contentHandler.readMap(fi.read());
                         File imageFile = new File(assets + "image_" + attachment.getFileName().replaceAll(".msav", ".png"));
                         ImageIO.write(map.image, "png", imageFile);
+
 
                         EmbedBuilder eb = new EmbedBuilder();
                         eb.setColor(Pals.progress);
@@ -129,10 +131,10 @@ public class PublicCommands {
         handler.<Context>register("players","Get all online in-game players.", (args, ctx) -> {
             EmbedBuilder eb = new EmbedBuilder();
             eb.setColor(Pals.progress);
-            eb.setTitle(":satellite: **players online: **" + playerGroup.all().size);
+            eb.setTitle(":satellite: **players online: **" + Groups.player.size());
 
             StringBuilder s = new StringBuilder();
-            for(Player p : playerGroup.all()){
+            for(Player p : Groups.player){
                 s.append(p.name).append("\n");
             }
             eb.setDescription(s);
@@ -141,8 +143,8 @@ public class PublicCommands {
 
         handler.<Context>register("status", "View the status of this server.", (args, ctx) -> {
             HashMap<String, String> fields = new HashMap<>();
-            fields.put("players", String.valueOf(playerGroup.all().size));
-            fields.put("map", escapeCharacters(world.getMap().name()));
+            fields.put("players", String.valueOf(Groups.player.size()));
+            fields.put("map", escapeCharacters(state.map.name()));
             fields.put("wave", String.valueOf(state.wave));
 
             ctx.sendEmbed(true, ":desktop: **" + serverName + "**", fields, false);
