@@ -86,17 +86,6 @@ public class ioMain extends Plugin {
             }
         });
 
-        // player connected
-        Events.on(EventType.PlayerConnect.class, event -> {
-            Player player = event.player;
-            PlayerData pd = playerDataHashMap.get(player.uuid());
-            if (pd != null){
-                if (pd.bannedUntil > Instant.now().getEpochSecond()){
-                    player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason, 0);
-                }
-            }
-        });
-
         // player disconnected
         Events.on(EventType.PlayerLeave.class, event -> {
             String uuid = event.player.uuid();
@@ -133,6 +122,15 @@ public class ioMain extends Plugin {
 
                 if (welcomeMessage.length() > 0 && !welcomeMessage.equals("none")) {
                     Call.infoMessage(player.con, formatMessage(player, welcomeMessage));
+                }
+
+                if (pd != null){
+                    if (pd.bannedUntil > Instant.now().getEpochSecond()){
+                        for (int i=0; i < 30; i++)
+                            Call.infoMessage(player.con, formatMessage(player, welcomeMessage));
+                        
+                        player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason, 0);
+                    }
                 }
 
             });
