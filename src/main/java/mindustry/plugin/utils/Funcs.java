@@ -1,17 +1,16 @@
 package mindustry.plugin.utils;
 
 import arc.Core;
-import arc.Events;
+import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Strings;
-import mindustry.content.Blocks;
-import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.server.ServerControl;
+import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock;
 import redis.clients.jedis.Jedis;
@@ -26,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import static mindustry.Vars.*;
 import static mindustry.plugin.discord.Loader.*;
 import static mindustry.plugin.ioMain.*;
+import static mindustry.content.Blocks.*;
 
 public class Funcs {
     public static int chatMessageMaxSize = 256;
@@ -35,6 +35,7 @@ public class Funcs {
 
     public static HashMap<Integer, Rank> rankNames = new HashMap<>();
     public static ArrayList<String> onScreenMessages = new ArrayList<>();
+    public static ArrayList<String> bannedNames = new ArrayList<>();
     public static String eventIp = "";
     public static int eventPort = 6567;
 
@@ -49,9 +50,24 @@ public class Funcs {
     }
 
     public static void init(){
-        rankNames.put(0, new Rank("", "[lightgray]guest[]"));
-        rankNames.put(1, new Rank("\uE809 ", "[#45a8ff]member[]"));
-        rankNames.put(2, new Rank("\uE828 ", "[#ff6745]moderator[]"));
+        rankNames.put(0, new Rank("[#7d7d7d]<none>[]", "none"));
+        rankNames.put(1, new Rank("[accent]<[white][accent]>[]", "Active"));
+        rankNames.put(2, new Rank("[accent]<[white][accent]>[]", "Veteran"));
+        rankNames.put(3, new Rank("[accent]<[white][accent]>[]", "Contributor"));
+        rankNames.put(4, new Rank("[accent]<[white][accent]>[]", "Apprentice Moderator"));
+        rankNames.put(5, new Rank("[accent]<[white][accent]>[]", "Moderator"));
+        rankNames.put(6, new Rank("[accent]<[white]\uE828[accent]>[]", "Admin"));
+
+        bannedNames.add("IGGGAMES");
+        bannedNames.add("CODEX");
+        bannedNames.add("VALVE");
+        bannedNames.add("tuttop");
+        bannedNames.add("Volas Y0uKn0w1sR34Lp");
+        bannedNames.add("IgruhaOrg");
+        bannedNames.add("андрей");
+
+        activeRequirements.bannedBlocks.addAll(router, conveyor, titaniumConveyor, armoredConveyor, junction, sorter, invertedSorter, overflowGate, underflowGate, liquidRouter, conduit, pulseConduit, platedConduit, liquidJunction, copperWall);
+
 
         statMessage = Core.settings.getString("statMessage");
         welcomeMessage = Core.settings.getString("welcomeMessage");
@@ -61,6 +77,14 @@ public class Funcs {
         public static Color error = new Color(255, 60, 60);
         public static Color success = new Color(60, 255, 100);
         public static Color progress = new Color(252, 243, 120);
+    }
+
+    public static class activeRequirements{
+
+        public static Seq<Block> bannedBlocks = new Seq<Block>();
+        public static int playtime = 75 * 10;
+        public static int buildingsBuilt = 1500 * 10;
+        public static int gamesPlayed = 10;
     }
 
     public static String escapeCharacters(String string){
@@ -110,7 +134,7 @@ public class Funcs {
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
             PlayerData pd = playerDataHashMap.get(player.uuid());
             if (pd != null) {
-                message = message.replaceAll("%rank%", rankNames.get(pd.role).name);
+                message = message.replaceAll("%rank%", rankNames.get(pd.rank).name);
             }
         }catch(Exception ignore){};
         return message;
@@ -125,7 +149,7 @@ public class Funcs {
             try {
                 return gson.fromJson(json, PlayerData.class);
             } catch(Exception e){
-                setJedisData(uuid, new PlayerData());
+                setJedisData(uuid, new PlayerData(0));
                 return null;
             }
         }

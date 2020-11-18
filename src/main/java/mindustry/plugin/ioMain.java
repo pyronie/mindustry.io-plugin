@@ -121,13 +121,13 @@ public class ioMain extends Plugin {
                         player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
                         return;
                     }
-                    if(pd.role > 0){
-                        pd.tag = rankNames.get(pd.role).tag;
+                    if(pd.rank > 0){
+                        pd.tag = rankNames.get(pd.rank).tag;
                         player.name(pd.tag + player.name);
                     }
                 } else { // not in database
-                    pd = new PlayerData();
-                    setJedisData(player.uuid(), new PlayerData());
+                    pd = new PlayerData(0);
+                    setJedisData(player.uuid(), new PlayerData(0));
                 }
                 playerDataHashMap.put(player.uuid(), pd);
 
@@ -143,11 +143,16 @@ public class ioMain extends Plugin {
             if(event.builder instanceof Player){
                 if(event.tile != null){
                     Player player = (Player) event.builder;
+                    PlayerData pd = playerDataHashMap.get(player.uuid());
+
                     TileInfo info = tileInfoHashMap.getOrDefault(event.tile, new TileInfo());
                     if(!event.breaking){
                         info.placedBy = player.name;
                         info.placedByUUID = player.uuid();
                         info.wasHere = (event.tile.block() != Blocks.air ? event.tile.block().name : "[#545454]none");
+
+                        pd.buildingsBuilt++;
+                        playerDataHashMap.put(player.uuid(), pd);
                     } else{
                         info.destroyedBy = player.name;
                         info.destroyedByUUID = player.uuid();
@@ -192,6 +197,14 @@ public class ioMain extends Plugin {
                 if (pd.bt != null && p.shooting()) {
                     Call.createBullet(pd.bt, p.team(), p.getX(), p.getY(), p.unit().rotation, pd.sclDamage, pd.sclVelocity, pd.sclLifetime);
                 }
+            }
+        });
+
+        Events.on(EventType.GameOverEvent.class, event -> {
+            for(Player p : Groups.player){
+                PlayerData pd = playerDataHashMap.get(p.uuid());
+                pd.gamesPlayed++;
+                playerDataHashMap.put(p.uuid(), pd);
             }
         });
     }

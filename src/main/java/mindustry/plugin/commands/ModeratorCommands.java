@@ -170,7 +170,7 @@ public class ModeratorCommands {
             if(rank < rankNames.size()) {
                 PlayerData pd = playerDataHashMap.containsKey(args[0]) ? playerDataHashMap.get(args[0]) : getJedisData(args[0]);
                 if (pd != null) {
-                    pd.role = rank;
+                    pd.rank = rank;
                     if(playerDataHashMap.containsKey(args[0])){
                         playerDataHashMap.put(args[0],  pd);
                     }
@@ -316,18 +316,24 @@ public class ModeratorCommands {
             }
         });
 
-        handler.<Context>register("weapon", "<player> <bullet> [lifetime] [velocity]", "Modify the specified players weapon with the provided parameters", (args, ctx) -> {
+        handler.<Context>register("weapon", "<player> <bullet> [damage] [lifetime] [velocity]", "Modify the specified players weapon with the provided parameters", (args, ctx) -> {
             BulletType desiredBulletType;
+            float dmg = 1f;
             float life = 1f;
             float vel = 1f;
             if(args.length > 2){
                 try{
-                    life = Float.parseFloat(args[2]);
-                }catch (Exception e){ ctx.sendEmbed(false, ":gun: error parsing lifetime number"); return;}
+                    dmg = Float.parseFloat(args[2]);
+                }catch (Exception e){ ctx.sendEmbed(false, ":gun: error parsing damage number"); return;}
             }
             if(args.length > 3){
                 try{
-                    vel = Float.parseFloat(args[3]);
+                    life = Float.parseFloat(args[3]);
+                }catch (Exception e){ ctx.sendEmbed(false, ":gun: error parsing lifetime number"); return;}
+            }
+            if(args.length > 4){
+                try{
+                    vel = Float.parseFloat(args[4]);
                 }catch (Exception e){ ctx.sendEmbed(false, ":gun: error parsing velocity number"); return;}
             }
             try {
@@ -339,21 +345,26 @@ public class ModeratorCommands {
             }
             HashMap<String, String> fields = new HashMap<>();
             Player player = findPlayer(args[0]);
-            PlayerData pd = playerDataHashMap.get(player.uuid());
 
             if(player != null){
+                PlayerData pd = playerDataHashMap.get(player.uuid());
                 pd.bt = desiredBulletType;
+                pd.sclDamage = dmg;
                 pd.sclLifetime = life;
                 pd.sclVelocity = vel;
+                playerDataHashMap.put(player.uuid(), pd);
                 fields.put("Bullet", args[1]);
                 fields.put("Bullet lifetime", args[2]);
                 fields.put("Bullet velocity", args[3]);
                 ctx.sendEmbed(true, ":gun: modded " + escapeCharacters(player.name) + "'s gun", fields, true);
             }else if(args[0].toLowerCase().equals("all")){
                 for(Player p : Groups.player) {
+                    PlayerData pd = playerDataHashMap.get(p.uuid());
                     pd.bt = desiredBulletType;
+                    pd.sclDamage = dmg;
                     pd.sclLifetime = life;
                     pd.sclVelocity = vel;
+                    playerDataHashMap.put(p.uuid(), pd);
                 }
                 fields.put("Bullet", args[1]);
                 fields.put("Bullet lifetime", args[2]);
