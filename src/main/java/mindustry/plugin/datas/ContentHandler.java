@@ -2,6 +2,7 @@ package mindustry.plugin.datas;
 
 import arc.*;
 import arc.files.*;
+import arc.func.Func;
 import arc.graphics.Color;
 import arc.graphics.*;
 import arc.graphics.Pixmap.*;
@@ -10,11 +11,13 @@ import arc.graphics.g2d.TextureAtlas.*;
 import arc.graphics.g2d.TextureAtlas.TextureAtlasData.*;
 import arc.math.*;
 import arc.struct.*;
+import arc.util.Log;
+import arc.util.Tmp;
 import arc.util.io.*;
 import arc.util.serialization.*;
-import mindustry.*;
-import mindustry.content.*;
-import mindustry.core.*;
+import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.core.World;
 import mindustry.ctype.*;
 import mindustry.entities.units.*;
 import mindustry.game.*;
@@ -27,6 +30,7 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.*;
 import java.io.*;
+import java.util.Arrays;
 import java.util.zip.*;
 
 import static mindustry.Vars.*;
@@ -40,30 +44,33 @@ public class ContentHandler{
     BufferedImage currentImage;
 
     public ContentHandler(){
+
+        /*
         Version.enabled = false;
         Vars.content = new ContentLoader();
         Vars.content.createBaseContent();
         for(ContentType type : ContentType.values()){
-            for(Content content : Vars.content.getBy(type).toArray()){
+            for(Content content : Vars.content.getBy(type)){
                 try{
                     content.init();
                 }catch(Throwable ignored){
                 }
             }
         }
+         */
 
-        String assets = "../Mindustry/core/assets/";
-        Vars.state = new GameState();
+        String assets = "assets/";
+        //Vars.state = new GameState();
 
         TextureAtlasData data = new TextureAtlasData(new Fi(assets + "sprites/sprites.atlas"), new Fi(assets + "sprites"), false);
-        Core.atlas = new TextureAtlas();
+        //Core.atlas = new TextureAtlas();
 
         ObjectMap<Page, BufferedImage> images = new ObjectMap<>();
         ObjectMap<String, BufferedImage> regions = new ObjectMap<>();
 
         data.getPages().each(page -> {
             try{
-                java.awt.image.BufferedImage image = ImageIO.read(page.textureFile.file());
+                BufferedImage image = ImageIO.read(page.textureFile.file());
                 images.put(page, image);
                 page.texture = Texture.createEmpty(new ImageData(image));
             }catch(Exception e){
@@ -79,7 +86,7 @@ public class ContentHandler{
                 graphics.drawImage(images.get(reg.page), 0, 0, reg.width, reg.height, reg.left, reg.top, reg.left + reg.width, reg.top + reg.height, null);
 
                 ImageRegion region = new ImageRegion(reg.name, reg.page.texture, reg.left, reg.top, image);
-                Core.atlas.addRegion(region.name, region);
+                //Core.atlas.addRegion(region.name, region);
                 regions.put(region.name, image);
             }catch(Exception e){
                 e.printStackTrace();
@@ -87,8 +94,10 @@ public class ContentHandler{
         });
 
         Lines.useLegacyLine = true;
-        Core.atlas.setErrorRegion("error");
+        //Core.atlas.setErrorRegion("error");
         Draw.scl = 1f / 4f;
+
+        /*
         Core.batch = new SpriteBatch(0){
             @Override
             protected void draw(TextureRegion region, float x, float y, float originX, float originY, float width, float height, float rotation){
@@ -120,7 +129,6 @@ public class ContentHandler{
                 //do nothing
             }
         };
-
         for(ContentType type : ContentType.values()){
             for(Content content : Vars.content.getBy(type)){
                 try{
@@ -129,9 +137,11 @@ public class ContentHandler{
                 }
             }
         }
+        */
+
 
         try{
-            BufferedImage image = ImageIO.read(new File("../Mindustry/core/assets/sprites/block_colors.png"));
+            BufferedImage image = ImageIO.read(new File("assets/sprites/block_colors.png"));
 
             for(Block block : Vars.content.blocks()){
                 block.mapColor.argb8888(image.getRGB(block.id, 0));
@@ -143,11 +153,15 @@ public class ContentHandler{
             throw new RuntimeException(e);
         }
 
+        /*
         world = new World(){
             public Tile tile(int x, int y){
                 return new Tile(x, y);
             }
         };
+         */
+
+
     }
 
     private BufferedImage tint(BufferedImage image, Color color){
@@ -206,10 +220,10 @@ public class ContentHandler{
 
             int width = meta.getInt("width"), height = meta.getInt("height");
 
-            BufferedImage floors = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            BufferedImage walls = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D fgraphics = floors.createGraphics();
-            java.awt.Color jcolor = new java.awt.Color(0, 0, 0, 64);
+            var floors = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            var walls = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            var fgraphics = floors.createGraphics();
+            var jcolor = new java.awt.Color(0, 0, 0, 64);
             int black = 255;
             CachedTile tile = new CachedTile(){
                 @Override
@@ -220,7 +234,6 @@ public class ContentHandler{
                     if(c != black && c != 0){
                         walls.setRGB(x, floors.getHeight() - 1 - y, conv(c));
                         fgraphics.setColor(jcolor);
-                        fgraphics.drawRect(x, floors.getHeight() - 1 - y + 1, 1, 1);
                     }
                 }
             };
@@ -279,7 +292,7 @@ public class ContentHandler{
             return out;
 
         }finally{
-            content.setTemporaryMapper(null);
+            // content.setTemporaryMapper(null);
         }
     }
 

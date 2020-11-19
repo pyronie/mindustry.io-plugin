@@ -3,9 +3,12 @@ package mindustry.plugin.discord;
 import arc.Core;
 import arc.util.Log;
 import com.google.gson.Gson;
+import mindustry.Vars;
 import mindustry.plugin.BotThread;
 import mindustry.plugin.datas.ContentHandler;
 import mindustry.plugin.utils.Funcs;
+import mindustry.world.Block;
+import mindustry.world.blocks.environment.OreBlock;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -15,6 +18,10 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 
 public class Loader {
     public static JedisPool pool;
@@ -40,12 +47,12 @@ public class Loader {
     public static int minRank = 0;
 
     public static TextChannel getTextChannel(String id){
-        return api.getTextChannelById(id);
+        Log.info("id: " + id);
+        return server.getTextChannelById(id);
     }
 
     public static void load(){
         Funcs.init();
-        contentHandler = new ContentHandler();
 
 
         Log.info("<.io> loading");
@@ -56,7 +63,8 @@ public class Loader {
             Log.err("Couldn't read settings.json file.");
         }
         try {
-            api = new JDABuilder(data.getString("token")).build().awaitReady();
+            //api = new JDABuilder(data.getString("token")).build().awaitReady();
+            api = JDABuilder.createDefault(data.getString("token")).build().awaitReady();
         }catch (Exception e){
             Log.err("Couldn't log into discord.");
         }

@@ -33,7 +33,7 @@ public class ReactionAdd extends ListenerAdapter {
         if(embed != null && member != null && emote != null){
             if(message.getChannel() == mapSubmissions){ // if reacted to a message in map submissions
                 if(member.getRoles().contains(mapreviewer)){
-                    if(emote.getId().equals("693162979616751616")){
+                    if(emote.getId().equals("735555385934741554")){
                         // approved, upload map
                         Attachment attachment = message.getAttachments().get(0);
                         if(attachment == null) return;
@@ -48,7 +48,7 @@ public class ReactionAdd extends ListenerAdapter {
                                 message1.delete().queueAfter(15, TimeUnit.SECONDS);
                             });
                         });
-                    }else if(emote.getId().equals("693162961761730723")){
+                    }else if(emote.getId().equals("735554784534462475")){
                         Log.info("disapproving");
                         User userByTag = api.getUserByTag(embed.getAuthor().getName());
                         if(userByTag != null){ userByTag.openPrivateChannel().queue(pm -> { pm.sendMessage(new EmbedBuilder().setTitle(":anguished: **your map was denied..**").setColor(Funcs.Pals.error).setDescription("disapproved by " + member.getUser().getAsTag()).build()).queue(); });}

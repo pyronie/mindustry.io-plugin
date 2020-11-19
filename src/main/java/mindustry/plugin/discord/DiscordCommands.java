@@ -1,6 +1,7 @@
 package mindustry.plugin.discord;
 
 import arc.util.CommandHandler;
+import arc.util.Log;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -30,16 +31,22 @@ public class DiscordCommands extends ListenerAdapter {
         String content = event.getMessage().getContentRaw();
 
         List<Role> roles = member.getRoles();
-        stop = false;
+
+        handleCommand(bt.publicHandler, content, ctx);
+        handleCommand(bt.reviewerHandler, content, ctx);
+        handleCommand(bt.moderatorHandler, content, ctx);
+
+        /*
         if(!handleCommand(bt.publicHandler, content, ctx)){
             if(roles.contains(mapreviewer)){
-                if(handleCommand(bt.reviewerHandler, content, ctx)) stop = true;
+                if(handleCommand(bt.reviewerHandler, content, ctx));
             }
-            if(roles.contains(moderator) && !stop){
-                if(handleCommand(bt.moderatorHandler, content, ctx)) stop = true;
+            if(roles.contains(moderator)){
+                Log.info("trying for mod");
+                if(handleCommand(bt.moderatorHandler, content, ctx));
             }
-            if (!stop) ctx.sendEmbed(false, ":interrobang: no permission or command doesn't exist", "consider using the **" + prefix + "help** command");
         }
+         */
     }
 
     public boolean handleCommand(CommandHandler handler, String contentRaw, Context ctx){

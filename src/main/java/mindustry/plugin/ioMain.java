@@ -13,9 +13,11 @@ import mindustry.gen.Player;
 import mindustry.graphics.Pal;
 import mindustry.mod.Plugin;
 import mindustry.net.Administration;
+import mindustry.plugin.datas.ContentHandler;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.datas.TileInfo;
 import mindustry.plugin.discord.Loader;
+import mindustry.plugin.utils.Funcs;
 import mindustry.plugin.utils.MapRules;
 import mindustry.plugin.utils.VoteSession;
 import mindustry.world.Tile;
@@ -37,7 +39,6 @@ public class ioMain extends Plugin {
     public ioMain() {
         //we can load this before anything else, it doesnt matter
         Loader.load();
-        content.load();
 
         // display on screen messages
         float duration = 10f;
@@ -53,7 +54,8 @@ public class ioMain extends Plugin {
         }, 0, 10);
 
         Events.on(EventType.ServerLoadEvent.class, event -> {
-            Log.info("Loaded");
+            contentHandler = new ContentHandler();
+            Log.info("Everything's loaded !");
         });
 
         Events.on(EventType.TapEvent.class, tapEvent -> {
@@ -112,7 +114,8 @@ public class ioMain extends Plugin {
                     }
                     if(pd.rank > 0){
                         pd.tag = rankNames.get(pd.rank).tag;
-                        player.name(pd.tag + player.name);
+                        // todo: figure out a non-intrusive way to do this
+                        // player.name(pd.tag + " " + player.name);
                     }
                 } else { // not in database
                     pd = new PlayerData(0);
@@ -128,11 +131,13 @@ public class ioMain extends Plugin {
                     if (pd.bannedUntil > Instant.now().getEpochSecond()){
                         for (int i=0; i < 30; i++)
                             Call.infoMessage(player.con, formatMessage(player, welcomeMessage));
-                        
+
                         player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason, 0);
                     }
                 }
 
+                if(bannedNames.contains(player.name.trim().toLowerCase()))
+                    player.con.kick("Influx Capacitor failed. Quantom leap needs to be restarted.");
             });
         });
 
@@ -171,7 +176,7 @@ public class ioMain extends Plugin {
         });
 
         Events.on(EventType.WorldLoadEvent.class, event -> {
-            Timer.schedule(MapRules::run, 5); // idk
+            Timer.schedule(MapRules::run, 1); // idk
         });
 
         Events.on(EventType.ServerLoadEvent.class, event -> {
@@ -192,7 +197,7 @@ public class ioMain extends Plugin {
         Events.on(EventType.Trigger.update.getClass(), event -> {
             for(Player p : Groups.player){
                 PlayerData pd = playerDataHashMap.get(p.uuid());
-                if (pd.bt != null && p.shooting()) {
+                if (pd != null && pd.bt != null && p.shooting()) {
                     Call.createBullet(pd.bt, p.team(), p.getX(), p.getY(), p.unit().rotation, pd.sclDamage, pd.sclVelocity, pd.sclLifetime);
                 }
             }

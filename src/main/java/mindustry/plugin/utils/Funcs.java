@@ -1,13 +1,23 @@
 package mindustry.plugin.utils;
 
 import arc.Core;
+import arc.assets.AssetManager;
+import arc.assets.loaders.TextureLoader;
+import arc.files.Fi;
+import arc.graphics.Pixmap;
+import arc.graphics.PixmapIO;
+import arc.graphics.Texture;
 import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Strings;
+import mindustry.ClientLauncher;
+import mindustry.Vars;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
+import mindustry.io.MapIO;
+import mindustry.maps.MapPreviewLoader;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.server.ServerControl;
 import mindustry.world.Block;
@@ -16,6 +26,7 @@ import mindustry.world.blocks.storage.CoreBlock;
 import redis.clients.jedis.Jedis;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -67,7 +78,6 @@ public class Funcs {
         bannedNames.add("андрей");
 
         activeRequirements.bannedBlocks.addAll(router, conveyor, titaniumConveyor, armoredConveyor, junction, sorter, invertedSorter, overflowGate, underflowGate, liquidRouter, conduit, pulseConduit, platedConduit, liquidJunction, copperWall);
-
 
         statMessage = Core.settings.getString("statMessage");
         welcomeMessage = Core.settings.getString("welcomeMessage");
@@ -176,6 +186,15 @@ public class Funcs {
             Log.info("next map override set: " + f.get(ServerControl.class));
         }catch(Exception e){
 
+        }
+    }
+
+    public static void parseMap(mindustry.maps.Map map){
+        try {
+            Pixmap prv = MapIO.generatePreview(map);
+            BufferedImage img = new BufferedImage(map.width, map.height, BufferedImage.TYPE_INT_ARGB);
+        }catch(Exception e){
+            e.printStackTrace();
         }
     }
 

@@ -3,7 +3,7 @@ apply plugin: "maven"
 
 version '0.1'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 14
 
 repositories{
     mavenLocal()
@@ -16,8 +16,8 @@ repositories{
 
 ext{
     mindustryVersion = 'v114'
-    arcVersion = '7e9d4252f8ab586d4911fbb4167c4c88cb523234'
-    jdaVersion = "v4.1.1"
+    arcVersion = 'v114'
+    jdaVersion = "v4.2.0"
 }
 
 dependencies{
@@ -32,7 +32,7 @@ dependencies{
     compile group: 'org.json', name: 'json', version: '20190722'
     compile "org.jsoup:jsoup:1.7.2"
 
-    implementation 'com.github.DV8FromTheWorld:JDA:v4.1.1'
+    implementation "com.github.DV8FromTheWorld:JDA:$jdaVersion"
 }
 
 jar{

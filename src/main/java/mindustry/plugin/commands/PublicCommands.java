@@ -113,8 +113,8 @@ public class PublicCommands {
                         eb.setImage("attachment://" + imageFile.getName());
                         
                         mapSubmissions.sendFile(mapFile).addFile(imageFile).embed(eb.build()).queue(message -> {
-                            message.addReaction("true:693162979616751616").queue();
-                            message.addReaction("false:693162961761730723").queue();
+                            message.addReaction("YES:735555385934741554").queue();
+                            message.addReaction("NO:735554784534462475").queue();
                         });
 
                         ctx.sendEmbed(true, ":map: **" + escapeCharacters(map.name) + "** submitted successfully!", "a moderator will soon approve or disapprove your map.");

@@ -341,7 +341,7 @@ public class ModeratorCommands {
                 desiredBulletType = (BulletType) field.get(null);
             } catch (NoSuchFieldException | IllegalAccessException ignored) {
                 ctx.sendEmbed(false, ":gun: invalid bullet type");
-                return;
+                desiredBulletType = null;
             }
             HashMap<String, String> fields = new HashMap<>();
             Player player = findPlayer(args[0]);
