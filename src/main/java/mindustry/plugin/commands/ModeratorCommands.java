@@ -415,8 +415,9 @@ public class ModeratorCommands {
                 pd.sclVelocity = vel;
                 tempPlayerDatas.put(player.uuid(), pd);
                 fields.put("Bullet", args[1]);
-                fields.put("Bullet lifetime", args[2]);
-                fields.put("Bullet velocity", args[3]);
+                fields.put("Bullet damage", args[2]);
+                fields.put("Bullet lifetime", args[3]);
+                fields.put("Bullet velocity", args[4]);
                 ctx.sendEmbed(true, ":gun: modded " + escapeCharacters(player.name) + "'s gun", fields, true);
             }else if(args[0].toLowerCase().equals("all")){
                 for(Player p : Groups.player) {

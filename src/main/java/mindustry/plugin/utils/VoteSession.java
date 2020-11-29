@@ -25,7 +25,7 @@ public class VoteSession{
         this.map = map;
         this.task = Timer.schedule(() -> {
             if(!checkPass()){
-                Call.sendMessage(Strings.format("[lightgray]Vote failed. Not enough votes to switch map to[accent] {0}[lightgray].", target.name()));
+                Call.sendMessage(Strings.format("[lightgray]Vote failed. Not enough votes to switch map to[accent] @[lightgray].", target.name()));
                 map[0] = null;
                 task.cancel();
             }
@@ -40,13 +40,13 @@ public class VoteSession{
         votes += d;
         voted.addAll(player.uuid(), netServer.admins.getInfo(player.uuid()).lastIP);
 
-        Call.sendMessage(Strings.format("[orange]{0}[lightgray] has voted to change the map to[orange] {1}[].[accent] ({2}/{3})\n[lightgray]Type[orange] /rtv to agree.",
+        Call.sendMessage(Strings.format("[orange]@[lightgray] has voted to change the map to[orange] @[].[accent] (@/@)\n[lightgray]Type[orange] /rtv to agree.",
                 player.name, target.name(), votes, votesRequired()));
     }
 
     boolean checkPass(){
         if(votes >= votesRequired()){
-            Call.sendMessage(Strings.format("[orange]Vote passed.[scarlet] changing map to {0}.", target.name()));
+            Call.sendMessage(Strings.format("[orange]Vote passed.[scarlet] changing map to @.", target.name()));
             Funcs.changeMap(target);
             map[0] = null;
             task.cancel();
