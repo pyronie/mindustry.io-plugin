@@ -112,6 +112,11 @@ public class ioMain extends Plugin {
                 if(jedispd != null && !Database.rowExists(player.uuid())) {
                     Log.info("migrating " + player.name + " to postgres");
                     Database.createRow(player.uuid(), jedispd);
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 PlayerData data = Database.getData(player.uuid());
@@ -138,10 +143,10 @@ public class ioMain extends Plugin {
         });
 
 
-        Events.on(EventType.BuildSelectEvent.class, event -> {
-            if(event.builder instanceof Player){
+        Events.on(EventType.BlockBuildEndEvent.class, event -> {
+            if(event.unit.getPlayer() != null){
                 if(event.tile != null){
-                    Player player = (Player) event.builder;
+                    Player player = event.unit.getPlayer();
                     TempPlayerData pd = tempPlayerDatas.get(player.uuid());
                     PlayerData buffer = pd.buffer;
 

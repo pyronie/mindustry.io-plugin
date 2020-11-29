@@ -83,6 +83,7 @@ public class Funcs {
         public static Color error = new Color(255, 60, 60);
         public static Color success = new Color(60, 255, 100);
         public static Color progress = new Color(252, 243, 120);
+        public static Color freeze = new Color(43, 151, 232);
     }
 
     public static class activeRequirements{

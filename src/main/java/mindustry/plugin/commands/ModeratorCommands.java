@@ -125,6 +125,68 @@ public class ModeratorCommands {
             }
         });
 
+        handler.<Context>register("playersinfo", "Check the information about all players on the server.", (args, ctx) -> {
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.setColor(Pals.progress);
+            eb.setTitle(":satellite: **players online: **" + Groups.player.size());
+
+            StringBuilder pi = new StringBuilder();
+            int pn = 1;
+            for(Player p : Groups.player){
+                if (!p.admin) {
+                    pi
+                            .append("**")
+                            .append(pn + "•")
+                            .append("** `")
+                            .append(escapeCharacters(p.name))
+                            .append("` : ")
+                            .append(p.con.address)
+                            .append(" : ")
+                            .append(p.uuid())
+                            .append("\n");
+                } else {
+                    pi
+                            .append("**")
+                            .append(pn + "•")
+                            .append("** `")
+                            .append(escapeCharacters(p.name))
+                            .append("`")
+                            .append("\n");
+
+
+                }
+
+                pn++;
+            }
+            eb.setDescription(pi);
+            ctx.sendEmbed(eb);
+
+        });
+
+        handler.<Context>register("freeze", "<uuid|name>", "Prevent the specified player by uuid or name from doing anything.", (args, ctx) -> {
+            EmbedBuilder eb = new EmbedBuilder();
+            Administration.PlayerInfo info;
+            Player player = findPlayer(args[0]);
+            if (player != null) {
+                info = netServer.admins.getInfo(player.uuid());
+                TempPlayerData tpd = tempPlayerDatas.get(player.uuid());
+                tpd.frozen = !tpd.frozen;
+                eb.setTitle((tpd.frozen ? ":snowflake: frozen " : ":droplet: thawed ") + escapeCharacters(info.lastName));
+
+                player.sendMessage(tpd.frozen ? "[#44dbfc]You've been frozen by an admin![]" : "[#4491fc]You have been thawed.[]");
+            } else{
+                if(args[0].length() == 24) { // uuid length
+                    info = netServer.admins.getInfo(args[0]);
+                }else{
+                    ctx.sendEmbed(false, ":mag: can't find that player/uuid..");
+                    return;
+                }
+            }
+            eb.setColor(Pals.freeze);
+
+            ctx.channel.sendMessage(eb.build()).queue();
+        });
+
         handler.<Context>register("lookup", "<uuid|name>", "Lookup the specified player by uuid or name (name search only works when player is online)", (args, ctx) -> {
             EmbedBuilder eb = new EmbedBuilder();
             Administration.PlayerInfo info;
@@ -338,7 +400,8 @@ public class ModeratorCommands {
                 Field field = Bullets.class.getDeclaredField(args[1]);
                 desiredBulletType = (BulletType) field.get(null);
             } catch (NoSuchFieldException | IllegalAccessException ignored) {
-                ctx.sendEmbed(false, ":gun: invalid bullet type");
+                if(args[0] != "none")
+                    ctx.sendEmbed(false, ":gun: invalid bullet type");
                 desiredBulletType = null;
             }
             HashMap<String, String> fields = new HashMap<>();
