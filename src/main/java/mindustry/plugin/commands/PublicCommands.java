@@ -113,8 +113,8 @@ public class PublicCommands {
                         eb.setImage("attachment://" + imageFile.getName());
                         
                         mapSubmissions.sendFile(mapFile).addFile(imageFile).embed(eb.build()).queue(message -> {
-                            message.addReaction("YES:735555385934741554").queue();
-                            message.addReaction("NO:735554784534462475").queue();
+                            message.addReaction("true:780513455609741332").queue();
+                            message.addReaction("false:780513428669726760").queue();
                         });
 
                         ctx.sendEmbed(true, ":map: **" + escapeCharacters(map.name) + "** submitted successfully!", "a moderator will soon approve or disapprove your map.");
@@ -135,7 +135,7 @@ public class PublicCommands {
 
             StringBuilder s = new StringBuilder();
             for(Player p : Groups.player){
-                s.append(p.name).append("\n");
+                s.append(escapeCharacters(p.name)).append("\n");
             }
             eb.setDescription(s);
             ctx.sendEmbed(eb);

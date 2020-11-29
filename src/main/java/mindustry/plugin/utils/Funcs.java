@@ -63,7 +63,7 @@ public class Funcs {
         rankNames.put(3, new Rank("[accent]<[white][accent]>[]", "Contributor"));
         rankNames.put(4, new Rank("[accent]<[white][accent]>[]", "Apprentice Moderator"));
         rankNames.put(5, new Rank("[accent]<[white][accent]>[]", "Moderator"));
-        rankNames.put(6, new Rank("[accent]<[white]\uE828[accent]>[]", "Admin"));
+        rankNames.put(6, new Rank("[accent]<[white]\uE82C[accent]>[]", "Admin"));
 
         bannedNames.add("IGGGAMES");
         bannedNames.add("CODEX");
