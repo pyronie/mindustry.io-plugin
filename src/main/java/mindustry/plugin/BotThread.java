@@ -8,6 +8,7 @@ import mindustry.plugin.commands.ModeratorCommands;
 import mindustry.plugin.commands.PublicCommands;
 import mindustry.plugin.commands.ReviewerCommands;
 import mindustry.plugin.datas.PlayerData;
+import mindustry.plugin.datas.TempPlayerData;
 import mindustry.plugin.discord.ReactionAdd;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
@@ -17,6 +18,7 @@ import mindustry.plugin.discord.DiscordCommands;
 
 
 import static mindustry.Vars.netServer;
+import static mindustry.Vars.player;
 import static mindustry.plugin.ioMain.*;
 import static mindustry.plugin.utils.Funcs.*;
 import static mindustry.plugin.discord.Loader.*;
@@ -49,13 +51,15 @@ public class BotThread extends Thread {
     public void run(){
         while (this.mt.isAlive()){
             try {
-                Thread.sleep(30 * 1000);
+                Thread.sleep(60 * 1000);
 
-                for (Player p : Groups.player) {
-                    PlayerData pd = playerDatas.get(p.uuid());
-                    if (pd != null)
-                        setJedisData(p.uuid(), pd);
+                for(Player p : Groups.player){
+                    TempPlayerData pd = tempPlayerDatas.get(p.uuid());
+                    pd.buffer.playTime++;
+                    tempPlayerDatas.put(p.uuid(), pd);
                 }
+
+                SaveDatabase();
 
                 if(Mathf.chance(0.01f)){
                     api.getPresence().setActivity(Activity.playing("( ͡° ͜ʖ ͡°)"));

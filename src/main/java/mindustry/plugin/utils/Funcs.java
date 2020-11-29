@@ -14,6 +14,7 @@ import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.io.MapIO;
 import mindustry.plugin.datas.PlayerData;
+import mindustry.plugin.discord.Loader;
 import mindustry.server.ServerControl;
 import mindustry.world.Block;
 import mindustry.world.Tile;
@@ -118,18 +119,17 @@ public class Funcs {
     }
 
     public static Player findPlayer(String identifier){
-        Player found = null;
         for (Player player : Groups.player) {
             if(player == null) return null;
             if(player.uuid() == null) return null;
             if(player.con == null) return null;
             if(player.con.address == null) return null;
 
-            if (player.con.address.equals(identifier.replaceAll(" ", "")) || String.valueOf(player.id).equals(identifier.replaceAll(" ", "")) || player.uuid().equals(identifier.replaceAll(" ", "")) || escapeColorCodes(player.name.toLowerCase().replaceAll(" ", "")).replaceAll("<.*?>", "").startsWith(identifier.toLowerCase().replaceAll(" ", ""))) {
-                found = player;
+            if (player.con.address.equals(identifier.replaceAll(" ", "")) || String.valueOf(player.id).equals(identifier.replaceAll(" ", "")) || player.uuid().equals(identifier.replaceAll(" ", "")) || escapeColorCodes(player.name.toLowerCase().replaceAll(" ", "")).replaceAll("<.*?>", "").startsWith(identifier.toLowerCase().replaceAll(" ", "")) || escapeColorCodes(player.name.toLowerCase().substring(player.name.indexOf(" ")+1)).trim().replaceAll("<.*?>", "").startsWith(identifier.toLowerCase().replaceAll(" ", ""))) {
+                return player;
             }
         }
-        return found;
+        return null;
     }
 
     public static String formatMessage(Player player, String message){
@@ -137,9 +137,13 @@ public class Funcs {
             message = message.replaceAll("%player%", escapeCharacters(player.name));
             message = message.replaceAll("%map%", state.map.name());
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
-            PlayerData pd = playerDatas.get(player.uuid());
+            PlayerData pd = Database.getData(player.uuid());
             if (pd != null) {
                 message = message.replaceAll("%rank%", rankNames.get(pd.rank).name);
+                message = message.replaceAll("%playtime%", String.valueOf(pd.playTime));
+                message = message.replaceAll("%games%", String.valueOf(pd.gamesPlayed));
+                message = message.replaceAll("%buildings%", String.valueOf(pd.buildingsBuilt));
+                message = message.replaceAll("%discord%", (pd.discord_id == "" ? "[gray]unlinked[]" : Loader.getDiscordUser(pd.discord_id).getEffectiveName()));
             }
         }catch(Exception ignore){};
         return message;
@@ -154,7 +158,6 @@ public class Funcs {
             try {
                 return gson.fromJson(json, PlayerData.class);
             } catch(Exception e){
-                setJedisData(uuid, new PlayerData(0));
                 return null;
             }
         }
@@ -171,6 +174,20 @@ public class Funcs {
                 }
             }
         });
+    }
+
+    public static void SaveDatabase(String uuid){
+        PlayerData buffer = tempPlayerDatas.get(uuid).buffer;
+        Database.updateDataWithBuffer(uuid, buffer);
+    }
+
+    public static void SaveDatabase(){
+        for(Player player : Groups.player){
+            String uuid = player.uuid();
+            PlayerData buffer = tempPlayerDatas.get(uuid).buffer;
+            Database.updateDataWithBuffer(uuid, buffer);
+            tempPlayerDatas.get(uuid).buffer = new PlayerData();
+        }
     }
 
     public static void changeMap(mindustry.maps.Map found){

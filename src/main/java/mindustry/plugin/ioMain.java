@@ -19,6 +19,7 @@ import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.datas.TempPlayerData;
 import mindustry.plugin.datas.TileInfo;
 import mindustry.plugin.discord.Loader;
+import mindustry.plugin.utils.Database;
 import mindustry.plugin.utils.Funcs;
 import mindustry.plugin.utils.MapRules;
 import mindustry.plugin.utils.VoteSession;
@@ -30,11 +31,11 @@ import mindustry.game.EventType;
 import mindustry.gen.Call;
 
 import static mindustry.Vars.*;
+import static mindustry.Vars.player;
 import static mindustry.plugin.utils.Funcs.*;
 import static mindustry.plugin.discord.Loader.*;
 
 public class ioMain extends Plugin {
-    public static HashMap<String, PlayerData> playerDatas = new HashMap<>();
     public static HashMap<String, TempPlayerData> tempPlayerDatas = new HashMap<>();
 
     public static int minutesPassed = 0;
@@ -68,7 +69,6 @@ public class ioMain extends Plugin {
                 TempPlayerData pd = tempPlayerDatas.get(player.uuid());
 
                 Tile t = tapEvent.tile;
-                pd.tapTile = t;
                 if (pd.inspector) {
                     Call.effect(player.con, Fx.placeBlock, t.worldx(), t.worldy(), 0.75f, Pal.accent);
                     player.sendMessage("[orange]--[] [accent]tile [](" + t.x + ", " + t.y + ")[accent] block:[] " + ((t.block() == null || t.block() == Blocks.air) ? "[#545454]none" : t.block().name) + " [orange]--[]");
@@ -95,12 +95,9 @@ public class ioMain extends Plugin {
         // player disconnected
         Events.on(EventType.PlayerLeave.class, event -> {
             String uuid = event.player.uuid();
-            if(playerDatas.containsKey(uuid))
-                setJedisData(uuid, playerDatas.get(uuid));
-
-            //free ram
-            playerDatas.remove(uuid);
-            tempPlayerDatas.remove(uuid);
+            Funcs.SaveDatabase(uuid);
+            if(tempPlayerDatas.containsKey(uuid))
+                tempPlayerDatas.remove(uuid);
         });
 
         // player joined
@@ -109,42 +106,31 @@ public class ioMain extends Plugin {
                 Player player = event.player;
                 PlayerData jedispd = getJedisData(player.uuid());
 
-                // todo: check if row exists in postgres database
-                if(jedispd != null && true){
-                    // todo: migrate jedis to postgres
+                tempPlayerDatas.put(player.uuid(), new TempPlayerData());
 
+                // migrate jedis to postgres
+                if(jedispd != null && !Database.rowExists(player.uuid())) {
+                    Log.info("migrating " + player.name + " to postgres");
+                    Database.createRow(player.uuid(), jedispd);
                 }
-                /*
-                if (jedispd != null) {
-                    if (pd.bannedUntil > Instant.now().getEpochSecond()) {
-                        player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason);
+
+                PlayerData data = Database.getData(player.uuid());
+                if(data != null){
+                    if (data.bannedUntil > Instant.now().getEpochSecond()) {
+                        player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + data.banReason);
                         return;
                     }
-                    if(pd.rank > 0){
-                        pd.tag = rankNames.get(pd.rank).tag;
-                        // todo: figure out a non-intrusive way to do this
-                        // player.name(pd.tag + " " + player.name);
-                    }
+                    if(data.rank > 0)
+                        player.name(rankNames.get(data.rank).tag + " " + player.name);
+
                 } else { // not in database
-                    pd = new PlayerData(0);
-                    setJedisData(player.uuid(), new PlayerData(0));
+                    Log.info("creating new row for " + player.name);
+                    Database.createRow(player.uuid(), new PlayerData());
                 }
-                playerDatas.put(player.uuid(), pd);
 
                 if (welcomeMessage.length() > 0 && !welcomeMessage.equals("none")) {
                     Call.infoMessage(player.con, formatMessage(player, welcomeMessage));
                 }
-
-                if (pd != null){
-                    if (pd.bannedUntil > Instant.now().getEpochSecond()){
-                        for (int i=0; i < 30; i++)
-                            Call.infoMessage(player.con, formatMessage(player, welcomeMessage));
-
-                        player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + pd.banReason, 0);
-                    }
-                }
-                */
-
 
                 if(bannedNames.contains(player.name.trim().toLowerCase()))
                     player.con.kick("Influx Capacitor failed. Quantom leap needs to be restarted.");
@@ -156,7 +142,8 @@ public class ioMain extends Plugin {
             if(event.builder instanceof Player){
                 if(event.tile != null){
                     Player player = (Player) event.builder;
-                    PlayerData pd = playerDatas.get(player.uuid());
+                    TempPlayerData pd = tempPlayerDatas.get(player.uuid());
+                    PlayerData buffer = pd.buffer;
 
                     TileInfo info = tileInfoHashMap.getOrDefault(event.tile, new TileInfo());
                     if(!event.breaking){
@@ -164,8 +151,8 @@ public class ioMain extends Plugin {
                         info.placedByUUID = player.uuid();
                         info.wasHere = (event.tile.block() != Blocks.air ? event.tile.block().name : "[#545454]none");
 
-                        pd.buildingsBuilt++;
-                        playerDatas.put(player.uuid(), pd);
+                        buffer.buildingsBuilt++;
+                        tempPlayerDatas.put(player.uuid(), pd);
                     } else{
                         info.destroyedBy = player.name;
                         info.destroyedByUUID = player.uuid();
@@ -193,12 +180,12 @@ public class ioMain extends Plugin {
             // action filter
             Vars.netServer.admins.addActionFilter(action -> {
                 Player player = action.player;
-                PlayerData pd = playerDatas.get(player.uuid());
+                TempPlayerData pd = tempPlayerDatas.get(player.uuid());
 
                 if (player == null) return true;
 
                 if (player.admin()) return true;
-                if (!pd.canInteract) return false;
+                if (pd.frozen) return false;
 
                 return action.type != Administration.ActionType.rotate;
             });
@@ -206,21 +193,34 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.Trigger.update.getClass(), event -> {
             for(Player p : Groups.player){
-                /*
-                PlayerData pd = playerDataHashMap.get(p.uuid());
+                TempPlayerData pd = tempPlayerDatas.get(p.uuid());
                 if (pd != null && pd.bt != null && p.shooting()) {
                     Call.createBullet(pd.bt, p.team(), p.getX(), p.getY(), p.unit().rotation, pd.sclDamage, pd.sclVelocity, pd.sclLifetime);
                 }
-                */
             }
         });
 
         Events.on(EventType.GameOverEvent.class, event -> {
             for(Player p : Groups.player){
-                PlayerData pd = playerDatas.get(p.uuid());
-                pd.gamesPlayed++;
-                playerDatas.put(p.uuid(), pd);
+                TempPlayerData pd = tempPlayerDatas.get(p.uuid());
+                pd.buffer.gamesPlayed++;
+                tempPlayerDatas.put(p.uuid(), pd);
             }
+            Funcs.SaveDatabase();
+        });
+
+        Events.on(EventType.WaveEvent.class, event -> {
+            CompletableFuture.runAsync(() -> {
+                for(Player player : Groups.player){
+                    String uuid = player.uuid();
+                    PlayerData data = Database.getData(player.uuid());
+
+                    if(data.highestWave < state.wave){
+                        data.highestWave = state.wave;
+                        Database.updateData(uuid, data);
+                    }
+                }
+            });
         });
     }
 
@@ -340,9 +340,7 @@ public class ioMain extends Plugin {
     }
 
     public static void exit(){
-        if(playerDatas != null){
-            playerDatas.forEach(Funcs::setJedisData);
-        }
+        Funcs.SaveDatabase();
         if(api != null){
             api.shutdownNow();
         }

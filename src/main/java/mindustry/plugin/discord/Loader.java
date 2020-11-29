@@ -3,26 +3,17 @@ package mindustry.plugin.discord;
 import arc.Core;
 import arc.util.Log;
 import com.google.gson.Gson;
-import mindustry.Vars;
 import mindustry.plugin.BotThread;
 import mindustry.plugin.datas.ContentHandler;
 import mindustry.plugin.utils.Database;
 import mindustry.plugin.utils.Funcs;
-import mindustry.world.Block;
-import mindustry.world.blocks.environment.OreBlock;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.*;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.Properties;
 
 public class Loader {
     public static JedisPool pool;
@@ -50,6 +41,8 @@ public class Loader {
     public static TextChannel getTextChannel(String id){
         return server.getTextChannelById(id);
     }
+
+    public static Member getDiscordUser(String id){ return server.getMemberById(id); };
 
     public static void load(){
         Funcs.init();

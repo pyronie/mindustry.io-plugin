@@ -14,6 +14,7 @@ import mindustry.net.Administration;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.datas.TempPlayerData;
 import mindustry.plugin.discord.Context;
+import mindustry.plugin.utils.Database;
 import mindustry.type.UnitType;
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -70,27 +71,28 @@ public class ModeratorCommands {
         handler.<Context>register("ban", "<player> <minutes> [reason...]", "Ban a player by the provided name, id or uuid (do offline bans using uuid)", (args, ctx) -> {
             Player player = findPlayer(args[0]);
             if(player != null){
-                PlayerData pd = playerDatas.get(player.uuid());
+                String uuid = player.uuid();
+                PlayerData pd = Database.getData(uuid);
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
                     pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4);
-                    playerDatas.put(player.uuid(), pd);
-                    // setJedisData(player.uuid, pd);
+                    Database.updateData(uuid, pd);
+
                     HashMap<String, String> fields = new HashMap<>();
-                    fields.put("UUID", player.uuid());
+                    fields.put("UUID", uuid);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
                     player.con.kick(KickReason.banned);
                 }else{
                     ctx.sendEmbed(false, ":interrobang: internal server error, please ping fuzz");
                 }
             }else{
-                PlayerData pd = getJedisData(args[0]);
+                PlayerData pd = Database.getData(args[0]);
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
                     pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + args[0].substring(0, 4);
-                    setJedisData(args[0], pd);
+                    Database.updateData(args[0], pd);
                     HashMap<String, String> fields = new HashMap<>();
                     fields.put("UUID", args[0]);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(netServer.admins.getInfo(args[0]).lastName),"reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
@@ -111,12 +113,12 @@ public class ModeratorCommands {
         });
 
         handler.<Context>register("unban", "<uuid>", "Unban the specified player by uuid (works for votekicks as well)", (args, ctx) -> {
-            PlayerData pd = getJedisData(args[0]);
+            PlayerData pd = Database.getData(args[0]);
             if(pd!= null){
                 PlayerInfo info = netServer.admins.getInfo(args[0]);
                 info.lastKicked = 0;
                 pd.bannedUntil = 0;
-                setJedisData(args[0], pd);
+                Database.updateData(args[0], pd);
                 ctx.sendEmbed(true, ":wrench: unbanned " + escapeCharacters(info.lastName) + " successfully!");
             }else{
                 ctx.sendEmbed(false, ":wrench: that uuid doesn't exist in the database..");
@@ -167,13 +169,10 @@ public class ModeratorCommands {
                 return;
             }
             if(rank < rankNames.size()) {
-                PlayerData pd = playerDatas.containsKey(args[0]) ? playerDatas.get(args[0]) : getJedisData(args[0]);
+                PlayerData pd = Database.getData(args[0]);
                 if (pd != null) {
                     pd.rank = rank;
-                    if(playerDatas.containsKey(args[0])){
-                        playerDatas.put(args[0],  pd);
-                    }
-                    setJedisData(args[0], pd);
+                    Database.updateData(args[0], pd);
                     PlayerInfo info = netServer.admins.getInfo(args[0]);
                     ctx.sendEmbed(true, ":wrench: set " + escapeCharacters(info.lastName) + "'s rank to " + escapeColorCodes(rankNames.get(rank).name));
                 } else {

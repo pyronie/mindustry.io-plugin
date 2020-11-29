@@ -12,6 +12,9 @@ public class TempPlayerData {
     public Tile tapTile;
     public boolean inspector;
     public boolean frozen = false;
+    public PlayerData buffer;
 
-    public TempPlayerData(){}
+    public TempPlayerData(){
+        buffer = new PlayerData();
+    }
 }
