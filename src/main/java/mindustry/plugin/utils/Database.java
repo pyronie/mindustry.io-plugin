@@ -6,6 +6,7 @@ import mindustry.plugin.discord.Loader;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Properties;
 
@@ -19,7 +20,10 @@ public class Database {
             Class.forName("org.postgresql.Driver");
             con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/io","root", Loader.bt.data.getString("db_pass"));
 
-            Log.info("<.io> Connected to postgres server");
+            stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM public.users;");
+
+            Log.info("<.io> Connected to postgres server, rows: " + rs.first());
         }catch(Exception e){
             e.printStackTrace();
         }
