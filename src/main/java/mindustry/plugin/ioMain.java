@@ -120,6 +120,10 @@ public class ioMain extends Plugin {
                 }
 
                 PlayerData data = Database.getData(player.uuid());
+                for(Rank rank : rankNames.values()){
+                    if(player.name.contains(rank.tag))
+                        player.con.kick("[scarlet]Don't try to impersonate a rank!");
+                }
                 if(data != null){
                     if (data.bannedUntil > Instant.now().getEpochSecond()) {
                         player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + data.banReason);
