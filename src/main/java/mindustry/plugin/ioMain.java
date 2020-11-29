@@ -138,7 +138,7 @@ public class ioMain extends Plugin {
                 }
 
                 if(bannedNames.contains(player.name))
-                    player.con.kick("Influx Capacitor failed. Quantom leap needs to be restarted.");
+                    player.con.kick("Influx Capacitor failed.");
             });
         });
 
