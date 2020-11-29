@@ -7,6 +7,7 @@ import arc.util.Log;
 import arc.util.Strings;
 import mindustry.game.Team;
 import mindustry.gen.Building;
+import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.io.MapIO;
@@ -171,14 +172,9 @@ public class Funcs {
     }
 
     public static void changeMap(mindustry.maps.Map found){
-        try {
-            Field f = ServerControl.class.getDeclaredField("nextMapOverride");
-            f.setAccessible(true);
-            f.set(ServerControl.class, found);
-            Log.info("next map override set: " + f.get(ServerControl.class));
-        }catch(Exception e){
-
-        }
+        maps.setMapProvider((mode, prev) -> found);
+        Events.fire(new EventType.GameOverEvent(Team.crux));
+        maps.setMapProvider(null);
     }
 
     public static void parseMap(mindustry.maps.Map map){
