@@ -70,12 +70,8 @@ public class Database {
             query.setLong(9, data.bannedUntil);
             query.setString(10, data.banReason);
 
-            ResultSet rs = query.executeQuery();
-            rs.next();
+            query.execute();
 
-            Log.info(rs.getObject(1));
-
-            rs.close();
             stmt.close();
         }catch(Exception e){
             e.printStackTrace();
@@ -142,8 +138,6 @@ public class Database {
             Statement stmt = con.createStatement();
             PreparedStatement query = con.prepareStatement("UPDATE public.users SET buildings = buildings + ?, playtime = playtime + ?, games = games + ? WHERE uuid=?;");
 
-            Log.info("buffer buildings: " + buffer.buildingsBuilt);
-            
             query.setInt(1, buffer.buildingsBuilt);
             query.setInt(2, buffer.playTime);
             query.setInt(3, buffer.gamesPlayed);
