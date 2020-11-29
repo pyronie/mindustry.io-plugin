@@ -24,7 +24,7 @@ import static mindustry.plugin.discord.Loader.*;
 public class BotThread extends Thread {
     public JDA api;
     private Thread mt;
-    private JSONObject data;
+    public JSONObject data;
     public DiscordCommands commandHandler = new DiscordCommands();
     public ReactionAdd reactionHandler = new ReactionAdd();
 
@@ -52,7 +52,7 @@ public class BotThread extends Thread {
                 Thread.sleep(30 * 1000);
 
                 for (Player p : Groups.player) {
-                    PlayerData pd = playerDataHashMap.get(p.uuid());
+                    PlayerData pd = playerDatas.get(p.uuid());
                     if (pd != null)
                         setJedisData(p.uuid(), pd);
                 }

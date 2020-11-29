@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import mindustry.Vars;
 import mindustry.plugin.BotThread;
 import mindustry.plugin.datas.ContentHandler;
+import mindustry.plugin.utils.Database;
 import mindustry.plugin.utils.Funcs;
 import mindustry.world.Block;
 import mindustry.world.blocks.environment.OreBlock;
@@ -18,6 +19,10 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.Properties;
 
 public class Loader {
     public static JedisPool pool;
@@ -49,7 +54,6 @@ public class Loader {
     public static void load(){
         Funcs.init();
 
-
         Log.info("<.io> loading");
         try {
             String pureJson = Core.settings.getDataDirectory().child("mods/settings.json").readString();
@@ -74,6 +78,7 @@ public class Loader {
             e.printStackTrace();
             Core.app.exit();
         }
+        Database.init();
 
         // setup prefix
         if (data.has("prefix")) {

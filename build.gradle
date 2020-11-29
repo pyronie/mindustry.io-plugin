@@ -15,8 +15,8 @@ repositories{
 }
 
 ext{
-    mindustryVersion = 'v114'
-    arcVersion = 'v114'
+    mindustryVersion = 'v118'
+    arcVersion = 'v118'
     jdaVersion = "v4.2.0"
 }
 
@@ -32,6 +32,7 @@ dependencies{
     compile group: 'org.json', name: 'json', version: '20190722'
     compile "org.jsoup:jsoup:1.7.2"
 
+    implementation 'org.postgresql:postgresql:42.2.10'
     implementation "com.github.DV8FromTheWorld:JDA:$jdaVersion"
 }
 

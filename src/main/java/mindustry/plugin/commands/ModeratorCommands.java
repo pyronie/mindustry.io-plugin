@@ -1,7 +1,6 @@
 package mindustry.plugin.commands;
 
 import arc.Core;
-import arc.math.Mathf;
 import arc.util.CommandHandler;
 import mindustry.content.Bullets;
 import mindustry.content.UnitTypes;
@@ -13,8 +12,8 @@ import mindustry.gen.Player;
 import mindustry.gen.Unit;
 import mindustry.net.Administration;
 import mindustry.plugin.datas.PlayerData;
+import mindustry.plugin.datas.TempPlayerData;
 import mindustry.plugin.discord.Context;
-import mindustry.plugin.ioMain;
 import mindustry.type.UnitType;
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -71,12 +70,12 @@ public class ModeratorCommands {
         handler.<Context>register("ban", "<player> <minutes> [reason...]", "Ban a player by the provided name, id or uuid (do offline bans using uuid)", (args, ctx) -> {
             Player player = findPlayer(args[0]);
             if(player != null){
-                PlayerData pd = playerDataHashMap.get(player.uuid());
+                PlayerData pd = playerDatas.get(player.uuid());
                 if(pd != null){
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
                     pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4);
-                    playerDataHashMap.put(player.uuid(), pd);
+                    playerDatas.put(player.uuid(), pd);
                     // setJedisData(player.uuid, pd);
                     HashMap<String, String> fields = new HashMap<>();
                     fields.put("UUID", player.uuid());
@@ -168,11 +167,11 @@ public class ModeratorCommands {
                 return;
             }
             if(rank < rankNames.size()) {
-                PlayerData pd = playerDataHashMap.containsKey(args[0]) ? playerDataHashMap.get(args[0]) : getJedisData(args[0]);
+                PlayerData pd = playerDatas.containsKey(args[0]) ? playerDatas.get(args[0]) : getJedisData(args[0]);
                 if (pd != null) {
                     pd.rank = rank;
-                    if(playerDataHashMap.containsKey(args[0])){
-                        playerDataHashMap.put(args[0],  pd);
+                    if(playerDatas.containsKey(args[0])){
+                        playerDatas.put(args[0],  pd);
                     }
                     setJedisData(args[0], pd);
                     PlayerInfo info = netServer.admins.getInfo(args[0]);
@@ -347,24 +346,24 @@ public class ModeratorCommands {
             Player player = findPlayer(args[0]);
 
             if(player != null){
-                PlayerData pd = playerDataHashMap.get(player.uuid());
+                TempPlayerData pd = tempPlayerDatas.get(player.uuid());
                 pd.bt = desiredBulletType;
                 pd.sclDamage = dmg;
                 pd.sclLifetime = life;
                 pd.sclVelocity = vel;
-                playerDataHashMap.put(player.uuid(), pd);
+                tempPlayerDatas.put(player.uuid(), pd);
                 fields.put("Bullet", args[1]);
                 fields.put("Bullet lifetime", args[2]);
                 fields.put("Bullet velocity", args[3]);
                 ctx.sendEmbed(true, ":gun: modded " + escapeCharacters(player.name) + "'s gun", fields, true);
             }else if(args[0].toLowerCase().equals("all")){
                 for(Player p : Groups.player) {
-                    PlayerData pd = playerDataHashMap.get(p.uuid());
+                    TempPlayerData pd = tempPlayerDatas.get(p.uuid());
                     pd.bt = desiredBulletType;
                     pd.sclDamage = dmg;
                     pd.sclLifetime = life;
                     pd.sclVelocity = vel;
-                    playerDataHashMap.put(p.uuid(), pd);
+                    tempPlayerDatas.put(p.uuid(), pd);
                 }
                 fields.put("Bullet", args[1]);
                 fields.put("Bullet lifetime", args[2]);

@@ -1,23 +1,15 @@
 package mindustry.plugin.utils;
 
 import arc.Core;
-import arc.assets.AssetManager;
-import arc.assets.loaders.TextureLoader;
-import arc.files.Fi;
 import arc.graphics.Pixmap;
-import arc.graphics.PixmapIO;
-import arc.graphics.Texture;
 import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Strings;
-import mindustry.ClientLauncher;
-import mindustry.Vars;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.io.MapIO;
-import mindustry.maps.MapPreviewLoader;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.server.ServerControl;
 import mindustry.world.Block;
@@ -142,7 +134,7 @@ public class Funcs {
             message = message.replaceAll("%player%", escapeCharacters(player.name));
             message = message.replaceAll("%map%", state.map.name());
             message = message.replaceAll("%wave%", String.valueOf(state.wave));
-            PlayerData pd = playerDataHashMap.get(player.uuid());
+            PlayerData pd = playerDatas.get(player.uuid());
             if (pd != null) {
                 message = message.replaceAll("%rank%", rankNames.get(pd.rank).name);
             }
