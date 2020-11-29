@@ -207,9 +207,11 @@ public class ioMain extends Plugin {
 
         Events.on(EventType.GameOverEvent.class, event -> {
             for(Player p : Groups.player){
-                TempPlayerData pd = tempPlayerDatas.get(p.uuid());
-                pd.buffer.gamesPlayed++;
-                tempPlayerDatas.put(p.uuid(), pd);
+                if(tempPlayerDatas.containsKey(p.uuid())) {
+                    TempPlayerData pd = tempPlayerDatas.get(p.uuid());
+                    pd.buffer.gamesPlayed++;
+                    tempPlayerDatas.put(p.uuid(), pd);
+                }
             }
             Funcs.SaveDatabase();
         });
