@@ -22,8 +22,9 @@ public class Database {
 
             stmt = con.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM public.users;");
+            rs.next();
 
-            Log.info("<.io> Connected to postgres server, rows: " + rs.first());
+            Log.info("<.io> Connected to postgres server, rows: " + rs.getString("count"));
         }catch(Exception e){
             e.printStackTrace();
         }
