@@ -19,6 +19,7 @@ import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.datas.TempPlayerData;
 import mindustry.plugin.datas.TileInfo;
 import mindustry.plugin.discord.Loader;
+import mindustry.plugin.utils.Funcs;
 import mindustry.plugin.utils.MapRules;
 import mindustry.plugin.utils.VoteSession;
 import mindustry.world.Tile;
@@ -339,8 +340,8 @@ public class ioMain extends Plugin {
     }
 
     public static void exit(){
-        if(playerDataHashMap != null){
-            playerDataHashMap.forEach(Funcs::setJedisData);
+        if(playerDatas != null){
+            playerDatas.forEach(Funcs::setJedisData);
         }
         if(api != null){
             api.shutdownNow();
