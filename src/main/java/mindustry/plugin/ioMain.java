@@ -109,7 +109,7 @@ public class ioMain extends Plugin {
 
                 PlayerData data = Database.getData(player.uuid());
                 for(Rank rank : rankNames.values()){
-                    if(player.name.contains(rank.tag))
+                    if(player.name.contains(rank.rawTag))
                         player.con.kick("[scarlet]Don't try to impersonate a rank!");
                 }
                 if(data != null){

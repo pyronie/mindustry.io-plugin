@@ -49,21 +49,23 @@ public class Funcs {
     public static class Rank{
         public String tag;
         public String name;
+        public String rawTag;
 
-        Rank(String t, String n){
+        Rank(String t, String rt, String n){
             this.tag = t;
+            this.rawTag = rt;
             this.name = n;
         }
     }
 
     public static void init(){
-        rankNames.put(0, new Rank("[#7d7d7d]<none>[]", "none"));
-        rankNames.put(1, new Rank("[accent]<[white][accent]>[]", "Active"));
-        rankNames.put(2, new Rank("[accent]<[white][accent]>[]", "Veteran"));
-        rankNames.put(3, new Rank("[accent]<[white][accent]>[]", "Contributor"));
-        rankNames.put(4, new Rank("[accent]<[white][accent]>[]", "Apprentice Moderator"));
-        rankNames.put(5, new Rank("[accent]<[white][accent]>[]", "Moderator"));
-        rankNames.put(6, new Rank("[accent]<[white]\uE82C[accent]>[]", "Admin"));
+        rankNames.put(0, new Rank("[#7d7d7d]<none>[]", "[NONE]", "none"));
+        rankNames.put(1, new Rank("[accent]<[white][accent]>[]", "", "Active"));
+        rankNames.put(2, new Rank("[accent]<[white][accent]>[]", "", "Veteran"));
+        rankNames.put(3, new Rank("[accent]<[white][accent]>[]","", "Contributor"));
+        rankNames.put(4, new Rank("[accent]<[white][accent]>[]","", "Apprentice Moderator"));
+        rankNames.put(5, new Rank("[accent]<[white][accent]>[]", "","Moderator"));
+        rankNames.put(6, new Rank("[accent]<[white]\uE82C[accent]>[]", "\uE82C","Admin"));
 
         bannedNames.add("IGGGAMES");
         bannedNames.add("CODEX");
@@ -95,7 +97,18 @@ public class Funcs {
     }
 
     public static String escapeCharacters(String string){
-        return escapeColorCodes(string.replaceAll("`", "").replaceAll("@", ""));
+        String escaped = escapeColorCodes(string.replaceAll("`", "").replaceAll("@", ""));
+        if(escaped.contains(" ")) {
+            boolean containsTag = false;
+            for (Rank r : rankNames.values()) {
+                if (escaped.contains(r.rawTag))
+                    containsTag = true;
+            }
+            if(containsTag)
+                escaped = escaped.substring(escaped.indexOf(" ")+1);
+        }
+
+        return escaped;
     }
 
     public static String escapeColorCodes(String string){
