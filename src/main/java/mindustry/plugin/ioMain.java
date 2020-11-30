@@ -104,20 +104,8 @@ public class ioMain extends Plugin {
         Events.on(EventType.PlayerJoin.class, event -> {
             CompletableFuture.runAsync(() -> {
                 Player player = event.player;
-                PlayerData jedispd = getJedisData(player.uuid());
-
                 tempPlayerDatas.put(player.uuid(), new TempPlayerData());
 
-                // migrate jedis to postgres
-                if(jedispd != null && !Database.rowExists(player.uuid())) {
-                    Log.info("migrating " + player.name + " to postgres");
-                    Database.createRow(player.uuid(), jedispd);
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
 
                 PlayerData data = Database.getData(player.uuid());
                 for(Rank rank : rankNames.values()){
@@ -250,6 +238,32 @@ public class ioMain extends Plugin {
     @Override
     public void registerClientCommands(CommandHandler handler){
         if (api != null) {
+            handler.<Player>register("migrate", "<code>", "Migrate your progress from v104 servers.", (args, player) -> {
+                if(args[0] == null || args[0].length() != 24)
+                    player.sendMessage("[accent]<[white]migration[accent]>[scarlet] That is not a valid 24 - character code.");
+
+                PlayerData jedispd = getJedisData(args[0]);
+                if(jedispd == null) {
+                    player.sendMessage("[accent]<[white]migration[accent]>[scarlet] That code is invalid or has already been used.");
+                    return;
+                }
+
+                Database.updateData(player.uuid(), jedispd);
+                player.sendMessage("[accent]<[white]migration[accent]>[] Migrated data successfully! Please rejoin to refresh ranks.");
+                removeJedisData(player.uuid());
+            });
+
+            // v5 side
+            /*
+            handler.<Player>register("migrate", "Generate a code for migration to V6 servers.", (args, player) -> {
+                PlayerData jedispd = getJedisData(player.uuid());
+                if(jedispd == null){
+                    player.sendMessage("[accent]<[white]migration[accent]>[scarlet] An unknown error has occured");
+                    return;
+                }
+                player.sendMessage("[accent]<[white]migration[accent]>[] Your code is [accent]" + player.uuid() + "[]\nWrite it down or take a photo, DO NOT SHARE IT WITH ANYBODY!\nUse the /migrate command on the V6 server to finish migration.");
+            });
+             */
 
             handler.<Player>register("inspector", "Toggle on tile inspector. (Grief detection)", (args, player) -> {
                 TempPlayerData pd = tempPlayerDatas.get(player.uuid());
