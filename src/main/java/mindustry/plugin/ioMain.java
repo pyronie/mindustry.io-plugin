@@ -239,8 +239,10 @@ public class ioMain extends Plugin {
     public void registerClientCommands(CommandHandler handler){
         if (api != null) {
             handler.<Player>register("migrate", "<code>", "Migrate your progress from v104 servers.", (args, player) -> {
-                if(args[0] == null || args[0].length() != 24)
+                if(args[0] == null || args[0].length() != 24) {
                     player.sendMessage("[accent]<[white]migration[accent]>[scarlet] That is not a valid 24 - character code.");
+                    return;
+                }
 
                 PlayerData jedispd = getJedisData(args[0]);
                 if(jedispd == null) {
