@@ -182,6 +182,7 @@ public class ioMain extends Plugin {
         });
 
         Events.on(EventType.WorldLoadEvent.class, event -> {
+            tileInfoHashMap.clear();
             Timer.schedule(MapRules::run, 1); // idk
         });
 
