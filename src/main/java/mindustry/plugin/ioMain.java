@@ -250,7 +250,6 @@ public class ioMain extends Plugin {
 
                 Database.updateData(player.uuid(), jedispd);
                 player.sendMessage("[accent]<[white]migration[accent]>[] Migrated data successfully! Please rejoin to refresh ranks.");
-                removeJedisData(player.uuid());
             });
 
             // v5 side
