@@ -33,8 +33,12 @@ public class DiscordCommands extends ListenerAdapter {
         List<Role> roles = member.getRoles();
 
         handleCommand(bt.publicHandler, content, ctx);
-        handleCommand(bt.reviewerHandler, content, ctx);
-        handleCommand(bt.moderatorHandler, content, ctx);
+
+        if(roles.contains(mapreviewer))
+            handleCommand(bt.reviewerHandler, content, ctx);
+
+        if(roles.contains(moderator))
+            handleCommand(bt.moderatorHandler, content, ctx);
 
         /*
         if(!handleCommand(bt.publicHandler, content, ctx)){
