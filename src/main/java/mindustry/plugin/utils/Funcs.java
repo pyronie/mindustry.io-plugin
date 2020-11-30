@@ -164,6 +164,18 @@ public class Funcs {
         }
     }
 
+    public static void removeJedisData(String uuid){
+        CompletableFuture.runAsync(() -> {
+            try (Jedis jedis = pool.getResource()) {
+                try {
+                    jedis.set(uuid, null);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
     public static void setJedisData(String uuid, PlayerData pd) {
         CompletableFuture.runAsync(() -> {
             try (Jedis jedis = pool.getResource()) {
