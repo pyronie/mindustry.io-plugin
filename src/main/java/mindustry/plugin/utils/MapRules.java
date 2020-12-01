@@ -32,7 +32,7 @@ public class MapRules {
 
         if(map.description().equals("???unknown???")) return;
         for(Tile t : world.tiles){
-            if(t.build != null && t.build.block instanceof CoreBlock){
+            if(t.build != null && t.block() != null && t.block() instanceof CoreBlock){
                 Call.label(map.description(), 20f, t.build.x, t.build.y);
             }
         }
