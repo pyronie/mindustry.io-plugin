@@ -30,6 +30,8 @@ public class ReactionAdd extends ListenerAdapter {
         Member member = event.getMember();
         
         if(event.getUser() == api.getSelfUser() || event.getUser() == null) return;
+        if(message.getAuthor() != api.getSelfUser()) return; // dont care about not own messages
+
         if(embed != null && member != null && emote != null){
             if(message.getChannel() == mapSubmissions){ // if reacted to a message in map submissions
                 if(member.getRoles().contains(mapreviewer)){
@@ -49,7 +51,6 @@ public class ReactionAdd extends ListenerAdapter {
                             });
                         });
                     }else if(emote.getId().equals("780513428669726760")){
-                        Log.info("disapproving");
                         User userByTag = api.getUserByTag(embed.getAuthor().getName());
                         if(userByTag != null){ userByTag.openPrivateChannel().queue(pm -> { pm.sendMessage(new EmbedBuilder().setTitle(":anguished: **your map was denied..**").setColor(Funcs.Pals.error).setDescription("disapproved by " + member.getUser().getAsTag()).build()).queue(); });}
                         message.getChannel().sendMessage(new EmbedBuilder().setTitle(":thumbsdown: denied. ").setColor(Funcs.Pals.error).build()).queue(message1 -> {
