@@ -57,6 +57,8 @@ public class BotThread extends Thread {
                     TempPlayerData pd = tempPlayerDatas.get(p.uuid());
                     pd.buffer.playTime++;
                     tempPlayerDatas.put(p.uuid(), pd);
+
+                    CheckPromotion(p);
                 }
 
                 SaveDatabase();

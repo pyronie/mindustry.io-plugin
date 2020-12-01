@@ -39,6 +39,8 @@ public class Funcs {
     public static String assets = "iocontent/";
     public static String welcomeMessage = "";
     public static String statMessage = "";
+    public static String promotionMessage = "[sky]%player%, you have been promoted to [sky]<active>[]!\n" + "[#4287f5]You reached a playtime of - %playtime% minutes! That's 10+ hours!\n" + "[#f54263]You played a total of %games% games!\n" + "[#9342f5]You built a total of %buildings% buildings!\n" + "[sky]Thank you for participating and enjoy your time on [orange]<[white]io[orange]>[sky]!\n" + "[scarlet]Please rejoin for the change to take effect.";
+
 
     public static HashMap<Integer, Rank> rankNames = new HashMap<>();
     public static ArrayList<String> onScreenMessages = new ArrayList<>();
@@ -205,6 +207,19 @@ public class Funcs {
     public static void SaveDatabase(String uuid){
         PlayerData buffer = tempPlayerDatas.get(uuid).buffer;
         Database.updateDataWithBuffer(uuid, buffer);
+    }
+
+    public static void CheckPromotion(Player p){
+        PlayerData pd = Database.getData(p.uuid());
+        if(pd == null) return;
+
+        if(pd.rank == 0 && pd.playTime >= activeRequirements.playtime && pd.buildingsBuilt >= activeRequirements.buildingsBuilt && pd.gamesPlayed >= activeRequirements.gamesPlayed){
+            Call.infoMessage(p.con, Funcs.formatMessage(p, promotionMessage));
+            if(pd.rank == 0){
+                pd.rank = 1;
+                Database.updateData(p.uuid(), pd);
+            }
+        }
     }
 
     public static void SaveDatabase(){
