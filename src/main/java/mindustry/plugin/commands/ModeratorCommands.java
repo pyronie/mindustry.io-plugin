@@ -21,6 +21,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
 import static mindustry.Vars.*;
@@ -243,6 +244,36 @@ public class ModeratorCommands {
             }else{
                 ctx.sendEmbed(false, ":wrench: error parsing rank number");
             }
+        });
+
+        //im sorry for this disaster, but we need it
+        handler.<Context>register("admin", "<uuid>", "Unadmin/Admin chosen player", (args, ctx) ->{
+            CompletableFuture.runAsync(() -> {
+                PlayerData pd = Database.getData(args[0]);
+                PlayerInfo info;
+                if(args[0].length() == 24) { // uuid length
+                    info = netServer.admins.getInfo(args[0]);
+                }else{
+                    ctx.sendEmbed(false, ":mag: can't find that player/uuid..");
+                    return;
+                }
+                if (pd != null && info != null) {
+                    Database.updateData(args[0], pd);
+                    Administration.PlayerInfo pi;
+                    Player target = findPlayer(args[0]);
+                    pi = target.getInfo();
+                    if (pi == null){
+                        ctx.sendEmbed(false, ":mag: can't find that player/uuid..");
+                    }else if (!pi.admin){
+                    netServer.admins.adminPlayer(pi.id, pi.adminUsid);
+                    ctx.sendEmbed(true, "Promoted " + escapeCharacters(target.name) + " to admin");
+                    }else {
+                        netServer.admins.unAdminPlayer(pi.id);
+                        ctx.sendEmbed(true, "Demoted " + escapeCharacters(target.name) + " from admin");
+                    }
+                }
+
+            });
         });
 
         handler.<Context>register("convert", "<player> <unit>", "Change a players unit into the specified one", (args, ctx) -> {
