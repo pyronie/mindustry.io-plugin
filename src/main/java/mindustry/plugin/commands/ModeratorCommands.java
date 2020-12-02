@@ -81,13 +81,13 @@ public class ModeratorCommands {
                     }
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
-                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[red]You are banned from this server.[][accent]\nReason:[][red] " + pd.banReason + "\n[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4) + "\n\nIf you think you were banned by mistake or wish to appeal your ban, make an appeal at:\n[cyan]https://discord.mindustry.io/[]";
+                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[]\n[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4) + "\n\nIf you think you were banned by mistake or wish to appeal your ban, make an appeal at:\n[cyan]https://discord.mindustry.io/[]";
                     Database.updateData(uuid, pd);
 
                     HashMap<String, String> fields = new HashMap<>();
                     fields.put("UUID", uuid);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
-                    player.con.kick("[red]You are banned from this server.[][accent]\nReason:[][red] " + pd.banReason + "\n[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4) + "\n\nIf you think you were banned by mistake or wish to appeal your ban, make an appeal at:\n[cyan]https://discord.mindustry.io/[]");
+                    player.con.kick("[red]You are banned from this server.[][accent]\nReason:[] [red]" + pd.banReason);
                 }else{
                     ctx.sendEmbed(false, ":interrobang: internal server error, please ping fuzz");
                 }

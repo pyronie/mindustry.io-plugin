@@ -114,7 +114,7 @@ public class ioMain extends Plugin {
                 }
                 if(data != null){
                     if (data.bannedUntil > Instant.now().getEpochSecond()) {
-                        player.con.kick(data.banReason);
+                        player.con.kick("[red]You are banned from this server.[][accent]\nReason:[] [red]" + data.banReason);
                         return;
                     }
                     if(data.rank > 0)
