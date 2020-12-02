@@ -76,6 +76,9 @@ public class Funcs {
         bannedNames.add("Volas Y0uKn0w1sR34Lp");
         bannedNames.add("IgruhaOrg");
         bannedNames.add("андрей");
+        bannedNames.add("�");
+        bannedNames.add("nigger");
+        bannedNames.add("sieg heil");
 
         activeRequirements.bannedBlocks.addAll(router, conveyor, titaniumConveyor, armoredConveyor, junction, sorter, invertedSorter, overflowGate, underflowGate, liquidRouter, conduit, pulseConduit, platedConduit, liquidJunction, copperWall);
 

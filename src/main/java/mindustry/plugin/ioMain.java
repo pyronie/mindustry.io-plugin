@@ -114,7 +114,7 @@ public class ioMain extends Plugin {
                 }
                 if(data != null){
                     if (data.bannedUntil > Instant.now().getEpochSecond()) {
-                        player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + data.banReason);
+                        player.con.kick(data.banReason);
                         return;
                     }
                     if(data.rank > 0)
@@ -130,7 +130,7 @@ public class ioMain extends Plugin {
                 }
 
                 if(bannedNames.contains(player.name))
-                    player.con.kick("Influx Capacitor failed.");
+                    player.con.kick("go read a book or something");
             });
         });
 
