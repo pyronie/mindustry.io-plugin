@@ -130,7 +130,7 @@ public class ioMain extends Plugin {
                 }
 
                 if(bannedNames.contains(player.name))
-                    player.con.kick("go read a book or something");
+                    player.con.kick("Influx Capacitor failed.");
             });
         });
 
