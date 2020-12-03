@@ -75,15 +75,19 @@ public class ModeratorCommands {
                 String uuid = player.uuid();
                 PlayerData pd = Database.getData(uuid);
                 if(pd != null){
+                    if (Integer.parseInt(args[1]) > 999999){
+                        ctx.sendEmbed(false, "<:im_ok:772010005682716682> There was an error trying to execute that command");
+                        return;
+                    }
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
-                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4);
+                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[]\n[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4) + "\n\nIf you think you were banned by mistake or wish to appeal your ban, make an appeal at:\n[cyan]https://discord.mindustry.io/[]";
                     Database.updateData(uuid, pd);
 
                     HashMap<String, String> fields = new HashMap<>();
                     fields.put("UUID", uuid);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
-                    player.con.kick(KickReason.banned);
+                    player.con.kick("[red]You are banned from this server.[][accent]\nReason:[] [red]" + pd.banReason);
                 }else{
                     ctx.sendEmbed(false, ":interrobang: internal server error, please ping fuzz");
                 }
