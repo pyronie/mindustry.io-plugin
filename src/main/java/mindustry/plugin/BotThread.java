@@ -35,7 +35,7 @@ public class BotThread extends Thread {
     public CommandHandler moderatorHandler = new CommandHandler(prefix);
 
     public BotThread(JDA api, Thread mt, JSONObject data) {
-        this.api = api; //new DiscordApiBuilder().setToken(data.get(0)).login().join();
+        this.api = api;
         this.mt = mt;
         this.data = data;
 
