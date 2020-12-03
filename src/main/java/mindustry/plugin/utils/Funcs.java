@@ -117,7 +117,7 @@ public class Funcs {
     }
 
     public static String escapeColorCodes(String string){
-        return Strings.stripColors(string).replaceAll("`", "");
+        return Strings.stripColors(string);
     }
 
     public static mindustry.maps.Map getMapBySelector(String query) {
