@@ -94,12 +94,14 @@ public class PublicCommands {
                 DataInputStream dis = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(bytes)));
                 if (attachment.getFileName().endsWith(".msav") && SaveIO.isSaveValid(dis)) {
                     try {
-
                         OutputStream os = new FileOutputStream(mapFile);
                         os.write(bytes);
                         os.close();
 
                         ContentHandler.Map map = contentHandler.readMap(fi.read());
+                        if(map == null)
+                            throw new Exception("lol ! !! !");
+
                         File imageFile = new File(assets + "image_" + attachment.getFileName().replaceAll(".msav", ".png"));
                         ImageIO.write(map.image, "png", imageFile);
 

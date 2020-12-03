@@ -291,7 +291,12 @@ public class ContentHandler{
 
             return out;
 
-        }finally{
+        }
+        catch(Exception ignored) {
+            return null;
+        }
+        finally
+        {
             // content.setTemporaryMapper(null);
         }
     }
