@@ -2,7 +2,6 @@ package mindustry.plugin.utils;
 
 import arc.struct.ObjectSet;
 import arc.util.Strings;
-import arc.util.Timer;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
@@ -14,22 +13,11 @@ public class VoteSession{
     Map target;
     public ObjectSet<String> voted = new ObjectSet<>();
     VoteSession[] map;
-    Timer.Task task;
     int votes;
-
-    //voting round duration in seconds
-    float voteDuration = 3f * 60;
 
     public VoteSession(VoteSession[] map, Map target){
         this.target = target;
         this.map = map;
-        this.task = Timer.schedule(() -> {
-            if(!checkPass()){
-                Call.sendMessage(Strings.format("[lightgray]Vote failed. Not enough votes to switch map to[accent] @[lightgray].", target.name()));
-                map[0] = null;
-                task.cancel();
-            }
-        }, voteDuration);
     }
 
     public int votesRequired(){
@@ -42,16 +30,15 @@ public class VoteSession{
 
         Call.sendMessage(Strings.format("[orange]@[lightgray] has voted to change the map to[orange] @[].[accent] (@/@)\n[lightgray]Type[orange] /rtv to agree.",
                 player.name, target.name(), votes, votesRequired()));
+
+        checkPass();
     }
 
-    boolean checkPass(){
+    void checkPass(){
         if(votes >= votesRequired()){
             Call.sendMessage(Strings.format("[orange]Vote passed.[scarlet] changing map to @.", target.name()));
             Funcs.changeMap(target);
             map[0] = null;
-            task.cancel();
-            return true;
         }
-        return false;
     }
 }

@@ -312,7 +312,7 @@ public class ioMain extends Plugin {
                 }
 
                 StringBuilder result = new StringBuilder();
-                result.append(Strings.format("[orange]-- Maps Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
+                result.append(Strings.format("[orange]-- Maps Page[lightgray] @[gray]/[lightgray]@[orange] --\n\n", (page+1), pages));
 
                 for(int i = perPage * page; i < Math.min(perPage * (page + 1), Vars.maps.customMaps().size); i++){
                     mindustry.maps.Map map = Vars.maps.customMaps().get(i);
@@ -322,7 +322,7 @@ public class ioMain extends Plugin {
             });
 
             Timekeeper vtime = new Timekeeper(voteCooldown);
-            VoteSession[] currentlyKicking = {null};
+            VoteSession[] currentlyVoting = {null};
 
             handler.<Player>register("nominate","<map...>", "[regular+] Vote to change to a specific map.", (args, player) -> {
                 if(!state.rules.pvp || player.admin()) {
@@ -332,11 +332,11 @@ public class ioMain extends Plugin {
                             player.sendMessage("[scarlet]You must wait " + voteCooldown/60 + " minutes between nominations.");
                             return;
                         }
-                        VoteSession session = new VoteSession(currentlyKicking, found);
+                        VoteSession session = new VoteSession(currentlyVoting, found);
 
                         session.vote(player, 1);
                         vtime.reset();
-                        currentlyKicking[0] = session;
+                        currentlyVoting[0] = session;
                     }else{
                         player.sendMessage("[scarlet]No map[orange]'" + args[0] + "'[scarlet] found.");
                     }
@@ -346,16 +346,16 @@ public class ioMain extends Plugin {
             });
 
             handler.<Player>register("rtv", "Vote to change the map.", (args, player) -> { // self info
-                if(currentlyKicking[0] == null){
+                if(currentlyVoting[0] == null){
                     player.sendMessage("[scarlet]No map is being voted on.");
                 }else{
                     //hosts can vote all they want
-                    if(player.uuid() != null && (currentlyKicking[0].voted.contains(player.uuid()) || currentlyKicking[0].voted.contains(netServer.admins.getInfo(player.uuid()).lastIP))){
+                    if(player.uuid() != null && (currentlyVoting[0].voted.contains(player.uuid()) || currentlyVoting[0].voted.contains(netServer.admins.getInfo(player.uuid()).lastIP))){
                         player.sendMessage("[scarlet]You've already voted.");
                         return;
                     }
 
-                    currentlyKicking[0].vote(player, 1);
+                    currentlyVoting[0].vote(player, 1);
                 }
             });
         }
