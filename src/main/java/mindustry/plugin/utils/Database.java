@@ -57,7 +57,7 @@ public class Database {
     public static void createRow(String uuid, PlayerData data){
         try {
             Statement stmt = con.createStatement();
-            PreparedStatement query = con.prepareStatement("INSERT INTO public.users(uuid, highest_wave, rank, playtime, buildings, games, verified, banned, banneduntil, banreason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+            PreparedStatement query = con.prepareStatement("INSERT INTO public.users(uuid, highest_wave, rank, playtime, buildings, games, verified, banned, banneduntil, banreason, lastIP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 
             query.setString(1, uuid);
             query.setInt(2, data.highestWave);
@@ -69,6 +69,7 @@ public class Database {
             query.setBoolean(8, data.banned);
             query.setLong(9, data.bannedUntil);
             query.setString(10, data.banReason);
+            query.setString(11, data.lastIP);
 
             query.execute();
 
@@ -99,6 +100,7 @@ public class Database {
                 pd.banned = rs.getBoolean("banned");
                 pd.bannedUntil = rs.getInt("banneduntil");
                 pd.banReason = rs.getString("banreason");
+                pd.lastIP = rs.getString("lastIP");
             }
 
             rs.close();
@@ -113,7 +115,7 @@ public class Database {
     public static void updateData(String uuid, PlayerData pd){
         try{
             Statement stmt = con.createStatement();
-            PreparedStatement query = con.prepareStatement("UPDATE public.users SET discord_id = ?, highest_wave = ?, rank = ?, playtime = ?, buildings = ?, games = ?, verified = ?, banned = ?, banneduntil = ?, banreason = ? WHERE uuid=?;");
+            PreparedStatement query = con.prepareStatement("UPDATE public.users SET discord_id = ?, highest_wave = ?, rank = ?, playtime = ?, buildings = ?, games = ?, verified = ?, banned = ?, banneduntil = ?, banreason = ?, lastIP = ? WHERE uuid=?;");
 
             query.setString(1, pd.discord_id);
             query.setInt(2, pd.highestWave);
@@ -126,6 +128,7 @@ public class Database {
             query.setLong(9, pd.bannedUntil);
             query.setString(10, pd.banReason);
             query.setString(11, uuid);
+            query.setString(12, pd.lastIP);
 
             query.execute();
             stmt.close();

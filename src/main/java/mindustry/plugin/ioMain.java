@@ -106,7 +106,6 @@ public class ioMain extends Plugin {
                 Player player = event.player;
                 tempPlayerDatas.put(player.uuid(), new TempPlayerData());
 
-
                 PlayerData data = Database.getData(player.uuid());
                 for(Rank rank : rankNames.values()){
                     if(player.name.contains(rank.rawTag))
@@ -114,12 +113,17 @@ public class ioMain extends Plugin {
                 }
                 if(data != null){
                     if (data.bannedUntil > Instant.now().getEpochSecond()) {
-                        player.con.kick("[red]You are banned from this server.[][accent]\nReason:[] [red]" + data.banReason);
+                        player.con.kick("[scarlet]You are banned.[accent] Reason:\n" + data.banReason);
                         return;
                     }
+
+                    if(data.bannedUntil< Instant.now().getEpochSecond() ){
+                        netServer.admins.unbanPlayerIP(player.getInfo().lastIP);
+                    }
+
                     if(data.rank > 0)
                         player.name(rankNames.get(data.rank).tag + " " + player.name);
-
+                    data.lastIP=player.getInfo().lastIP;
                 } else { // not in database
                     Log.info("creating new row for " + player.name);
                     Database.createRow(player.uuid(), new PlayerData());
@@ -131,6 +135,7 @@ public class ioMain extends Plugin {
 
                 if(bannedNames.contains(player.name))
                     player.con.kick("Influx Capacitor failed.");
+                Database.updateData(player.uuid(),data);
             });
         });
 

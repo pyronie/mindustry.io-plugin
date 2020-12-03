@@ -12,6 +12,7 @@ public class PlayerData{
     public boolean banned = false;
     public long bannedUntil = 0;
     public String banReason = "";
+    public String lastIP="";
 
     public PlayerData() { }
 }

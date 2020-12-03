@@ -75,19 +75,15 @@ public class ModeratorCommands {
                 String uuid = player.uuid();
                 PlayerData pd = Database.getData(uuid);
                 if(pd != null){
-                    if (Integer.parseInt(args[1]) > 999999){
-                        ctx.sendEmbed(false, "<:im_ok:772010005682716682> There was an error trying to execute that command");
-                        return;
-                    }
                     long until = Instant.now().getEpochSecond() + Integer.parseInt(args[1]) * 60;
                     pd.bannedUntil = until;
-                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[]\n[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4) + "\n\nIf you think you were banned by mistake or wish to appeal your ban, make an appeal at:\n[cyan]https://discord.mindustry.io/[]";
+                    pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4);
                     Database.updateData(uuid, pd);
 
                     HashMap<String, String> fields = new HashMap<>();
                     fields.put("UUID", uuid);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
-                    player.con.kick("[red]You are banned from this server.[][accent]\nReason:[] [red]" + pd.banReason);
+                    player.con.kick(KickReason.banned);
                 }else{
                     ctx.sendEmbed(false, ":interrobang: internal server error, please ping fuzz");
                 }
@@ -127,6 +123,22 @@ public class ModeratorCommands {
                 ctx.sendEmbed(true, ":wrench: unbanned " + escapeCharacters(info.lastName) + " successfully!");
             }else{
                 ctx.sendEmbed(false, ":wrench: that uuid doesn't exist in the database..");
+            }
+        });
+
+        handler.<Context>register("unbanIP", "<IP>", "Unban the specified player by IP", (args, ctx) -> {
+            PlayerData pd = getJedisData(args[0]);
+            if(pd!= null){
+                PlayerInfo info = netServer.admins.getInfo(args[0]);
+
+                if(netServer.admins.unbanPlayerIP(pd.lastIP)){
+                    ctx.sendEmbed(true, ":wrench: unbanned IP " + pd.lastIP + " successfully!");
+                }
+                else{
+                    ctx.sendEmbed(false, ":wrench: unbanIP failed successfully, IP unable to be found");
+                }
+            }else{
+                ctx.sendEmbed(false, ":wrench: unbanIP failed successfully, PlayerData not found");
             }
         });
 
@@ -435,7 +447,7 @@ public class ModeratorCommands {
                 Field field = Bullets.class.getDeclaredField(args[1]);
                 desiredBulletType = (BulletType) field.get(null);
             } catch (NoSuchFieldException | IllegalAccessException ignored) {
-                if(args[0] != "none")
+                if(args[0].equals("none"))
                     ctx.sendEmbed(false, ":gun: invalid bullet type");
                 desiredBulletType = null;
             }
