@@ -125,7 +125,7 @@ public class Funcs {
         } catch (Exception e) {
             // try by name
             for (mindustry.maps.Map m : maps.customMaps()) {
-                if (m.name().replaceAll(" ", "").toLowerCase().contains(query.toLowerCase().replaceAll(" ", ""))) {
+                if (Funcs.escapeColorCodes(m.name()).replaceAll(" ", "").toLowerCase().contains(query.toLowerCase().replaceAll(" ", ""))) {
                     found = m;
                     break;
                 }
