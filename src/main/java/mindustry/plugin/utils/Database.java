@@ -127,8 +127,9 @@ public class Database {
             query.setBoolean(8, pd.banned);
             query.setLong(9, pd.bannedUntil);
             query.setString(10, pd.banReason);
-            query.setString(11, uuid);
-            query.setString(12, pd.lastIP);
+            query.setString(11, pd.lastIP);
+            query.setString(12, uuid);
+
 
             query.execute();
             stmt.close();

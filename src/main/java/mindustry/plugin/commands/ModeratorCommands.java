@@ -83,9 +83,10 @@ public class ModeratorCommands {
                     pd.bannedUntil = until;
                     pd.banReason = (args.length >= 3 ? args[2] : "not specified") + "\n" + "[]\n[accent]Until: " + epochToString(until) + "\n[accent]Ban ID:[] " + player.uuid().substring(0, 4) + "\n\nIf you think you were banned by mistake or wish to appeal your ban, make an appeal at:\n[cyan]https://discord.mindustry.io/[]";
                     Database.updateData(uuid, pd);
-
                     HashMap<String, String> fields = new HashMap<>();
                     fields.put("UUID", uuid);
+                    fields.put("IP", pd.lastIP);
+                    netServer.admins.banPlayerIP(pd.lastIP);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(player.name), "reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
                     player.con.kick("[red]You are banned from this server.[][accent]\nReason:[] [red]" + pd.banReason);
                 }else{
@@ -100,6 +101,8 @@ public class ModeratorCommands {
                     Database.updateData(args[0], pd);
                     HashMap<String, String> fields = new HashMap<>();
                     fields.put("UUID", args[0]);
+                    fields.put("IP", pd.lastIP);
+                    netServer.admins.banPlayerIP(pd.lastIP);
                     ctx.sendEmbed(true, ":hammer: the ban hammer has been swung at " + escapeCharacters(netServer.admins.getInfo(args[0]).lastName),"reason: *" + escapeColorCodes(pd.banReason) + "*", fields, false);
                 }else{
                     ctx.sendEmbed(false, ":hammer: that player or uuid cannot be found");
@@ -130,8 +133,8 @@ public class ModeratorCommands {
             }
         });
 
-        handler.<Context>register("unbanIP", "<IP>", "Unban the specified player by IP", (args, ctx) -> {
-            PlayerData pd = getJedisData(args[0]);
+        handler.<Context>register("unbanip", "<IP>", "Unban the specified player by IP", (args, ctx) -> {
+            PlayerData pd = Database.getData(args[0]);
             if(pd!= null){
                 PlayerInfo info = netServer.admins.getInfo(args[0]);
 
