@@ -14,6 +14,7 @@ import mindustry.gen.Player;
 import mindustry.graphics.Pal;
 import mindustry.mod.Plugin;
 import mindustry.net.Administration;
+import mindustry.plugin.commands.ModeratorCommands;
 import mindustry.plugin.datas.ContentHandler;
 import mindustry.plugin.datas.PlayerData;
 import mindustry.plugin.datas.TempPlayerData;
@@ -32,6 +33,7 @@ import mindustry.gen.Call;
 
 import static mindustry.Vars.*;
 import static mindustry.Vars.player;
+import static mindustry.content.UnitTypes.*;
 import static mindustry.plugin.utils.Funcs.*;
 import static mindustry.plugin.discord.Loader.*;
 
@@ -184,12 +186,10 @@ public class ioMain extends Plugin {
             Vars.netServer.admins.addActionFilter(action -> {
                 Player player = action.player;
                 TempPlayerData pd = tempPlayerDatas.get(player.uuid());
-
                 if (player == null) return true;
-
                 if (player.admin()) return true;
                 if (pd.frozen) return false;
-
+                if(pd.buffer.playTime<4 && ModeratorCommands.slowmode) return false;
                 return action.type != Administration.ActionType.rotate;
             });
         });

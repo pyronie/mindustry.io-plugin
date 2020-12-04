@@ -32,6 +32,7 @@ import static mindustry.plugin.ioMain.*;
 import static mindustry.plugin.utils.Funcs.*;
 
 public class ModeratorCommands {
+    public static boolean slowmode = false;
     public ModeratorCommands(){
     }
 
@@ -126,6 +127,7 @@ public class ModeratorCommands {
                 PlayerInfo info = netServer.admins.getInfo(args[0]);
                 info.lastKicked = 0;
                 pd.bannedUntil = 0;
+                netServer.admins.unbanPlayerIP(pd.lastIP);
                 Database.updateData(args[0], pd);
                 ctx.sendEmbed(true, ":wrench: unbanned " + escapeCharacters(info.lastName) + " successfully!");
             }else{
@@ -208,6 +210,14 @@ public class ModeratorCommands {
             }
             eb.setColor(Pals.freeze);
 
+            ctx.channel.sendMessage(eb.build()).queue();
+        });
+
+        handler.<Context>register("slowmode", "", "Prevents players with less than 4 minutes of playtime from building", (args, ctx) -> {
+                EmbedBuilder eb = new EmbedBuilder();
+                eb.setTitle(slowmode ? ":droplet: slowmode ended" : ":snowflake: slowmode started");
+                slowmode = !slowmode;
+                eb.setColor(Pals.freeze);
             ctx.channel.sendMessage(eb.build()).queue();
         });
 
